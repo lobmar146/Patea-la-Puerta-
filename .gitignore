@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.test
+test-results/
+playwright-report/
+*.log
+public/cards/*.jpg
+public/cards/*.png
+public/cards/*.webp
+!public/cards/.gitkeep
+public/cards/available.json
