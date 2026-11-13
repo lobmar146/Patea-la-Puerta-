@@ -11,7 +11,7 @@
     "dev": "concurrently -k -n api,web -c yellow,cyan \"npm:dev:server\" \"npm:dev:client\"",
     "dev:server": "tsx watch --clear-screen=false src/server/index.ts",
     "dev:client": "vite",
-    "build": "prisma generate && vite build && tsc -p tsconfig.server.json",
+    "build": "prisma generate && node scripts/fetch-assets.mjs && vite build && tsc -p tsconfig.server.json",
     "start": "node dist/server/server/index.js",
     "start:prod": "prisma migrate deploy && node dist/server/server/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.server.json --noEmit",

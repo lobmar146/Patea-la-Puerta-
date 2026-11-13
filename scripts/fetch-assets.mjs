@@ -1,10 +1,10 @@
 // Descarga las referencias del manifiesto a public/cards/ para usarlas sin hotlinks.
-// Uso: npm run assets:fetch   (ejecutalo en una máquina con acceso a esos sitios)
+// Uso: npm run assets:fetch. También corre dentro de `npm run build` (así Render las incluye).
 //
-// - Hace un GET simple. Si un sitio bloquea la descarga, NO se intenta eludir: queda el fallback.
-// - Escribe public/cards/available.json con los archivos realmente descargados y válidos.
-// - La licencia de reutilización no está confirmada (ver docs/ASSETS.md); no publiques estos
-//   archivos en un despliegue compartido sin revisar antes ese estado.
+// - Hace un GET simple con tiempo límite. Si un sitio bloquea la descarga, NO se intenta eludir:
+//   se conserva la copia local si existe o queda el fallback SVG. Nunca hace fallar el build.
+// - Escribe public/cards/available.json con los archivos realmente disponibles.
+// - Uso privado entre amigos, sin fines comerciales (ver docs/ASSETS.md).
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 
 const dir = new URL('../public/cards/', import.meta.url);
@@ -18,7 +18,7 @@ const available = [];
 for (const [file, url] of pairs) {
   const target = new URL(file, dir);
   try {
-    const res = await fetch(url, { headers: { 'user-agent': 'patea-la-puerta-asset-fetch/1.0' }, redirect: 'follow' });
+    const res = await fetch(url, { headers: { 'user-agent': 'patea-la-puerta-asset-fetch/1.0' }, redirect: 'follow', signal: AbortSignal.timeout(15000) });
     const type = res.headers.get('content-type') ?? '';
     if (!res.ok || !type.startsWith('image/')) throw new Error(`HTTP ${res.status} ${type}`);
     const buf = Buffer.from(await res.arrayBuffer());

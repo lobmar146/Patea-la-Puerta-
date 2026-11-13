@@ -6,12 +6,14 @@ La app elige imágenes desde `src/client/assets/manifest.ts`. Las cartas se usan
 
 - Las seis descargas de las referencias indicadas en el prompt se comprobaron visualmente el 2026-11-13 y se guardan en `public/cards/` para evitar hotlinks.
 - `available.json` lista solo las copias disponibles. Las hojas con varias cartas se recortan desde el manifiesto; los recortes no modifican el original.
-- Los archivos listados se incluyeron en el proyecto a pedido del usuario. **El permiso de redistribución no está confirmado**. No desplegar públicamente con estas imágenes sin revisar los derechos/permiso.
+- `npm run build` ejecuta `scripts/fetch-assets.mjs` antes de Vite, así el despliegue en Render incluye las imágenes. Si una descarga falla, se usa la copia de `public/cards/` si está versionada o, si no, el SVG de respaldo.
+- Para no depender de los sitios de origen, se pueden versionar las copias locales (`git add public/cards/*.jpg`); `.gitignore` ya no las excluye.
+- Decisión del usuario (2026-11-13): se usan en el despliegue porque es un uso privado entre amigos y sin fines comerciales. El permiso de redistribución de SJ Games no está confirmado.
 - Los reversos de carta no identifican artista en las copias consultadas. La página oficial de Munchkin identifica a John Kovalic como ilustrador del juego base y las páginas de las expansiones muestran el crédito en sus productos.
 
 ## Créditos y permisos
 
-Munchkin, sus cartas y arte © Steve Jackson Games. El arte de las cartas fotografiadas está acreditado a John Kovalic cuando corresponde; la foto de eBay conserva visible la marca de agua de Western Ohio Gaming. Una publicación en internet no otorga automáticamente permiso de redistribución. La política online de SJ Games no es una licencia y no confirma permiso específico para esta aplicación. Uso en despliegue público: **pendiente de permiso**.
+Munchkin, sus cartas y arte © Steve Jackson Games. El arte de las cartas fotografiadas está acreditado a John Kovalic cuando corresponde; la foto de eBay conserva visible la marca de agua de Western Ohio Gaming. Una publicación en internet no otorga automáticamente permiso de redistribución. La política online de SJ Games no es una licencia y no confirma permiso específico para esta aplicación. Uso en el despliegue: privado entre amigos, sin fines comerciales, por decisión del usuario; permiso formal no confirmado.
 
 ## Manifiesto
 

@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { io, type Socket } from 'socket.io-client';
 import type { Action } from '../shared/commands';
 import type { CommandResult, Participant, Snapshot } from '../shared/types';
+import { syncServerClock } from './serverClock';
 import { uuid } from './api';
 
 export type ConnStatus = 'connecting' | 'online' | 'reconnecting' | 'unauthorized';
@@ -58,6 +59,7 @@ export function RoomProvider({ code, children }: { code: string; children: React
       // Al reconectar llega un snapshot completo; se descartan los que llegan atrasados.
       if (s.version < versionRef.current) return;
       versionRef.current = s.version;
+      syncServerClock(s.serverTime);
       setSnap(s);
       setOnline(new Set(s.online));
       const me = s.state.participants[s.me.participantId];

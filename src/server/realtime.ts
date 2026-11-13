@@ -20,7 +20,7 @@ function online(roomId: string): string[] {
   return [...(presence.get(roomId)?.entries() ?? [])].filter(([, n]) => n > 0).map(([id]) => id);
 }
 
-export function createRealtime(server: HttpServer) {
+export function createRealtime(server: HttpServer, onActivity: () => void = () => {}) {
   const io = new Server<Record<string, never>, Record<string, never>, Record<string, never>, SocketData>(server, {
     serveClient: false,
   });
@@ -37,6 +37,7 @@ export function createRealtime(server: HttpServer) {
       me: { participantId: data.participantId, role: p.role, isDm: p.isDm },
       online: online(room.id),
       expiresAt: room.expiresAt.toISOString(),
+      serverTime: new Date().toISOString(),
     };
   }
 
@@ -73,6 +74,7 @@ export function createRealtime(server: HttpServer) {
 
   io.on('connection', async (socket: Socket) => {
     const data = socket.data as SocketData;
+    onActivity();
     await socket.join(data.roomId);
     const room = presence.get(data.roomId) ?? new Map<string, number>();
     room.set(data.participantId, (room.get(data.participantId) ?? 0) + 1);
@@ -99,6 +101,7 @@ export function createRealtime(server: HttpServer) {
         ack?.({ ok: false, code: 'invalid', message: parsed.error.issues[0]?.message ?? 'Comando inválido.', version: -1 });
         return;
       }
+      onActivity();
       try {
         const out = await processCommand(data.code, data.tokenHash, parsed.data);
         ack?.(out.result);
