@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#2b1d12" />
+    <script>
+      try {
+        if (localStorage.getItem('pp-theme') === 'dark') {
+          document.documentElement.dataset.theme = 'dark';
+        }
+      } catch {
+        // El navegador puede desactivar el almacenamiento local.
+      }
+    </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>Pateá la Puerta!</title>
   </head>

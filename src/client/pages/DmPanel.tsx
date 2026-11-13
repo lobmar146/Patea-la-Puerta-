@@ -1,3 +1,4 @@
+import { Crown, Pause, Play } from 'lucide-react';
 import { useState } from 'react';
 import { PHASE_LABEL } from '../../shared/engine';
 import { activeParticipantId, displayName } from '../../shared/rules';
@@ -21,15 +22,20 @@ export function DmPanel() {
 
   return (
     <div className="space-y-4" data-testid="dm-panel">
+      <header className="inverse-surface relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-ink via-[#38271c] to-royal/80 p-5 text-parchment-50 shadow-[0_18px_45px_rgba(43,29,18,.18)] sm:p-7">
+        <div aria-hidden className="absolute -right-12 -top-20 -z-10 h-64 w-64 rounded-full border-[26px] border-white/[.04]" />
+        <p className="text-[10px] font-black uppercase tracking-[.24em] text-parchment-200 sm:text-xs">Herramientas de mesa</p>
+        <div className="mt-2 flex items-end justify-between gap-3"><div><h1 className="font-display text-3xl font-black sm:text-4xl">Panel del DM</h1><p className="mt-1 text-sm text-parchment-100 sm:text-base">Controlá la partida y ayudá a que siga el ritmo.</p></div><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/10 text-2xl"><Crown aria-hidden className="size-6 shrink-0" /></span></div>
+      </header>
       <Section title="Partida">
         <div className="flex flex-wrap gap-2">
-          {state.status === 'active' && <button className="btn-secondary" disabled={pending} onClick={() => send({ type: 'game.pause' })}>⏸ Pausar</button>}
-          {state.status === 'paused' && <button className="btn-go" disabled={pending} onClick={() => send({ type: 'game.resume' })}>▶ Reanudar</button>}
+          {state.status === 'active' && <button className="btn-secondary" disabled={pending} onClick={() => send({ type: 'game.pause' })}><Pause aria-hidden className="size-4 shrink-0" /> Pausar</button>}
+          {state.status === 'paused' && <button className="btn-go" disabled={pending} onClick={() => send({ type: 'game.resume' })}><Play aria-hidden className="size-4 shrink-0" /> Reanudar</button>}
           {state.status !== 'lobby' && !confirmEnd && <button className="btn-primary" onClick={() => setConfirmEnd(true)}>Terminar partida</button>}
           {state.status === 'lobby' && <p>La partida se inicia desde la pestaña Sala.</p>}
         </div>
         {confirmEnd && (
-          <div className="mt-3 space-y-2 rounded-lg border-2 border-blood bg-white p-3">
+          <div className="mt-3 space-y-3 rounded-2xl border border-accent-wine/30 bg-blood/[.06] p-4">
             <label className="label" htmlFor="winner">¿Hubo ganador?</label>
             <select id="winner" className="input" value={winner} onChange={(e) => setWinner(e.target.value)}>
               <option value="">Sin ganador declarado</option>
@@ -70,7 +76,7 @@ export function DmPanel() {
       <Section title="Participantes">
         <ul className="space-y-2">
           {others.map((p) => (
-            <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-ink bg-white p-2">
+              <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ui-line/10 bg-surface-raised p-3 shadow-sm">
               <span>
                 <b>{displayName(state, p.id)}</b> · {p.role === 'player' ? 'Jugador' : 'Espectador'} <PresenceDot online={online.has(p.id)} />
               </span>

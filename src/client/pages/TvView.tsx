@@ -1,12 +1,16 @@
+import { ArrowLeft, Maximize, Minimize, Pause, Play, Swords, Trophy, Wifi, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { PHASE_GUIDE } from '../../shared/phases';
 import { APP_NAME, activeParticipantId, basePower, displayName, upcoming } from '../../shared/rules';
 import { Illustration } from '../components/Illustration';
+import { ActiveStopwatch } from '../components/Stopwatch';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { ConnectionBadge, EventList, QrCode, joinUrl } from '../components/ui';
 import { useRoom } from '../useRoom';
 import { CombatTotalsPanel } from './CombatView';
 
-/** Vista de solo lectura para TV (1920x1080, se adapta a otras resoluciones). */
+/** Vista de solo lectura, diseñada para verse bien tanto en una TV como en móvil. */
 export function TvView({ publicUrl }: { publicUrl: string | null }) {
   const { snap, online, status } = useRoom();
   const [full, setFull] = useState(false);
@@ -16,7 +20,7 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
     return () => document.removeEventListener('fullscreenchange', h);
   }, []);
 
-  if (!snap) return <main className="flex min-h-dvh items-center justify-center text-4xl">Conectando con la mesa…</main>;
+  if (!snap) return <main className="grid min-h-dvh place-items-center bg-ink p-6 text-2xl font-bold text-parchment-50">Conectando con la mesa…</main>;
   const { state } = snap;
   const active = activeParticipantId(state);
   const guide = PHASE_GUIDE[state.turn.phase];
@@ -24,91 +28,117 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
   const players = state.turn.order.map((id) => state.characters[id]).filter(Boolean);
 
   return (
-    <main className="flex min-h-dvh flex-col gap-[1.2vw] bg-parchment-100 p-[1.5vw] text-[1.1vw] max-lg:text-base" data-testid="tv-view">
-      <header className="flex items-center justify-between gap-4">
-        <h1 className="font-display text-[2.2vw] font-black max-lg:text-2xl">{APP_NAME}</h1>
-        <div className="flex items-center gap-3">
-          <ConnectionBadge big />
-          <button className="btn-secondary" onClick={() => (full ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => undefined)}>
-            {full ? 'Salir de pantalla completa' : '⛶ Pantalla completa'}
+    <main className={`tv-shell inverse-surface min-h-dvh overflow-x-hidden p-3 text-parchment-50 sm:p-5 lg:p-6 ${state.status !== 'lobby' && state.status !== 'finished' ? 'tv-shell-live' : ''}`} data-testid="tv-view">
+      <header className="tv-header mx-auto flex w-full max-w-[1800px] flex-wrap items-center justify-between gap-3 pb-4 sm:pb-6">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <Link to={`/s/${snap.code}`} className="tv-control shrink-0" aria-label="Volver a la partida"><ArrowLeft aria-hidden className="size-4 shrink-0" /> <span className="hidden sm:inline">Volver a la partida</span></Link>
+          <span className="h-8 w-px bg-white/15" aria-hidden />
+          <div className="min-w-0">
+            <p className="truncate font-display text-lg font-black tracking-tight sm:text-2xl">{APP_NAME}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[.2em] text-parchment-200/65 sm:text-xs">Vista de mesa</p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <ConnectionBadge />
+          <ThemeToggle compact />
+          <button className="tv-control" onClick={() => (full ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => undefined)} aria-label={full ? 'Salir de pantalla completa' : 'Activar pantalla completa'}>
+            {full ? <Minimize aria-hidden className="size-4 shrink-0" /> : <Maximize aria-hidden className="size-4 shrink-0" />}<span className="hidden md:inline">{full ? 'Salir de pantalla completa' : 'Pantalla completa'}</span>
           </button>
         </div>
       </header>
-      {status !== 'online' && <p role="status" className="card bg-gold p-2 text-center text-[1.6vw] font-bold text-white">Reconectando… se muestra el último estado conocido.</p>}
 
-      {state.status === 'finished' ? (
-        <section className="card flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center" data-testid="tv-finished">
-          <p className="text-[2vw] font-bold uppercase max-lg:text-2xl">Partida terminada</p>
-          <p className="text-[5vw] font-black max-lg:text-5xl">{state.winnerId ? `🏆 ¡${displayName(state, state.winnerId)} gana!` : 'Fin de la partida'}</p>
-        </section>
-      ) : state.status === 'lobby' ? (
-        <section className="card flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
-          <p className="text-[2.5vw] font-bold max-lg:text-3xl">Esperando que empiece la partida</p>
-          <p className="text-[6vw] font-black tracking-[0.3em] max-lg:text-6xl">{snap.code}</p>
-          <QrCode text={joinUrl(snap.code, publicUrl)} size={260} />
-          <p className="text-[1.6vw] max-lg:text-xl">Jugadores: {players.map((c) => c.name).join(', ') || '—'}</p>
-        </section>
-      ) : (
-        <div className="grid flex-1 grid-cols-[1.25fr_1fr] gap-[1.2vw] max-lg:grid-cols-1">
-          <div className="flex flex-col gap-[1.2vw]">
-            <section className="card flex items-center gap-[1.5vw] p-[1.2vw]" data-testid="tv-turn">
-              <Illustration name={guide.illustration} className="w-[9vw] shrink-0 max-lg:w-24" />
-              <div>
-                <p className="text-[1.4vw] font-bold uppercase max-lg:text-base">{state.status === 'paused' ? '⏸ En pausa · ' : ''}Turno {state.turn.turnNumber}</p>
-                <p className="text-[4vw] font-black leading-none max-lg:text-4xl" data-testid="tv-active">▶ {displayName(state, active)}</p>
-                <p className="mt-2 text-[2.4vw] font-bold max-lg:text-2xl" data-testid="tv-phase">{guide.title}</p>
-                <p className="text-[1.4vw] max-lg:text-base">{guide.reminder}</p>
+      <div className={`tv-content mx-auto flex w-full max-w-[1800px] flex-col gap-4 sm:gap-6 ${state.status !== 'lobby' && state.status !== 'finished' ? 'tv-content-live' : ''}`}>
+        {status !== 'online' && <p role="status" className="tv-connection rounded-2xl border border-gold/50 bg-gold/20 p-3 text-center font-bold text-white">Reconectando… se muestra el último estado conocido.</p>}
+
+        {state.status === 'finished' ? (
+          <section className="tv-panel flex min-h-[65dvh] flex-col items-center justify-center gap-5 p-6 text-center sm:p-12" data-testid="tv-finished">
+            <Trophy aria-hidden className="size-14 text-accent-gold" /><p className="text-sm font-black uppercase tracking-[.25em] text-accent-wine">Partida terminada</p>
+            <p className="font-display text-4xl font-black sm:text-7xl">{state.winnerId ? `¡${displayName(state, state.winnerId)} gana!` : 'Fin de la partida'}</p>
+            <p className="text-ui-muted">Una aventura para recordar… y discutir en la revancha.</p>
+          </section>
+        ) : state.status === 'lobby' ? (
+          <section className="tv-panel grid min-h-[65dvh] items-center gap-8 p-6 text-center md:grid-cols-[1fr_auto] md:p-12 md:text-left">
+            <div>
+              <p className="text-sm font-black uppercase tracking-[.22em] text-accent-wine">Preparando la aventura</p>
+              <h2 className="mt-3 font-display text-4xl font-black leading-tight sm:text-6xl">Esperando que empiece la partida</h2>
+              <p className="mt-4 text-lg text-ui-muted">Compartí el código para que se sume el grupo.</p>
+              <p className="mt-6 inline-flex rounded-2xl bg-surface-inset px-5 py-3 font-black tracking-[.32em] text-accent-gold sm:text-3xl">{snap.code}</p>
+              <p className="mt-5 text-sm text-ui-muted">{players.length} {players.length === 1 ? 'jugador' : 'jugadores'} · {players.map((c) => c.name).join(' · ') || 'aún no hay jugadores'}</p>
+            </div>
+            <div className="mx-auto rounded-3xl bg-white p-4 shadow-xl"><QrCode text={joinUrl(snap.code, publicUrl)} size={220} /></div>
+          </section>
+        ) : (
+          <>
+            <div className="tv-primary">
+            <section className="tv-hero grid overflow-hidden rounded-[1.7rem] sm:rounded-[2.2rem] lg:grid-cols-[1.15fr_.85fr]" data-testid="tv-turn">
+              <div className="relative z-10 flex min-w-0 flex-col justify-center p-5 sm:p-8 lg:p-10">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="tv-kicker">Turno {state.turn.turnNumber}</span>
+                  {state.status === 'paused' && <span className="tv-kicker !bg-[#68410f]"><Pause aria-hidden className="size-3 shrink-0" /> En pausa</span>}
+                  <span className="tv-kicker !bg-white/10">{guide.title}</span>
+                </div>
+                <p className="mt-4 text-xs font-black uppercase tracking-[.26em] text-parchment-100/80 sm:text-sm">Ahora juega</p>
+                <h1 className="mt-1 break-words font-display text-4xl font-black leading-[.98] tracking-tight sm:text-6xl lg:text-[clamp(3rem,5.3vw,6rem)]" data-testid="tv-active">{displayName(state, active)}</h1>
+                <p className="mt-3 font-display text-xl font-bold leading-tight text-parchment-50 sm:text-2xl" data-testid="tv-phase">{guide.title}</p>
+                <p className="mt-1 max-w-2xl text-sm leading-relaxed text-parchment-50 sm:text-base">{guide.reminder}</p>
+                <div className="mt-4 max-w-xl"><ActiveStopwatch state={state} big /></div>
+              </div>
+              <div className="relative hidden min-h-0 items-center justify-center overflow-hidden bg-gradient-to-br from-blood/35 to-transparent p-5 lg:flex">
+                <div aria-hidden className="absolute h-[25rem] w-[25rem] rounded-full border border-parchment-100/10 shadow-[0_0_0_36px_rgba(248,239,217,.025),0_0_0_72px_rgba(248,239,217,.02)]" />
+                <div className="relative w-[min(44%,250px)] rotate-3 rounded-2xl border border-white/20 bg-white/10 p-2 shadow-[0_25px_60px_rgba(0,0,0,.35)]"><Illustration name={guide.illustration} className="w-full rounded-xl" /></div>
               </div>
             </section>
+
             {state.combat && (
-              <section className="card border-blood p-[1.2vw]" data-testid="tv-combat">
-                <h2 className="mb-2 text-[2vw] font-black max-lg:text-2xl">⚔ Combate: {state.combat.monsters.map((m) => m.name).join(', ') || 'monstruo sin cargar'}</h2>
+              <section className="tv-panel tv-combat-panel border-accent-wine/25 p-3 sm:p-5" data-testid="tv-combat">
+                <div className="mb-2 flex items-center gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blood/10 text-xl" ><Swords aria-hidden className="size-5 shrink-0" /></span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-black uppercase tracking-[.18em] text-accent-wine">Combate activo</p>
+                    <h2 className="truncate font-display text-lg font-black sm:text-2xl">
+                      {state.combat.monsters.map((m) => m.name).join(' + ') || 'Monstruo sin cargar'}
+                    </h2>
+                  </div>
+                </div>
                 <CombatTotalsPanel state={state} combat={state.combat} big />
               </section>
             )}
-            {state.levelAlert && (
-              <p className="card bg-gold p-3 text-[2vw] font-bold text-white">🏆 {displayName(state, state.levelAlert.participantId)} llegó a nivel {state.levelAlert.level}. El DM confirma.</p>
-            )}
-            <section className="card p-[1.2vw]">
-              <h2 className="text-[1.6vw] font-bold max-lg:text-xl">Últimos eventos</h2>
-              <EventList events={snap.events} limit={4} big />
+            {state.levelAlert && <p className="tv-level-alert rounded-2xl border border-gold/50 bg-[#68410f] p-3 text-center text-base font-black text-white sm:text-xl"><Trophy aria-hidden className="mr-1 inline size-5" />{displayName(state, state.levelAlert.participantId)} llegó a nivel {state.levelAlert.level}. El DM confirma.</p>}
+            </div>
+
+            <section className="tv-section tv-roster" data-testid="tv-table">
+              <div className="mb-3 flex items-end justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.22em] text-parchment-100/80 sm:text-xs">La aventura</p><h2 className="font-display text-2xl font-black sm:text-3xl">La mesa</h2></div><span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-white">{players.length} {players.length === 1 ? 'jugador' : 'jugadores'}</span></div>
+              <ul className="tv-roster-list grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-2">
+                {players.map((c) => (
+                  <li key={c.id} className={`tv-player ${active === c.id ? 'tv-player-active' : ''}`}>
+                    <div className="flex items-center gap-2"><span className="h-9 w-1.5 shrink-0 rounded-full" style={{ background: c.color }} /><div className="min-w-0 flex-1"><p className="truncate text-base font-black sm:text-lg">{active === c.id && <Play aria-hidden className="mr-1 inline size-4 text-[#ffd36a]" />}{c.name}</p><p className="truncate text-xs text-parchment-50/80">{[...c.races, ...c.classes].join(' · ') || 'Humano sin clase'}</p></div><div className="text-center"><span className="block text-[9px] font-black uppercase tracking-widest text-parchment-50/80">Nivel</span><strong className="font-display text-2xl font-black tabular-nums sm:text-3xl">{c.level}</strong></div></div>
+                    <div className="mt-2 flex items-center justify-between border-t border-white/15 pt-2"><span className="inline-flex items-center gap-1 text-xs font-semibold text-parchment-50/80">{online.has(c.id) ? <Wifi aria-hidden className="size-3 shrink-0" /> : <WifiOff aria-hidden className="size-3 shrink-0" />}{online.has(c.id) ? 'En línea' : 'Desconectado'}</span><span className="rounded-lg bg-[#692424] px-2.5 py-1 inline-flex items-center gap-1 text-xs font-black text-white"><Swords aria-hidden className="size-3 shrink-0" /> Poder {basePower(c)}</span></div>
+                  </li>
+                ))}
+              </ul>
             </section>
-          </div>
-          <div className="flex flex-col gap-[1.2vw]">
-            <section className="card p-[1.2vw]">
-              <table className="w-full text-left" data-testid="tv-table">
-                <thead>
-                  <tr className="text-[1.3vw] max-lg:text-sm"><th>Personaje</th><th className="text-center">Nivel</th><th className="text-center">Poder</th></tr>
-                </thead>
-                <tbody>
-                  {players.map((c) => (
-                    <tr key={c.id} className={`border-t-2 border-parchment-300 ${active === c.id ? 'bg-gold/20' : ''}`}>
-                      <td className="py-[0.5vw]">
-                        <span className="mr-2 inline-block h-[1.4vw] w-[1.4vw] rounded-full border-2 border-ink align-middle max-lg:h-4 max-lg:w-4" style={{ background: c.color }} aria-hidden />
-                        <span className="text-[2vw] font-bold max-lg:text-xl">{active === c.id ? '▶ ' : ''}{c.name}</span>
-                        {!online.has(c.id) && <span className="ml-2 text-[1vw] max-lg:text-xs">(desconectado)</span>}
-                        <div className="text-[1.1vw] max-lg:text-xs">{[...c.races, ...c.classes].join(' · ') || 'Humano sin clase'}</div>
-                      </td>
-                      <td className="text-center text-[3vw] font-black tabular-nums max-lg:text-3xl">{c.level}</td>
-                      <td className="text-center text-[2.4vw] font-bold tabular-nums max-lg:text-2xl">{basePower(c)}</td>
-                    </tr>
+
+            <div className="tv-footer-grid grid gap-3 lg:grid-cols-[1fr_auto]">
+              <section className="tv-panel tv-meta-panel p-3 sm:p-4">
+                <h2 className="mb-2 font-display text-lg font-black sm:text-xl">Turnos que vienen</h2>
+                <ol className="flex flex-wrap gap-2">
+                  {next.map((id, i) => (
+                    <li key={id} className="flex items-center gap-2 rounded-xl bg-surface-muted px-3 py-1.5 text-sm font-bold sm:text-base">
+                      <span className="grid h-6 w-6 place-items-center rounded-full bg-surface-inset text-xs text-accent-gold">{i + 1}</span>
+                      {displayName(state, id)}
+                    </li>
                   ))}
-                </tbody>
-              </table>
-            </section>
-            <section className="card p-[1.2vw]">
-              <h2 className="text-[1.6vw] font-bold max-lg:text-xl">Próximos turnos</h2>
-              <ol className="mt-1 flex flex-wrap gap-3 text-[1.8vw] max-lg:text-lg">
-                {next.map((id, i) => <li key={id}>{i + 1}. {displayName(state, id)}</li>)}
-              </ol>
-            </section>
-            <section className="mt-auto flex items-center justify-end gap-3 opacity-80">
-              <span className="text-[1.2vw] max-lg:text-sm">Sumate: <b className="tracking-widest">{snap.code}</b></span>
-              <QrCode text={joinUrl(snap.code, publicUrl)} size={90} />
-            </section>
-          </div>
-        </div>
-      )}
+                </ol>
+                <div className="mt-2 border-t border-ui-line/15 pt-2">
+                  <h3 className="mb-1 text-xs font-black uppercase tracking-widest text-ui-muted">Últimos eventos</h3>
+                  <EventList events={snap.events} limit={2} />
+                </div>
+              </section>
+              <section className="tv-join flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/[.06] p-3 sm:gap-4 sm:p-4"><div><p className="text-[10px] font-black uppercase tracking-[.18em] text-white sm:text-xs">Sumate a la mesa</p><p className="mt-1 font-black tracking-[.22em] sm:text-lg" data-testid="tv-code">{snap.code}</p></div><div className="rounded-xl bg-white p-1.5"><QrCode text={joinUrl(snap.code, publicUrl)} size={72} /></div></section>
+            </div>
+          </>
+        )}
+      </div>
     </main>
   );
 }

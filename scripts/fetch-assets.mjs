@@ -3,8 +3,8 @@
 //
 // - Hace un GET simple. Si un sitio bloquea la descarga, NO se intenta eludir: queda el fallback.
 // - Escribe public/cards/available.json con los archivos realmente descargados y válidos.
-// - Las imágenes descargadas están en .gitignore: su licencia de reutilización no está confirmada
-//   (ver docs/ASSETS.md). Decidí vos si corresponde publicarlas.
+// - La licencia de reutilización no está confirmada (ver docs/ASSETS.md); no publiques estos
+//   archivos en un despliegue compartido sin revisar antes ese estado.
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 
 const dir = new URL('../public/cards/', import.meta.url);

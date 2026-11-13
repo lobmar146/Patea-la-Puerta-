@@ -1,13 +1,14 @@
+import { Circle, Minus, Plus, RefreshCw, TriangleAlert, Wifi, WifiOff, type LucideIcon } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import QRCode from 'qrcode';
 import type { EventDTO } from '../../shared/types';
 import { useRoom, type ConnStatus } from '../useRoom';
 
-const STATUS: Record<ConnStatus, { text: string; icon: string; cls: string }> = {
-  online: { text: 'Conectado', icon: '●', cls: 'bg-moss text-white' },
-  connecting: { text: 'Conectando…', icon: '◌', cls: 'bg-gold text-white' },
-  reconnecting: { text: 'Reconectando…', icon: '↻', cls: 'bg-gold text-white' },
-  unauthorized: { text: 'Sin acceso', icon: '✕', cls: 'bg-blood text-white' },
+const STATUS: Record<ConnStatus, { text: string; icon: LucideIcon; cls: string }> = {
+  online: { text: 'Conectado', icon: Wifi, cls: 'bg-moss text-white' },
+  connecting: { text: 'Conectando…', icon: RefreshCw, cls: 'bg-[#68410f] text-white' },
+  reconnecting: { text: 'Reconectando…', icon: RefreshCw, cls: 'bg-[#68410f] text-white' },
+  unauthorized: { text: 'Sin acceso', icon: WifiOff, cls: 'bg-blood text-white' },
 };
 
 export function ConnectionBadge({ big = false }: { big?: boolean }) {
@@ -19,17 +20,18 @@ export function ConnectionBadge({ big = false }: { big?: boolean }) {
       aria-live="polite"
       data-testid="conn-status"
       data-status={status}
-      className={`inline-flex items-center gap-1 rounded-full border-2 border-ink px-2 py-0.5 font-bold ${s.cls} ${big ? 'text-xl' : 'text-xs'}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 font-bold shadow-sm ${s.cls} ${big ? 'text-lg' : 'text-xs'}`}
     >
-      <span aria-hidden>{s.icon}</span> {s.text}
+      <s.icon aria-hidden className="size-3.5 shrink-0" /> {s.text}
     </span>
   );
 }
 
 export function PresenceDot({ online }: { online: boolean }) {
   return (
-    <span className={`text-xs font-bold ${online ? 'text-moss' : 'text-ink-soft'}`} title={online ? 'En línea' : 'Desconectado'}>
-      {online ? '● en línea' : '○ desconectado'}
+    <span className={`inline-flex items-center gap-1 text-xs font-bold ${online ? 'text-accent-moss' : 'text-ui-muted'}`} title={online ? 'En línea' : 'Desconectado'}>
+      <Circle aria-hidden className={`size-2 shrink-0 ${online ? 'fill-current' : ''}`} />
+      {online ? 'en línea' : 'desconectado'}
     </span>
   );
 }
@@ -56,13 +58,13 @@ export function Stepper({
       <span className="font-bold">{label}</span>
       <div className="flex items-center gap-2">
         <button type="button" className="btn-secondary w-12 text-xl" aria-label={`Restar 1 a ${label}`} disabled={disabled || value <= min} onClick={() => onChange(value - 1)}>
-          −
+          <Minus aria-hidden className="size-5" />
         </button>
         <output className="w-12 text-center text-2xl font-black tabular-nums" aria-label={label} data-testid={testId ? `${testId}-value` : undefined}>
           {value}
         </output>
         <button type="button" className="btn-secondary w-12 text-xl" aria-label={`Sumar 1 a ${label}`} disabled={disabled || value >= max} onClick={() => onChange(value + 1)}>
-          +
+          <Plus aria-hidden className="size-5" />
         </button>
       </div>
     </div>
@@ -80,7 +82,7 @@ export function Toast() {
   return (
     <div role="alert" data-testid="toast" className="fixed inset-x-3 top-3 z-50 mx-auto max-w-md rounded-lg border-2 border-ink bg-blood p-3 font-bold text-white shadow-lg">
       <div className="flex items-start gap-2">
-        <span aria-hidden>⚠</span>
+        <TriangleAlert aria-hidden className="size-5 shrink-0" />
         <p className="flex-1">{toast}</p>
         <button className="underline" onClick={() => setToast(null)}>
           Cerrar
@@ -95,7 +97,7 @@ export function EventList({ events, limit = 10, big = false }: { events: EventDT
     <ol className={`space-y-1 ${big ? 'text-2xl' : 'text-sm'}`} aria-label="Eventos recientes">
       {events.slice(0, limit).map((e) => (
         <li key={e.id} className={`border-l-4 pl-2 ${e.type.startsWith('dm.') ? 'border-royal' : 'border-parchment-300'}`}>
-          {e.type.startsWith('dm.') && <span className="font-bold text-royal">[DM] </span>}
+          {e.type.startsWith('dm.') && <span className="font-bold text-accent-blue">[DM] </span>}
           {e.message}
         </li>
       ))}
@@ -115,9 +117,9 @@ export function QrCode({ text, size = 180 }: { text: string; size?: number }) {
 
 export function Section({ title, children, actions }: { title: string; children: ReactNode; actions?: ReactNode }) {
   return (
-    <section className="card p-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-xl font-bold">{title}</h2>
+    <section className="card p-4 sm:p-6">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2.5 text-xl font-black tracking-tight sm:text-2xl"><span className="h-6 w-1.5 rounded-full bg-blood" aria-hidden />{title}</h2>
         {actions}
       </div>
       {children}

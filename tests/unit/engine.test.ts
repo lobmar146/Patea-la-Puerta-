@@ -81,6 +81,27 @@ describe('creación y personajes', () => {
 });
 
 describe('turnos', () => {
+  it('cronómetro sincronizado: pausa, reanuda y acumula al acabar el turno', () => {
+    const t0 = '2026-01-01T00:00:00.000Z';
+    let s = applyAction(setup(), 'dm', { type: 'game.start' }, { now: t0, id }).state;
+    expect(s.clock.activeSince).toBe(t0);
+
+    s = applyAction(s, 'dm', { type: 'game.pause' }, { now: '2026-01-01T00:00:10.000Z', id }).state;
+    expect(s.clock).toMatchObject({ activeSince: null, turnElapsedMs: 10_000 });
+    s = applyAction(s, 'dm', { type: 'game.resume' }, { now: '2026-01-01T00:00:40.000Z', id }).state;
+    expect(s.clock.activeSince).toBe('2026-01-01T00:00:40.000Z');
+
+    s = applyAction(s, 'dm', { type: 'turn.kickDoor' }, { now: '2026-01-01T00:00:45.000Z', id }).state;
+    s = applyAction(s, 'dm', { type: 'turn.doorResult', result: 'other' }, { now: '2026-01-01T00:00:46.000Z', id }).state;
+    s = applyAction(s, 'dm', { type: 'turn.lootRoom' }, { now: '2026-01-01T00:00:47.000Z', id }).state;
+    s = applyAction(s, 'dm', { type: 'turn.lootDone' }, { now: '2026-01-01T00:00:48.000Z', id }).state;
+    s = applyAction(s, 'dm', { type: 'turn.charityDone' }, { now: '2026-01-01T00:00:49.000Z', id }).state;
+    s = applyAction(s, 'dm', { type: 'turn.end' }, { now: '2026-01-01T00:00:50.000Z', id }).state;
+    expect(s.clock).toMatchObject({ activeSince: '2026-01-01T00:00:50.000Z', turnElapsedMs: 0 });
+    expect(s.clock.totalsByParticipant.dm).toBe(20_000);
+    expect(s.clock.totalsByParticipant.p1).toBeUndefined();
+  });
+
   it('solo el jugador activo avanza la fase', () => {
     const s = started();
     expect(activeParticipantId(s)).toBe('dm');

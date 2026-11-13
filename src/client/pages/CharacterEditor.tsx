@@ -1,3 +1,4 @@
+import { Check, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { CharacterPatch } from '../../shared/commands';
 import { CLASS_SUGGESTIONS, COLORS, RACE_SUGGESTIONS, basePower } from '../../shared/rules';
@@ -19,7 +20,7 @@ function TagEditor({ label, values, suggestions, onChange, disabled, id }: { lab
         {values.map((v) => (
           <span key={v} className="chip">
             {v}
-            <button type="button" disabled={disabled} className="px-1 font-black" aria-label={`Quitar ${v}`} onClick={() => onChange(values.filter((x) => x !== v))}>×</button>
+            <button type="button" disabled={disabled} className="px-1 font-black" aria-label={`Quitar ${v}`} onClick={() => onChange(values.filter((x) => x !== v))}><X aria-hidden className="size-4 shrink-0" /></button>
           </span>
         ))}
       </div>
@@ -48,23 +49,21 @@ export function CharacterEditor({ targetId }: { targetId: string }) {
 
   return (
     <div className="space-y-4" data-testid="character-editor">
-      <section className="card overflow-hidden">
-        <div className="h-3" style={{ background: c.color }} />
-        <div className="flex items-center justify-between gap-4 p-4">
-          <div>
-            <h2 className="text-2xl font-black" data-testid="char-name">{c.name}</h2>
-            <p className="text-sm">{[...c.races, ...c.classes].join(' · ') || 'Humano sin clase'}</p>
-          </div>
-          <div className="text-center">
-            <div className="text-xs font-bold uppercase">Poder base</div>
-            <div className="text-5xl font-black tabular-nums" data-testid="char-power">{basePower(c)}</div>
-            <div className="text-xs">nivel + equipo + otros</div>
+      <section className="inverse-surface relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-ink via-[#3a261b] to-blood/90 p-5 text-parchment-50 shadow-[0_18px_45px_rgba(43,29,18,.18)] sm:p-7">
+        <div aria-hidden className="absolute -right-10 -top-16 -z-10 h-56 w-56 rounded-full border-[22px] border-white/[.04]" />
+        <div className="absolute inset-y-0 left-0 w-1.5" style={{ background: c.color }} />
+        <div className="flex items-center justify-between gap-4 pl-2">
+          <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.22em] text-parchment-200">Tu aventurero</p><h1 className="mt-1 truncate font-display text-3xl font-black tracking-tight sm:text-4xl" data-testid="char-name">{c.name}</h1><p className="mt-1 truncate text-sm text-parchment-100">{[...c.races, ...c.classes].join(' · ') || 'Humano sin clase'}</p></div>
+          <div className="shrink-0 rounded-2xl border border-white/10 bg-white/[.08] px-4 py-3 text-center shadow-inner">
+            <div className="text-[9px] font-black uppercase tracking-[.18em] text-parchment-100">Poder total</div>
+            <div className="font-display text-4xl font-black tabular-nums sm:text-5xl" data-testid="char-power">{basePower(c)}</div>
+            <div className="text-[10px] text-parchment-100">nivel + equipo + otros</div>
           </div>
         </div>
       </section>
 
       <Section title="Estadísticas">
-        <div className="space-y-3">
+        <div className="space-y-2">
           <Stepper label="Nivel" testId="level" value={c.level} min={1} max={99} disabled={pending} onChange={(v) => patch({ level: v })} />
           <Stepper label="Equipo (bonificación total)" testId="gear" value={c.gear} disabled={pending} onChange={(v) => patch({ gear: v })} />
           <Stepper label="Otros modificadores permanentes" testId="mods" value={c.otherMods} disabled={pending} onChange={(v) => patch({ otherMods: v })} />
@@ -92,8 +91,8 @@ export function CharacterEditor({ targetId }: { targetId: string }) {
             <legend className="label">Color</legend>
             <div className="flex flex-wrap gap-2">
               {COLORS.map((col) => (
-                <button key={col} type="button" aria-label={`Color ${col}${col === c.color ? ' (actual)' : ''}`} aria-pressed={col === c.color} className={`h-10 w-10 rounded-full border-2 border-ink ${col === c.color ? 'ring-4 ring-ink ring-offset-2' : ''}`} style={{ background: col }} onClick={() => patch({ color: col })}>
-                  {col === c.color && <span className="font-black text-white">✔</span>}
+                <button key={col} type="button" aria-label={`Color ${col}${col === c.color ? ' (actual)' : ''}`} aria-pressed={col === c.color} className={`h-10 w-10 rounded-full border-2 border-ui-line/40 ${col === c.color ? 'ring-4 ring-ui-fg ring-offset-2 ring-offset-surface' : ''}`} style={{ background: col }} onClick={() => patch({ color: col })}>
+                  {col === c.color && <Check aria-hidden className="mx-auto size-5 text-white" />}
                 </button>
               ))}
             </div>

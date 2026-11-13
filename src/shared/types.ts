@@ -91,6 +91,13 @@ export interface TurnState {
   doorResult: DoorResult | null;
 }
 
+/** Reloj por turnos. El intervalo actual se deriva de activeSince y se persiste. */
+export interface TurnClockState {
+  activeSince: string | null;
+  turnElapsedMs: number;
+  totalsByParticipant: Record<string, number>;
+}
+
 export interface LevelAlert {
   participantId: string;
   level: number;
@@ -104,6 +111,7 @@ export interface GameState {
   participants: Record<string, Participant>;
   characters: Record<string, Character>;
   turn: TurnState;
+  clock: TurnClockState;
   combat: Combat | null;
   levelAlert: LevelAlert | null;
   winnerId: string | null;

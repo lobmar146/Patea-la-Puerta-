@@ -1,32 +1,33 @@
 # Ilustraciones: procedencia y estado
 
-Todo pasa por `src/client/assets/manifest.ts`. Las imágenes son **temáticas**: usar una carta como ilustración no aplica sus efectos.
+La app elige imágenes desde `src/client/assets/manifest.ts`. Las cartas se usan como referencia visual: sus efectos no se aplican automáticamente. Si falta una imagen local o no carga, se usa el SVG de `public/illustrations/`.
 
-## Estado actual
-- **En uso:** ilustraciones provisorias originales (SVG) en `public/illustrations/`, generadas con `node scripts/gen-illustrations.mjs`. Dicen "provisoria". No imitan cartas oficiales.
-- **Referencias reales:** NO verificadas todavía. Desde el entorno donde se desarrolló la app, la red bloqueó `net-clan.com`, `www.sjgames.com` y `m.media-amazon.com` (política del entorno). Un lector web externo tampoco pudo abrir esas imágenes. No se intentó eludir ningún bloqueo.
-- **Cómo incorporarlas:** en una máquina con acceso, `npm run assets:fetch` descarga a `public/cards/` y escribe `available.json`. La app usa una imagen solo si está en esa lista; si falta o falla, muestra la provisoria (nunca una imagen rota). Las descargadas están en `.gitignore`.
-- **Hojas con varias cartas** (Amazon y `door5.jpg`) requieren definir `crop` (porcentajes) en el manifiesto después de ver la imagen; sin recorte no se usan.
+## Estado
 
-## Permisos
-Que una imagen esté publicada no implica licencia de reutilización. El arte de Munchkin es © Steve Jackson Games.
-La [política online de SJ Games](https://www.sjgames.com/general/online_policy.html) (consultada el 2026-11-13, "actualizada el 12 de agosto de 2026") permite a fans usar una cantidad razonable de arte (no más de 10 piezas) en usos no comerciales, con crédito al artista, aviso de copyright y copia en servidor propio. **Pero también indica que no se deben publicar generadores de personajes ni ayudas de juego**, y aclara que es una política y no una licencia. Esta app podría considerarse una ayuda de juego: **permiso no confirmado**. Recomendación: usarla en privado o pedir permiso a SJ Games antes de publicarla con arte oficial.
+- Las seis descargas de las referencias indicadas en el prompt se comprobaron visualmente el 2026-11-13 y se guardan en `public/cards/` para evitar hotlinks.
+- `available.json` lista solo las copias disponibles. Las hojas con varias cartas se recortan desde el manifiesto; los recortes no modifican el original.
+- Los archivos listados se incluyeron en el proyecto a pedido del usuario. **El permiso de redistribución no está confirmado**. No desplegar públicamente con estas imágenes sin revisar los derechos/permiso.
+- Los reversos de carta no identifican artista en las copias consultadas. La página oficial de Munchkin identifica a John Kovalic como ilustrador del juego base y las páginas de las expansiones muestran el crédito en sus productos.
 
-## Tabla
-| Clave | Uso | Fuente de referencia | Crédito conocido | Verificación | Permiso |
+## Créditos y permisos
+
+Munchkin, sus cartas y arte © Steve Jackson Games. El arte de las cartas fotografiadas está acreditado a John Kovalic cuando corresponde; la foto de eBay conserva visible la marca de agua de Western Ohio Gaming. Una publicación en internet no otorga automáticamente permiso de redistribución. La política online de SJ Games no es una licencia y no confirma permiso específico para esta aplicación. Uso en despliegue público: **pendiente de permiso**.
+
+## Manifiesto
+
+| Clave | Uso | Archivo local | Referencia | Crédito | Permiso |
 |---|---|---|---|---|---|
-| door | Patear la puerta | https://net-clan.com/PDFS/Munchkin/door-back.jpg (dorso de Puerta) | Steve Jackson Games; artista no confirmado | Pendiente (bloqueado) | No confirmado |
-| loot | Saquear (Puerta, nunca Tesoro) | misma que door | idem | Pendiente | No confirmado |
-| rewards | Recompensas | https://net-clan.com/PDFS/Munchkin/loot-back.jpg (dorso de Tesoro) | Steve Jackson Games | Pendiente | No confirmado |
-| curse | Maldición | https://www.sjgames.com/img/newsq/illq/2016/duckofdoom.jpg (Duck of Doom) | Steve Jackson Games; artista no confirmado | Pendiente | No confirmado |
-| monster | Monstruo / combate | https://m.media-amazon.com/images/I/81kd4nstzlL._AC_SL1500_.jpg (Plutonium Dragon) | Steve Jackson Games | Pendiente; falta recorte | No confirmado |
-| trouble | Buscar problemas | https://net-clan.com/PDFS/Munchkin/door5.jpg (Wandering Monster, 2.ª fila derecha) | Steve Jackson Games | Pendiente; falta recorte | No confirmado |
-| help | Pedir ayuda | https://net-clan.com/PDFS/Munchkin/door5.jpg (Help Me Out Here!, arriba izquierda) | Steve Jackson Games | Pendiente; falta recorte | No confirmado |
-| flee | Huida | Aviso https://www.ebay.com/itm/295563935976 ("Munchkin Boots Of Running Really Fast Card USED…"); foto principal https://i.ebayimg.com/images/g/6GoAAOSwlkNkDj7~/s-l1600.jpg | Steve Jackson Games; foto del vendedor de eBay | Aviso leído; foto no verificada | No confirmado (además la foto es del vendedor) |
-| charity | Caridad | Composición de door + rewards con flecha (generada por la app) | — | Depende de door/rewards | — |
-| endTurn | Fin de turno | Composición de door con flecha | — | Depende de door | — |
+| door | Patear la puerta | `door-back.jpg` | [Dorso de Puerta](https://net-clan.com/PDFS/Munchkin/door-back.jpg) | Steve Jackson Games; artista no identificado | No confirmado |
+| loot | Saquear (siempre Puerta, nunca Tesoro) | `door-back.jpg` | Igual que arriba | Steve Jackson Games; artista no identificado | No confirmado |
+| rewards | Recompensas | `loot-back.jpg` | [Dorso de Tesoro](https://net-clan.com/PDFS/Munchkin/loot-back.jpg) | Steve Jackson Games; artista no identificado | No confirmado |
+| curse | Maldición | `duckofdoom.jpg` | [Duck of Doom](https://www.sjgames.com/img/newsq/illq/2016/duckofdoom.jpg) | Steve Jackson Games; John Kovalic | No confirmado |
+| monster | Monstruo / combate | `selection-amazon.jpg` | [Selección de cartas](https://m.media-amazon.com/images/I/81kd4nstzlL._AC_SL1500_.jpg), Dragón de Plutonio (fila inferior, centro) | Steve Jackson Games; John Kovalic | No confirmado |
+| trouble | Buscar problemas | `door5.jpg` | [Hoja de cartas](https://net-clan.com/PDFS/Munchkin/door5.jpg), Wandering Monster (fila inferior, derecha) | Steve Jackson Games; John Kovalic | No confirmado |
+| help | Pedir ayuda | `door5.jpg` | Igual que arriba, Help Me Out Here! (arriba a la izquierda) | Steve Jackson Games; John Kovalic | No confirmado |
+| flee | Huida | `boots-ebay.jpg` | [Aviso y foto](https://www.ebay.com/itm/295563935976) de Boots of Running Really Fast | Arte: Steve Jackson Games / John Kovalic; fotografía con marca de agua Western Ohio Gaming | No confirmado; foto de vendedor |
+| charity | Caridad | SVG local compuesto con dorsos y flecha | Composición de la app | Patea la Puerta | — |
+| endTurn | Fin de turno | SVG local con dorso y flecha | Composición de la app | Patea la Puerta | — |
 
-## Pendientes
-1. Ejecutar `npm run assets:fetch` en una máquina con acceso y revisar cada imagen.
-2. Definir `crop` para monster, trouble y help.
-3. Decidir si se piden permisos o se mantienen las provisorias para una versión pública.
+## Mantener o sustituir
+
+Para cambiar una asignación, editar `manifest.ts`. Para volver a intentar una descarga simple, ejecutar `npm run assets:fetch`; el script no sortea bloqueos. Las referencias de comercio como Amazon/eBay son fotografías de terceros, por lo que se reemplazan por una fuente autorizada si se consigue permiso. Los datos de cartas se documentan aparte: esta lista es solo de las ilustraciones usadas por fase, no un catálogo completo de cartas.

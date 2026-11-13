@@ -55,25 +55,25 @@ export const ASSETS: Record<IllustrationKey, AssetEntry> = {
   monster: {
     label: 'Monstruo: Plutonium Dragon',
     fallback: '/illustrations/monster.svg',
-    // Hoja con varias cartas: falta definir el recorte del Dragón de Plutonio (ver docs/ASSETS.md).
-    source: { file: 'selection-amazon.jpg', url: 'https://m.media-amazon.com/images/I/81kd4nstzlL._AC_SL1500_.jpg', sheet: true },
+    // Recorte: Dragón de Plutonio en la fila inferior, al centro.
+    source: { file: 'selection-amazon.jpg', url: 'https://m.media-amazon.com/images/I/81kd4nstzlL._AC_SL1500_.jpg', sheet: true, crop: { x: 31, y: 50, w: 38, h: 47 } },
   },
   trouble: {
     label: 'Buscar problemas: Wandering Monster (ilustración temática)',
     fallback: '/illustrations/trouble.svg',
-    // Segunda fila, derecha. Recorte pendiente de verificar con la imagen descargada.
-    source: { file: 'door5.jpg', url: 'https://net-clan.com/PDFS/Munchkin/door5.jpg', sheet: true },
+    // Segunda fila, derecha.
+    source: { file: 'door5.jpg', url: 'https://net-clan.com/PDFS/Munchkin/door5.jpg', sheet: true, crop: { x: 68, y: 58, w: 31, h: 41 } },
   },
   help: {
     label: 'Pedir ayuda: Help Me Out Here! (ilustración temática)',
     fallback: '/illustrations/help.svg',
-    // Arriba a la izquierda. Recorte pendiente de verificar con la imagen descargada.
-    source: { file: 'door5.jpg', url: 'https://net-clan.com/PDFS/Munchkin/door5.jpg', sheet: true },
+    // Arriba a la izquierda.
+    source: { file: 'door5.jpg', url: 'https://net-clan.com/PDFS/Munchkin/door5.jpg', sheet: true, crop: { x: 0, y: 0, w: 28, h: 32 } },
   },
   flee: {
     label: 'Huida: Boots of Running Really Fast',
     fallback: '/illustrations/flee.svg',
-    // Foto principal del aviso https://www.ebay.com/itm/295563935976
+    // Foto de la carta del aviso; se muestra completa para conservar la marca de agua del vendedor.
     source: { file: 'boots-ebay.jpg', url: 'https://i.ebayimg.com/images/g/6GoAAOSwlkNkDj7~/s-l1600.jpg' },
   },
 };

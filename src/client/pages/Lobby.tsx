@@ -1,3 +1,4 @@
+import { ArrowDown, ArrowUp, Check, Crown, Dices, Link2, X } from 'lucide-react';
 import { useState } from 'react';
 import { DEFAULT_SETS, displayName } from '../../shared/rules';
 import { PresenceDot, QrCode, Section, joinUrl } from '../components/ui';
@@ -34,7 +35,8 @@ export function Lobby({ publicUrl }: { publicUrl: string | null }) {
                 void navigator.clipboard?.writeText(url).then(() => setCopied(true)).catch(() => setCopied(false));
               }}
             >
-              {copied ? '✔ Enlace copiado' : 'Copiar enlace'}
+              {copied ? <Check aria-hidden className="size-4 shrink-0" /> : <Link2 aria-hidden className="size-4 shrink-0" />}
+              {copied ? 'Enlace copiado' : 'Copiar enlace'}
             </button>
             <p className="text-xs">El QR solo lleva a la sala: no da permisos de DM. Cada uno elige Jugador o Espectador al entrar.</p>
           </div>
@@ -44,18 +46,18 @@ export function Lobby({ publicUrl }: { publicUrl: string | null }) {
       <Section title="Orden de turnos">
         <ol className="space-y-2" data-testid="order-list">
           {order.map((id, i) => (
-            <li key={id} className="flex items-center justify-between gap-2 rounded-lg border-2 border-ink bg-white p-2">
+            <li key={id} className="flex items-center justify-between gap-2 rounded-lg border-2 border-ui-line/40 bg-surface-raised p-2">
               <span className="flex items-center gap-2">
                 <span className="w-6 text-center font-black">{i + 1}.</span>
-                <span className="inline-block h-4 w-4 rounded-full border border-ink" style={{ background: state.characters[id]?.color }} aria-hidden />
+                <span className="inline-block h-4 w-4 rounded-full border border-ui-line/40" style={{ background: state.characters[id]?.color }} aria-hidden />
                 <span className="font-bold">{displayName(state, id)}</span>
-                {state.participants[id].isDm && <span className="chip">👑 DM</span>}
+                {state.participants[id].isDm && <span className="chip"><Crown aria-hidden className="size-4 shrink-0" /> DM</span>}
                 <PresenceDot online={online.has(id)} />
               </span>
               {me.isDm && (
                 <span className="flex gap-1">
-                  <button className="btn-secondary btn-small" aria-label={`Subir a ${displayName(state, id)}`} disabled={pending || i === 0} onClick={() => move(i, -1)}>↑</button>
-                  <button className="btn-secondary btn-small" aria-label={`Bajar a ${displayName(state, id)}`} disabled={pending || i === order.length - 1} onClick={() => move(i, 1)}>↓</button>
+                  <button className="btn-secondary btn-small" aria-label={`Subir a ${displayName(state, id)}`} disabled={pending || i === 0} onClick={() => move(i, -1)}><ArrowUp aria-hidden className="size-4 shrink-0" /></button>
+                  <button className="btn-secondary btn-small" aria-label={`Bajar a ${displayName(state, id)}`} disabled={pending || i === order.length - 1} onClick={() => move(i, 1)}><ArrowDown aria-hidden className="size-4 shrink-0" /></button>
                 </span>
               )}
             </li>
@@ -64,7 +66,7 @@ export function Lobby({ publicUrl }: { publicUrl: string | null }) {
         {spectators.length > 0 && <p className="mt-2 text-sm">Espectadores: {spectators.map((s) => s.name).join(', ')}</p>}
         {me.isDm ? (
           <div className="mt-4 flex flex-wrap gap-2">
-            <button className="btn-secondary" disabled={pending || order.length < 2} onClick={() => send({ type: 'order.randomize' })}>🎲 Sortear orden</button>
+            <button className="btn-secondary" disabled={pending || order.length < 2} onClick={() => send({ type: 'order.randomize' })}><Dices aria-hidden className="size-4 shrink-0" /> Sortear orden</button>
             <button className="btn-go flex-1" disabled={pending || order.length === 0} onClick={() => send({ type: 'game.start' })} data-testid="start-game">¡Empezar partida!</button>
           </div>
         ) : (
@@ -85,7 +87,7 @@ export function Lobby({ publicUrl }: { publicUrl: string | null }) {
               {state.config.extraSets.map((s) => (
                 <span key={s} className="chip">
                   {s} <span className="text-xs">(reglas a cargo de la mesa)</span>
-                  <button aria-label={`Quitar ${s}`} className="px-1 font-black" onClick={() => send({ type: 'room.updateConfig', sets: state.config.sets, extraSets: state.config.extraSets.filter((x) => x !== s) })}>×</button>
+                  <button aria-label={`Quitar ${s}`} className="px-1 font-black" onClick={() => send({ type: 'room.updateConfig', sets: state.config.sets, extraSets: state.config.extraSets.filter((x) => x !== s) })}><X aria-hidden className="size-4 shrink-0" /></button>
                 </span>
               ))}
             </div>

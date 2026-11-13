@@ -62,6 +62,14 @@ export function combatTotals(state: GameState, combat: Combat): CombatTotals {
   return { fighter, helper, playerMods, players, monsterBase, monsterMods, monsters, diff: players - monsters };
 }
 
+/** En el juego base, un Guerrero en cualquiera de los dos puestos gana los empates. */
+export function playersWinTies(state: GameState, fighterId: string | null, helperId?: string | null): boolean {
+  return [fighterId, helperId].some((id) => {
+    if (!id) return false;
+    return state.characters[id]?.classes.some((label) => ['guerrero', 'warrior'].includes(label.trim().toLowerCase()));
+  });
+}
+
 export function activeParticipantId(state: GameState): string | null {
   if (state.status === 'lobby' || state.turn.order.length === 0) return null;
   return state.turn.order[state.turn.activeIndex] ?? null;

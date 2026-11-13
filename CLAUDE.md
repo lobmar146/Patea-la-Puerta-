@@ -8,6 +8,7 @@ Las cartas, dados y negociaciones pasan en la mesa: la app lleva números, turno
 - `src/shared`: tipos, esquemas Zod de comandos (`commands.ts`), máquina de estados pura (`engine.ts`), cálculos (`rules.ts`), textos de fases (`phases.ts`). Lo usan servidor y cliente.
 - `src/client`: React + Vite + Tailwind. Estado en vivo vía `useRoom.tsx` (Socket.IO). Ilustraciones en `src/client/assets/manifest.ts`.
 - PostgreSQL + Prisma (`prisma/schema.prisma`): `Room` guarda el estado JSONB versionado; `Participant`, `Session`, `GameEvent`, `ProcessedCommand` son relacionales.
+- El cronómetro se persiste dentro de `GameState.clock`; el servidor marca inicio/pausa/reanudación/cambio de turno y el cliente calcula los segundos desde `activeSince` sin emitir comandos periódicos.
 
 ## Comandos
 ```
@@ -38,3 +39,10 @@ Las pruebas usan `TEST_DATABASE_URL` (por defecto `postgresql://munchkin:munchki
 - Textos de reglas: paráfrasis breves, nunca copiar el reglamento.
 - Imágenes: solo vía el manifiesto; registrar procedencia en `docs/ASSETS.md`; nunca hotlinks.
 - Al terminar una etapa: correr verificaciones y actualizar `docs/PROGRESS.md`.
+
+## UX móvil y transiciones
+- Las decisiones y formularios del turno/combate van en `Modal`: en móvil se muestra como panel inferior, en escritorio centrado. Mantener botones táctiles de al menos 48 px, scroll dentro del panel, cierre con Escape y fondo, y área segura inferior.
+- El resumen de fase queda visible detrás del modal; el modal no cambia reglas ni confirma una acción al cerrarse.
+- Transiciones breves de fase y modal; respetar `prefers-reduced-motion`.
+- En monstruos, “nivel de combate” equivale al nivel/fuerza impreso; “niveles al vencer” describe la recompensa. No mezclar ambos campos ni cambiar el contrato de datos sin migración.
+- El cronómetro mide el turno actual, acumula el tiempo al pasar de jugador y se congela durante pausa. Mantenerlo sincronizado desde el backend y probar límites de turno/reinicio.

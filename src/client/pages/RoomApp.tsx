@@ -1,8 +1,10 @@
+import { Crown, Dices, DoorOpen, Pause, Shield, Trophy, Tv, type LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { APP_NAME, displayName } from '../../shared/rules';
 import { useRoom } from '../useRoom';
 import { ConnectionBadge, Toast } from '../components/ui';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { CharacterEditor } from './CharacterEditor';
 import { DmPanel } from './DmPanel';
 import { Finished } from './Finished';
@@ -46,11 +48,11 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
   if (state.status === 'finished') return <Finished />;
 
   const isPlayer = me.role === 'player';
-  const tabs: { id: Tab; label: string; icon: string }[] = [
-    ...(isPlayer ? [{ id: 'me' as Tab, label: 'Mi personaje', icon: '🛡' }] : []),
-    { id: 'turn', label: state.status === 'lobby' ? 'Sala' : 'Turno', icon: '🚪' },
-    { id: 'table', label: 'Mesa', icon: '🎲' },
-    ...(me.isDm ? [{ id: 'dm' as Tab, label: 'DM', icon: '👑' }] : []),
+  const tabs: { id: Tab; label: string; icon: LucideIcon }[] = [
+    ...(isPlayer ? [{ id: 'me' as Tab, label: 'Mi personaje', icon: Shield }] : []),
+    { id: 'turn', label: state.status === 'lobby' ? 'Sala' : 'Turno', icon: DoorOpen },
+    { id: 'table', label: 'Mesa', icon: Dices },
+    ...(me.isDm ? [{ id: 'dm' as Tab, label: 'DM', icon: Crown }] : []),
   ];
   const current = tabs.some((t) => t.id === tab) ? tab : 'turn';
   const alert = state.levelAlert;
@@ -58,28 +60,29 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
   return (
     <div className="min-h-dvh pb-24">
       <Toast />
-      <header className="sticky top-0 z-30 border-b-2 border-ink bg-ink px-3 py-2 text-parchment-50">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-2">
+      <header className="inverse-surface sticky top-0 z-30 border-b border-white/10 bg-ink/95 px-3 py-3 text-parchment-50 shadow-lg shadow-ink/10 backdrop-blur-xl sm:px-5">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-2">
           <div>
-            <span className="font-display text-lg font-black">{APP_NAME}</span>
-            <span className="ml-2 rounded bg-parchment-50 px-2 font-black tracking-widest text-ink" data-testid="room-code">{snap.code}</span>
+            <span className="font-display text-lg font-black tracking-tight sm:text-xl">{APP_NAME}</span>
+            <span className="ml-2 inline-flex rounded-lg border border-parchment-50/15 bg-white/10 px-2.5 py-1 text-xs font-black tracking-[.16em] text-parchment-100 sm:text-sm" data-testid="room-code">{snap.code}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <span className="hidden text-sm sm:inline" data-testid="me-label">
               {displayName(state, me.id)} · {me.isDm ? 'DM' : me.role === 'player' ? 'Jugador' : 'Espectador'}
             </span>
             <ConnectionBadge />
+            <ThemeToggle compact />
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-4 p-3">
+      <main className="mx-auto max-w-4xl space-y-5 p-3 sm:p-5">
         {state.status === 'paused' && (
-          <p role="status" className="card bg-gold p-3 text-center text-lg font-bold text-white">⏸ Partida en pausa</p>
+          <p role="status" className="card border-accent-gold/50 bg-surface-inset p-3 text-center text-lg font-bold text-accent-gold"><Pause aria-hidden className="mr-1 inline size-5" />Partida en pausa</p>
         )}
         {alert && (
           <div role="alert" className="card border-gold p-3" data-testid="level-alert">
-            <p className="text-lg font-bold">🏆 {displayName(state, alert.participantId)} figura en nivel {alert.level}.</p>
+            <p className="text-lg font-bold"><Trophy aria-hidden className="mr-1 inline size-5" />{displayName(state, alert.participantId)} figura en nivel {alert.level}.</p>
             <p className="text-sm">La app no declara ganadores sola: según el reglamento, el nivel 10 normalmente se alcanza matando un monstruo. El DM confirma lo que pasó en la mesa.</p>
             {me.isDm && (
               <div className="mt-2 flex flex-wrap gap-2">
@@ -97,20 +100,20 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
         {current === 'dm' && me.isDm && <DmPanel />}
 
         <p className="pt-4 text-center text-sm">
-          <Link className="underline" to={`/s/${snap.code}/tv`}>Abrir vista TV</Link>
+          <Link className="inline-flex items-center gap-2 underline" to={`/s/${snap.code}/tv`}><Tv aria-hidden className="size-4 shrink-0" /> Abrir vista TV</Link>
         </p>
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t-2 border-ink bg-parchment-50 pb-[env(safe-area-inset-bottom)]" aria-label="Secciones">
-        <ul className="mx-auto flex max-w-3xl">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-ui-line/15 bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(43,29,18,.08)] backdrop-blur-lg" aria-label="Secciones">
+        <ul className="mx-auto flex max-w-4xl gap-1 px-2 py-1 sm:gap-2 sm:px-4">
           {tabs.map((t) => (
-            <li key={t.id} className="flex-1">
+            <li key={t.id} className="flex-1 py-1">
               <button
-                className={`flex min-h-[60px] w-full flex-col items-center justify-center text-sm font-bold ${current === t.id ? 'bg-ink text-parchment-50' : ''}`}
+                className={`flex min-h-[56px] w-full flex-col items-center justify-center rounded-2xl text-xs font-bold transition-colors sm:text-sm ${current === t.id ? 'bg-blood text-white shadow-md shadow-blood/20' : 'text-ui-muted hover:bg-surface-muted'}`}
                 aria-current={current === t.id ? 'page' : undefined}
                 onClick={() => setTab(t.id)}
               >
-                <span aria-hidden className="text-xl">{t.icon}</span>
+                <t.icon aria-hidden className="mb-1 size-5" />
                 {t.label}
               </button>
             </li>

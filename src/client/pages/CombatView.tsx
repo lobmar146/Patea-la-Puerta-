@@ -1,65 +1,92 @@
+import { Footprints, Hourglass, Plus, Sparkles, Trophy } from 'lucide-react';
 import { useState } from 'react';
 import type { Combat, GameState } from '../../shared/types';
-import { combatTotals, displayName } from '../../shared/rules';
+import { combatTotals, displayName, playersWinTies } from '../../shared/rules';
 import { Illustration } from '../components/Illustration';
+import { Modal } from '../components/Modal';
 import { MonsterForm } from '../components/MonsterForm';
 import { useRoom } from '../useRoom';
 
-export function diffText(diff: number) {
+export function diffText(diff: number, playersTakeTie = false) {
   if (diff > 0) return `Los jugadores superan por ${diff}`;
   if (diff < 0) return `Los monstruos superan por ${-diff}`;
-  return 'Empate (en el juego base gana el monstruo, salvo cartas o clases que digan otra cosa)';
+  return playersTakeTie
+    ? 'Empate · ventaja de los jugadores por Guerrero'
+    : 'Empate · ventaja de los monstruos';
 }
 
 export function CombatTotalsPanel({ state, combat, big = false }: { state: GameState; combat: Combat; big?: boolean }) {
-  const t = combatTotals(state, combat);
-  const num = big ? 'text-8xl' : 'text-5xl';
+  const totals = combatTotals(state, combat);
+  const hasMonsters = combat.monsters.length > 0;
+  const playersTakeTie = playersWinTies(state, combat.fighterId, combat.helperId);
+  const winningDifference = playersTakeTie ? 0 : 1;
+  const playersLead = totals.diff >= winningDifference;
+  const pointsNeeded = playersLead ? totals.diff - winningDifference + 1 : winningDifference - totals.diff;
+  const trailingSide = playersLead ? 'monstruos' : 'jugadores';
+  const statusColor = totals.diff > 0
+    ? 'bg-moss/10 text-accent-moss'
+    : totals.diff < 0
+      ? 'bg-blood/10 text-accent-wine'
+      : 'bg-gold/15 text-accent-gold';
+  const numberSize = big ? 'text-3xl min-[360px]:text-4xl sm:text-6xl' : 'text-3xl min-[360px]:text-4xl sm:text-5xl';
   return (
     <div data-testid="combat-totals">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center">
-        <div className="rounded-lg border-2 border-ink bg-royal/10 p-2">
-          <div className={`font-bold ${big ? 'text-3xl' : ''}`}>🛡 Jugadores</div>
-          <div className={`${num} font-black tabular-nums`} data-testid="players-total">{t.players}</div>
-          <div className={big ? 'text-xl' : 'text-xs'}>
-            {displayName(state, combat.fighterId)} {t.fighter}
-            {combat.helperId ? ` + ${displayName(state, combat.helperId)} ${t.helper}` : ''}
-            {t.playerMods ? ` ${t.playerMods >= 0 ? '+' : ''}${t.playerMods} temp.` : ''}
+        <div className="min-w-0 rounded-xl border border-royal/30 bg-royal/10 p-2">
+          <div className={`font-bold text-accent-blue ${big ? 'text-2xl' : 'text-sm'}`}>Jugadores</div>
+          <div className={`${numberSize} font-black tabular-nums`} data-testid="players-total">{totals.players}</div>
+          <div className={`break-words text-ui-muted ${big ? 'text-base' : 'text-xs'}`}>
+            {displayName(state, combat.fighterId)} {totals.fighter}
+            {combat.helperId ? ` + ${displayName(state, combat.helperId)} ${totals.helper}` : ''}
+            {totals.playerMods ? ` ${totals.playerMods >= 0 ? '+' : ''}${totals.playerMods} temp.` : ''}
           </div>
         </div>
-        <div className={`font-black ${big ? 'text-5xl' : 'text-2xl'}`}>VS</div>
-        <div className="rounded-lg border-2 border-ink bg-blood/10 p-2">
-          <div className={`font-bold ${big ? 'text-3xl' : ''}`}>👹 Monstruos</div>
-          <div className={`${num} font-black tabular-nums`} data-testid="monsters-total">{t.monsters}</div>
-          <div className={big ? 'text-xl' : 'text-xs'}>
-            base {t.monsterBase}
-            {t.monsterMods ? ` ${t.monsterMods >= 0 ? '+' : ''}${t.monsterMods} temp.` : ''}
+        <div className={`font-black text-ui-muted ${big ? 'text-3xl' : 'text-sm'}`} aria-hidden="true">VS</div>
+        <div className="min-w-0 rounded-xl border border-blood/30 bg-blood/10 p-2">
+          <div className={`font-bold text-accent-wine ${big ? 'text-2xl' : 'text-sm'}`}>Monstruos</div>
+          <div className={`${numberSize} font-black tabular-nums`} data-testid="monsters-total">{totals.monsters}</div>
+          <div className={`text-ui-muted ${big ? 'text-base' : 'text-xs'}`}>
+            Base {totals.monsterBase}
+            {totals.monsterMods ? ` ${totals.monsterMods >= 0 ? '+' : ''}${totals.monsterMods} temp.` : ''}
           </div>
         </div>
       </div>
-      <p className={`mt-2 text-center font-bold ${big ? 'text-3xl' : 'text-lg'}`} data-testid="combat-diff">
-        {t.diff > 0 ? '▲ ' : t.diff < 0 ? '▼ ' : '＝ '}
-        {diffText(t.diff)}
+      <p
+        className={`mt-2 flex flex-wrap items-baseline justify-center gap-x-3 rounded-xl px-3 py-2 text-center ${big ? 'text-xl' : 'text-base'} ${hasMonsters ? statusColor : 'bg-surface-raised text-ui-muted'}`}
+        aria-live="polite"
+        aria-atomic="true"
+        data-testid="combat-diff"
+      >
+        <strong>{hasMonsters ? diffText(totals.diff, playersTakeTie) : 'Sin monstruos en combate'}</strong>
+        {hasMonsters && (
+          <span className={`font-semibold ${big ? 'text-sm' : 'text-xs'}`}>
+            A los {trailingSide} les {pointsNeeded === 1 ? 'falta 1 punto' : `faltan ${pointsNeeded} puntos`} para tomar la ventaja
+          </span>
+        )}
       </p>
     </div>
   );
 }
 
+type CombatModal = 'monster' | 'modifier' | 'victory' | 'flee' | 'other' | { monsterId: string } | null;
+
 export function CombatView() {
   const { snap, me, send, pending } = useRoom();
-  const [adding, setAdding] = useState(false);
+  const [modal, setModal] = useState<CombatModal>(null);
   const [modSide, setModSide] = useState<'players' | 'monsters'>('monsters');
   const [modValue, setModValue] = useState('');
   const [modLabel, setModLabel] = useState('');
-  const [mode, setMode] = useState<'victory' | 'flee' | 'other' | null>(null);
   if (!snap || !me || !snap.state.combat) return null;
   const { state } = snap;
   const combat = snap.state.combat;
   const isFighter = combat.fighterId === me.id;
-  const canEdit = isFighter || combat.helperId === me.id || me.isDm;
+  const canEdit = state.status === 'active' && (isFighter || combat.helperId === me.id || me.isDm);
   const canResolve = isFighter || me.isDm;
   const isPlayer = me.role === 'player';
   const candidates = state.turn.order.filter((id) => id !== combat.fighterId && id !== combat.helperId);
   const pendingReqs = combat.helpRequests.filter((r) => r.status === 'pending');
+  const editingMonsterId = modal && typeof modal === 'object' ? modal.monsterId : null;
+  const editingMonster = combat.monsters.find(({ id }) => id === editingMonsterId);
 
   return (
     <section className="card space-y-4 p-4" data-testid="combat">
@@ -68,26 +95,61 @@ export function CombatView() {
         <h2 className="text-2xl font-black">¡Combate!</h2>
       </div>
       <CombatTotalsPanel state={state} combat={combat} />
-      <p className="text-sm">La app no declara la victoria: cartas y habilidades pueden cambiarlo todo. Confirmen en la mesa.</p>
+      <p className="text-sm text-ui-muted">Las cartas y habilidades en mesa pueden cambiar la ventaja. Confirmen cómo terminó el combate.</p>
 
       <div>
         <h3 className="font-bold">Monstruos</h3>
-        <ul className="space-y-1">
-          {combat.monsters.length === 0 && <li className="italic">Todavía no hay monstruos cargados.</li>}
-          {combat.monsters.map((m) => (
-            <li key={m.id} className="flex items-center justify-between rounded border border-ink bg-white px-2 py-1">
-              <span><b>{m.name}</b> · fuerza {m.strength} · {m.levels} nivel(es) · {m.treasures} tesoro(s)</span>
-              {canEdit && <button className="btn-secondary btn-small" disabled={pending} aria-label={`Quitar ${m.name}`} onClick={() => send({ type: 'combat.removeMonster', monsterId: m.id })}>Quitar</button>}
-            </li>
-          ))}
-        </ul>
-        {canEdit && (adding ? (
-          <div className="mt-2 rounded-lg border-2 border-ink bg-white p-3">
-            <MonsterForm submitLabel="Sumar monstruo" disabled={pending} onSubmit={(m) => { void send({ type: 'combat.addMonster', monster: m }); setAdding(false); }} />
-          </div>
-        ) : (
-          <button className="btn-secondary btn-small mt-2" onClick={() => setAdding(true)}>+ Otro monstruo</button>
-        ))}
+        {combat.monsters.length > 0 && (
+          <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+            {combat.monsters.map((monster) => (
+              <li key={monster.id} className="rounded-xl border border-ui-line bg-surface-raised p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <strong className="min-w-0 break-words">{monster.name}</strong>
+                  {canEdit && (
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        className="btn-secondary btn-small"
+                        disabled={pending}
+                        aria-label={`Editar ${monster.name}`}
+                        onClick={() => setModal({ monsterId: monster.id })}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="btn-secondary btn-small"
+                        disabled={pending}
+                        aria-label={`Quitar ${monster.name}`}
+                        onClick={() => send({ type: 'combat.removeMonster', monsterId: monster.id })}
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <dl className="rounded-lg bg-blood/10 p-2 text-accent-wine">
+                    <dt className="text-xs font-semibold">Nivel de combate</dt>
+                    <dd className="text-2xl font-black tabular-nums">{monster.strength}</dd>
+                  </dl>
+                  <dl className="rounded-lg bg-gold/15 p-2 text-accent-gold">
+                    <dt className="text-xs font-semibold">Al vencer</dt>
+                    <dd className="text-sm font-bold tabular-nums">
+                      +{monster.levels} {monster.levels === 1 ? 'nivel' : 'niveles'}
+                    </dd>
+                    <dd className="text-sm font-bold tabular-nums">
+                      {monster.treasures} {monster.treasures === 1 ? 'tesoro' : 'tesoros'}
+                    </dd>
+                  </dl>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {canEdit && (
+          <button className="btn-secondary mt-2 w-full sm:w-auto" onClick={() => setModal('monster')}>
+            <Plus aria-hidden className="size-4 shrink-0" /> {combat.monsters.length ? 'Añadir otro monstruo' : 'Añadir monstruo'}
+          </button>
+        )}
       </div>
 
       <div>
@@ -95,32 +157,13 @@ export function CombatView() {
         <p className="text-xs">Pociones, potenciadores, maldiciones de combate… desaparecen al terminar el combate.</p>
         <ul className="my-1 space-y-1">
           {combat.modifiers.map((m) => (
-            <li key={m.id} className="flex items-center justify-between rounded border border-ink bg-white px-2 py-1">
-              <span>{m.side === 'players' ? '🛡 Jugadores' : '👹 Monstruos'} {m.value >= 0 ? '+' : ''}{m.value}{m.label ? ` · ${m.label}` : ''} <span className="text-xs">({displayName(state, m.addedBy)})</span></span>
+            <li key={m.id} className="flex items-center justify-between rounded border border-ui-line bg-surface-raised px-2 py-1">
+              <span>{m.side === 'players' ? 'Jugadores' : 'Monstruos'} {m.value >= 0 ? '+' : ''}{m.value}{m.label ? ` · ${m.label}` : ''} <span className="text-xs">({displayName(state, m.addedBy)})</span></span>
               {(m.addedBy === me.id || isFighter || me.isDm) && <button className="btn-secondary btn-small" disabled={pending} onClick={() => send({ type: 'combat.removeModifier', modifierId: m.id })}>Quitar</button>}
             </li>
           ))}
         </ul>
-        {isPlayer && (
-          <form className="flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); const v = Number(modValue); if (!modValue || Number.isNaN(v)) return; void send({ type: 'combat.addModifier', side: modSide, value: v, label: modLabel.trim() }); setModValue(''); setModLabel(''); }}>
-            <label>
-              <span className="label">Bando</span>
-              <select className="input" value={modSide} onChange={(e) => setModSide(e.target.value as 'players' | 'monsters')}>
-                <option value="monsters">Monstruos</option>
-                <option value="players">Jugadores</option>
-              </select>
-            </label>
-            <label className="w-24">
-              <span className="label">Valor</span>
-              <input className="input" type="number" min={-99} max={99} value={modValue} onChange={(e) => setModValue(e.target.value)} placeholder="+5" data-testid="mod-value" />
-            </label>
-            <label className="min-w-[8rem] flex-1">
-              <span className="label">Motivo</span>
-              <input className="input" maxLength={60} value={modLabel} onChange={(e) => setModLabel(e.target.value)} placeholder="Opcional" />
-            </label>
-            <button className="btn-secondary" disabled={pending || !modValue}>Sumar</button>
-          </form>
-        )}
+        {isPlayer && <button className="btn-secondary mt-2 w-full sm:w-auto" onClick={() => setModal('modifier')}><Plus aria-hidden className="size-4 shrink-0" /> Añadir modificador</button>}
       </div>
 
       <div>
@@ -138,7 +181,7 @@ export function CombatView() {
         )}
         {pendingReqs.map((r) => (
           <p key={r.id} className="mt-1 text-sm">
-            ⏳ Esperando respuesta de {displayName(state, r.toId)}{' '}
+            <Hourglass aria-hidden className="mr-1 inline size-4" />Esperando respuesta de {displayName(state, r.toId)}{' '}
             {(isFighter || me.isDm) && <button className="underline" onClick={() => send({ type: 'help.cancel', requestId: r.id })}>cancelar</button>}
           </p>
         ))}
@@ -154,18 +197,57 @@ export function CombatView() {
       </div>
 
       {canResolve && (
-        <div className="border-t-2 border-ink pt-3">
+        <div className="border-t border-ui-line pt-3">
           <h3 className="font-bold">Resolver combate</h3>
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            <button className={mode === 'victory' ? 'btn-go' : 'btn-secondary'} onClick={() => setMode('victory')}>🏆 Victoria</button>
-            <button className={mode === 'flee' ? 'btn-go' : 'btn-secondary'} onClick={() => setMode('flee')}>🏃 Huida</button>
-            <button className={mode === 'other' ? 'btn-go' : 'btn-secondary'} onClick={() => setMode('other')}>✳ Otra</button>
+          <p className="mt-1 text-sm">Elegí cómo terminó en la mesa y registralo.</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-3">
+            <button className="btn-go w-full" onClick={() => setModal('victory')}><Trophy aria-hidden className="size-4 shrink-0" /> Victoria</button>
+            <button className="btn-secondary w-full" onClick={() => setModal('flee')}><Footprints aria-hidden className="size-4 shrink-0" /> Huida</button>
+            <button className="btn-secondary w-full" onClick={() => setModal('other')}><Sparkles aria-hidden className="size-4 shrink-0" /> Otra resolución</button>
           </div>
-          {mode === 'victory' && <VictoryForm combat={combat} />}
-          {mode === 'flee' && <FleeForm combat={combat} />}
-          {mode === 'other' && <OtherForm />}
         </div>
       )}
+
+      <Modal open={modal === 'monster'} title="Añadir monstruo" onClose={() => setModal(null)}>
+        <MonsterForm state={state} submitLabel="Sumar al combate" disabled={pending || !canEdit} onSubmit={(monster) => { void send({ type: 'combat.addMonster', monster }); setModal(null); }} />
+      </Modal>
+      <Modal open={editingMonsterId !== null} title="Editar monstruo" onClose={() => setModal(null)}>
+        {editingMonster ? (
+          <MonsterForm
+            key={editingMonster.id}
+            state={state}
+            initial={editingMonster}
+            submitLabel="Guardar cambios"
+            disabled={pending || !canEdit}
+            onSubmit={async (monster) => {
+              const result = await send({ type: 'combat.updateMonster', monsterId: editingMonster.id, monster });
+              if (result.ok) setModal((current) => current === modal ? null : current);
+            }}
+          />
+        ) : <p className="text-sm text-ui-muted">Este monstruo ya salió del combate.</p>}
+      </Modal>
+      <Modal open={modal === 'modifier'} title="Añadir modificador" onClose={() => setModal(null)}>
+        <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); const value = Number(modValue); if (!modValue || Number.isNaN(value)) return; void send({ type: 'combat.addModifier', side: modSide, value, label: modLabel.trim() }); setModValue(''); setModLabel(''); setModal(null); }}>
+          <label className="block">
+            <span className="label">¿A qué bando afecta?</span>
+            <select className="input" value={modSide} onChange={(e) => setModSide(e.target.value as 'players' | 'monsters')}>
+              <option value="monsters">Monstruos</option><option value="players">Jugadores</option>
+            </select>
+          </label>
+          <label className="block">
+            <span className="label">Bonificación o penalización</span>
+            <input className="input" type="number" min={-99} max={99} value={modValue} onChange={(e) => setModValue(e.target.value)} placeholder="Ej.: +5 o -2" data-testid="mod-value" />
+          </label>
+          <label className="block">
+            <span className="label">Motivo (opcional)</span>
+            <input className="input" maxLength={60} value={modLabel} onChange={(e) => setModLabel(e.target.value)} placeholder="Ej.: poción" />
+          </label>
+          <button className="btn-primary w-full" disabled={pending || !modValue}>Aplicar modificador</button>
+        </form>
+      </Modal>
+      <Modal open={modal === 'victory'} title="Registrar victoria" onClose={() => setModal(null)}><VictoryForm combat={combat} /></Modal>
+      <Modal open={modal === 'flee'} title="Registrar huida" onClose={() => setModal(null)}><FleeForm combat={combat} /></Modal>
+      <Modal open={modal === 'other'} title="Registrar otra resolución" onClose={() => setModal(null)}><OtherForm /></Modal>
     </section>
   );
 }
@@ -219,12 +301,12 @@ function FleeForm({ combat }: { combat: Combat }) {
         combat.monsters.map((m) => {
           const k = `${p}:${m.id}`;
           return (
-            <fieldset key={k} className="flex flex-wrap items-center justify-between gap-2 rounded border border-ink bg-white p-2">
+            <fieldset key={k} className="flex flex-wrap items-center justify-between gap-2 rounded border border-ui-line bg-surface-raised p-2">
               <legend className="sr-only">{displayName(snap.state, p)} contra {m.name}</legend>
               <span>{displayName(snap.state, p)} vs {m.name}</span>
               <span className="flex gap-1">
                 {(['escaped', 'caught'] as const).map((r) => (
-                  <label key={r} className={`btn btn-small cursor-pointer ${(res[k] ?? 'escaped') === r ? 'bg-ink text-parchment-50' : 'bg-parchment-50'}`}>
+                  <label key={r} className={`btn btn-small cursor-pointer ${(res[k] ?? 'escaped') === r ? 'bg-ink text-parchment-50' : 'bg-surface'} focus-within:ring-2 focus-within:ring-accent-blue`}>
                     <input type="radio" className="sr-only" name={k} checked={(res[k] ?? 'escaped') === r} onChange={() => setRes({ ...res, [k]: r })} />
                     {r === 'escaped' ? 'Escapó' : 'Lo atrapó'}
                   </label>

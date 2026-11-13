@@ -86,11 +86,13 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
 
   // 8a. Pablo: otra carta -> buscar problemas -> combate con ayuda.
   await tab(p1, 'Turno');
+  await expect(p1.getByTestId('active-stopwatch')).toBeVisible();
+  await expect(tv.getByTestId('active-stopwatch')).toBeVisible();
   await p1.getByRole('button', { name: /Patear la puerta/ }).click();
   await phaseIs(p1, 'Patear la puerta');
   await p1.getByRole('button', { name: /Otra carta/ }).click();
   await phaseIs(p1, 'Sin monstruo');
-  await p1.getByRole('button', { name: /Buscar problemas/ }).click();
+  await p1.getByRole('button', { name: /Elegir: buscar problemas/ }).click();
   await p1.getByTestId('monster-strength').fill('3');
   await expect(p1.getByRole('button', { name: 'Pelear contra este monstruo' })).toBeDisabled();
   await p1.getByLabel('Confirmo que juego un monstruo de mi mano').check();
@@ -108,13 +110,15 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(p1.getByTestId('players-total')).toHaveText('3'); // Pablo 2 + Dana 1
   await expect(p1.getByTestId('monsters-total')).toHaveText('3');
   await expect(p1.getByRole('button', { name: /Pedir ayuda a/ })).toHaveCount(0);
+  await p2.getByRole('button', { name: /Añadir modificador/ }).click();
   await p2.getByTestId('mod-value').fill('2');
-  await p2.getByRole('button', { name: 'Sumar', exact: true }).click();
+  await p2.getByRole('button', { name: 'Aplicar modificador' }).click();
   await expect(tv.getByTestId('monsters-total')).toHaveText('5');
   await expect(p1.getByTestId('combat-diff')).toContainText('Los monstruos superan por 2');
+  await p1.getByRole('button', { name: /Añadir modificador/ }).click();
   await p1.getByTestId('mod-value').fill('4');
   await p1.getByRole('combobox').selectOption('players');
-  await p1.getByRole('button', { name: 'Sumar', exact: true }).click();
+  await p1.getByRole('button', { name: 'Aplicar modificador' }).click();
   await expect(tv.getByTestId('players-total')).toHaveText('7');
 
   // 10. Victoria confirmada a mano; doble clic no duplica la recompensa.
@@ -129,8 +133,10 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(dm.getByTestId('level-Pablo')).toHaveText('3');
 
   // 11. Caridad permite pasar al siguiente turno.
-  await p1.getByRole('button', { name: 'Caridad resuelta' }).click();
-  await p1.getByRole('button', { name: /Pasar el turno a Dana/ }).click();
+  await p1.getByRole('button', { name: /Confirmar caridad resuelta/ }).click();
+  await p1.getByRole('button', { name: 'Listo, continuar' }).click();
+  await p1.getByRole('button', { name: /Preparar pase de turno a Dana/ }).click();
+  await p1.getByRole('button', { name: /Sí, pasar el turno/ }).click();
   await expect(tv.getByTestId('tv-active')).toContainText('Dana');
 
   // 8b. Dana: maldición -> saquear.
@@ -139,12 +145,16 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await dm.getByRole('button', { name: /Maldición/ }).click();
   await phaseIs(dm, 'Resolver maldición');
   await expect(tv.getByTestId('tv-phase')).toHaveText('Resolver maldición');
-  await dm.getByRole('button', { name: 'Maldición resuelta, seguir' }).click();
+  await dm.getByRole('button', { name: /Registrar que resolví la maldición/ }).click();
+  await dm.getByRole('button', { name: /Sí, seguir al camino/ }).click();
   await dm.getByRole('button', { name: /Saquear la habitación/ }).click();
   await phaseIs(dm, 'Saquear la habitación');
-  await dm.getByRole('button', { name: /Listo: robé una Puerta/ }).click();
-  await dm.getByRole('button', { name: 'Caridad resuelta' }).click();
-  await dm.getByRole('button', { name: /Pasar el turno a Lu/ }).click();
+  await dm.getByRole('button', { name: 'Confirmar saqueo' }).click();
+  await dm.getByRole('button', { name: /Sí, saqué una Puerta/ }).click();
+  await dm.getByRole('button', { name: /Confirmar caridad resuelta/ }).click();
+  await dm.getByRole('button', { name: 'Listo, continuar' }).click();
+  await dm.getByRole('button', { name: /Preparar pase de turno a Lu/ }).click();
+  await dm.getByRole('button', { name: /Sí, pasar el turno/ }).click();
 
   // 8c. Lu: monstruo al patear -> huida.
   await p2.getByRole('button', { name: /Patear la puerta/ }).click();

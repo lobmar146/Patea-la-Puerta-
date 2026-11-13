@@ -44,14 +44,14 @@ Nada se decide solo: la victoria del combate, las recompensas y el ganador al ll
 
 Variables: ver `.env.example`. Las pruebas usan `TEST_DATABASE_URL` (por defecto la base local `patea_test`).
 
-## Despliegue en Render
-1. Subí el repo a GitHub.
-2. En Render: **New → Blueprint** y elegí el repo; `render.yaml` crea un Web Service Node y una base PostgreSQL. **Elegí los planes vos**: el archivo no asume ninguno gratuito y los precios pueden cambiar.
-3. Build: `npm ci --include=dev && npm run build`. Start: `npm run start:prod` (aplica migraciones). Healthcheck: `/api/health`.
-4. Opcional: `PUBLIC_URL` con la URL pública para que el QR use ese dominio.
-5. Mantené **una sola instancia** (la presencia en línea vive en memoria).
+## Despliegue gratuito en Render
 
-El servidor escucha en `process.env.PORT` y `0.0.0.0`, sirve el frontend compilado y deja `/api` y `/socket.io` fuera del fallback de rutas.
+1. Subí la versión que quieras desplegar a una rama de GitHub. La versión pública usa las ilustraciones SVG incluidas en el repo.
+2. En [Neon](https://console.neon.tech/), creá un proyecto **Free** en **AWS US East (N. Virginia)**. En **Connect**, desactivá *Connection pooling* y copiá la URL directa de PostgreSQL con `sslmode=require`. Agregale `&connect_timeout=15` para darle tiempo a la base de arrancar cuando está dormida. [Guía de Neon para Prisma](https://neon.com/docs/guides/prisma#troubleshooting).
+3. En el [panel de Render](https://dashboard.render.com/), elegí **New → Blueprint**, conectá el repo y seleccioná la rama del paso 1. Usá el `render.yaml` de la raíz. El Blueprint configura un Web Service **Free** en Virginia. Pegá la URL de Neon como valor de `DATABASE_URL` en el formulario de Render.
+4. Revisá el plan **Free** y elegí **Deploy Blueprint**. El arranque aplica las migraciones automáticamente. Cuando quede activo, probá `/api/health` en la URL pública y creá una partida. Abrí el QR en un celular y la vista TV en otra pantalla para verificar que ambos reciban los cambios.
+
+Render Free suspende el servicio después de 15 minutos sin tráfico entrante. La primera visita después de la pausa puede tardar cerca de un minuto. La base de Neon guarda las partidas durante esos reinicios. [Límites de Render Free](https://render.com/docs/free) · [Plan Free de Neon](https://neon.com/docs/introduction/plans).
 
 ## Documentación
 - `CLAUDE.md`: arquitectura, permisos y convenciones.

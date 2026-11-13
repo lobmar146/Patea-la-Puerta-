@@ -53,3 +53,20 @@
 docker compose up -d && npm install && npx prisma migrate dev
 npm run check && npm run test:e2e
 ```
+
+## Actualización UX/UI (2026-11-13)
+- Decisiones de fase, formularios de monstruos/modificadores y resoluciones de combate ahora se muestran en modales: panel inferior en móvil y centrado en escritorio.
+- Se añadieron acciones táctiles grandes, scroll interno, área segura inferior, cierre con Escape/fondo y transiciones breves para modales y cambios de fase. La preferencia de movimiento reducido sigue respetada.
+- En el formulario/lista de monstruos se distingue “nivel de combate” (valor para comparar) de “niveles al vencer” (recompensa), sin cambiar el modelo ni las reglas.
+- Se añadió un cronómetro sincronizado: mide el turno actual, muestra el total acumulado por jugador, se congela en pausa y persiste en PostgreSQL. Nueva migración prepara las salas existentes.
+- Se descargaron y revisaron las seis referencias de imagen disponibles. Los recortes del manifiesto apuntan al Dragón de Plutonio, Wandering Monster, Help Me Out Here! y Boots of Running Really Fast; las composiciones de caridad/fin usan los dorsos locales. Los créditos/permiso siguen detallados en `docs/ASSETS.md`.
+- **Verificado en esta continuación:** `npm run typecheck`, `npm run lint`, `npm test` (32/32), `npx vite build` y `npx tsc -p tsconfig.server.json` pasan.
+- **No verificado en esta continuación:** `npm run build` no pudo regenerar Prisma en Windows (`EPERM` al reemplazar `query_engine-windows.dll.node`; probablemente está abierto en la app local). `npm run test:e2e` no arrancó porque falta el Chromium que Playwright espera. No se cerró ningún proceso ni se instaló un navegador.
+- Recorrido concreto para Claude: revisar en móvil que las decisiones aparezcan como panel inferior sin desplazar la página, que el cierre no ejecute acciones, y que las transiciones no distraigan; luego ejecutar `npx playwright install chromium`, `npm run build` y `npm run test:e2e` cuando no esté bloqueado el motor Prisma.
+
+## Actualización de presentación (2026-11-13)
+- La vista TV ahora organiza turno, combate, jugadores y QR en una sola pantalla en resoluciones de escritorio/TV; en móvil conserva desplazamiento vertical normal.
+- La vista TV tiene un botón permanente para volver a la partida y control de pantalla completa.
+- Se unificaron las cabeceras y tarjetas de Mi personaje, Mesa y DM con la paleta de Munchkin y controles de mayor jerarquía visual.
+- Se reforzaron combinaciones de contraste de la interfaz para apuntar a WCAG AA (4,5:1 en texto normal); no se ejecutó una auditoría completa automatizada de accesibilidad.
+- Verificado en esta actualización: `npm run typecheck`, `npm run lint`, `npx vite build` y `git diff --check` pasan. No se ejecutaron pruebas funcionales/e2e.

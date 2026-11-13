@@ -53,6 +53,7 @@ export function createInitialState(code: string, ttlDays: number, sets?: string[
     participants: {},
     characters: {},
     turn: { order: [], activeIndex: 0, phase: 'setup', turnNumber: 0, doorResult: null },
+    clock: { activeSince: null, turnElapsedMs: 0, totalsByParticipant: {} },
     combat: null,
     levelAlert: null,
     winnerId: null,
@@ -204,6 +205,24 @@ function nextActiveIndex(state: GameState): number {
   return order.length === 0 ? 0 : (activeIndex + 1) % order.length;
 }
 
+function accrueClock(state: GameState, now: string, completeTurn = false) {
+  const clock = state.clock;
+  if (clock.activeSince) {
+    const delta = Math.max(0, Date.parse(now) - Date.parse(clock.activeSince));
+    clock.turnElapsedMs += delta;
+    clock.activeSince = null;
+  }
+  if (completeTurn) {
+    const id = activeParticipantId(state);
+    if (id) clock.totalsByParticipant[id] = (clock.totalsByParticipant[id] ?? 0) + clock.turnElapsedMs;
+    clock.turnElapsedMs = 0;
+  }
+}
+
+function startClock(state: GameState, now: string) {
+  state.clock.activeSince = state.status === 'active' && activeParticipantId(state) ? now : null;
+}
+
 function shuffle<T>(arr: T[], rng: Rng): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -292,12 +311,14 @@ export function applyAction(
       if (state.turn.order.length === 0) throw new GameError('invalid', 'Hace falta al menos un jugador.');
       state.status = 'active';
       state.turn = { ...state.turn, activeIndex: 0, phase: 'setup', turnNumber: 1, doorResult: null };
+      startClock(state, now);
       log('game.start', `¡Comienza la partida! Arranca ${displayName(state, state.turn.order[0])}.`);
       break;
     }
     case 'game.pause': {
       requireDm(actor);
       requireStatus(state, 'active');
+      accrueClock(state, now);
       state.status = 'paused';
       log('game.pause', 'Partida en pausa. Hidratarse es parte de la estrategia.');
       break;
@@ -306,12 +327,14 @@ export function applyAction(
       requireDm(actor);
       requireStatus(state, 'paused');
       state.status = 'active';
+      startClock(state, now);
       log('game.resume', 'Se reanuda la partida.');
       break;
     }
     case 'game.end': {
       requireDm(actor);
       if (action.winnerId) player(state, action.winnerId);
+      accrueClock(state, now, true);
       state.status = 'finished';
       state.winnerId = action.winnerId;
       state.finishedAt = now;
@@ -390,10 +413,12 @@ export function applyAction(
       requireTurnOwner(state, actor);
       requirePhase(state, 'endTurn');
       const prev = activeParticipantId(state);
+      accrueClock(state, now, true);
       state.turn.activeIndex = nextActiveIndex(state);
       state.turn.phase = 'setup';
       state.turn.doorResult = null;
       state.turn.turnNumber += 1;
+      startClock(state, now);
       log('turn.next', `Termina el turno de ${displayName(state, prev)}. Le toca a ${displayName(state, activeParticipantId(state))}.`);
       break;
     }
@@ -555,11 +580,13 @@ export function applyAction(
       const idx = state.turn.order.indexOf(action.activeId);
       if (idx < 0) throw new GameError('invalid', 'Ese jugador no está en el orden de turnos.');
       const changedPlayer = idx !== state.turn.activeIndex;
+      if (changedPlayer) accrueClock(state, now, true);
       if (state.combat && (action.phase !== 'combat' || changedPlayer)) {
         log('dm.correction', 'El DM descartó el combate en curso.');
         state.combat = null;
       }
       state.turn.activeIndex = idx;
+      if (changedPlayer) startClock(state, now);
       if (action.phase === 'combat' && !state.combat) startCombat(state, 'dm', undefined, id, now);
       state.turn.phase = action.phase;
       log('dm.correction', `Corrección del DM: turno de ${displayName(state, action.activeId)}, fase «${PHASE_LABEL[action.phase]}».`);
@@ -579,6 +606,8 @@ export function applyAction(
       const target = participant(state, action.participantId);
       if (target.id === actor.id) throw new GameError('invalid', 'Transferí la administración antes de irte.');
       const activeId = activeParticipantId(state);
+      const removedActive = activeId === target.id && state.turn.order.includes(target.id);
+      if (removedActive) accrueClock(state, now, true);
       if (state.combat && [state.combat.fighterId, state.combat.helperId].includes(target.id)) {
         throw new GameError('invalid', 'Resolvé el combate antes de quitar a alguien que participa.');
       }
@@ -596,6 +625,7 @@ export function applyAction(
           state.turn.activeIndex = activeId ? Math.max(0, order.indexOf(activeId)) : 0;
         }
       }
+      if (removedActive) startClock(state, now);
       if (state.levelAlert?.participantId === target.id) state.levelAlert = null;
       log('dm.remove', `El DM quitó a ${displayName(state, target.id)} de la sala.`);
       return { state, events, revokeParticipant: target.id };
@@ -604,6 +634,7 @@ export function applyAction(
       requireDm(actor);
       if (!state.levelAlert) throw new GameError('invalid', 'No hay ningún aviso de nivel pendiente.');
       const w = state.levelAlert.participantId;
+      accrueClock(state, now, true);
       state.status = 'finished';
       state.winnerId = w;
       state.finishedAt = now;

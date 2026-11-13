@@ -1,6 +1,8 @@
+import { Check } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, ApiError, type RoomInfo } from '../api';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { RoomProvider } from '../useRoom';
 import { RoomApp } from './RoomApp';
 import { TvView } from './TvView';
@@ -59,7 +61,8 @@ function JoinForm({ code, tv, info, onJoined }: { code: string; tv: boolean; inf
 
   return (
     <main className="mx-auto max-w-md p-4">
-      <form onSubmit={submit} className="card mt-6 space-y-4 p-4">
+      <div className="flex justify-end"><ThemeToggle /></div>
+      <form onSubmit={submit} className="card mt-4 space-y-4 p-4">
         <h1 className="text-2xl font-bold">Entrar a la sala <span className="font-black tracking-widest">{code}</span></h1>
         {info.status !== 'lobby' && <p className="chip">La partida ya está en curso: si entrás como jugador, vas al final del orden.</p>}
         <div>
@@ -70,9 +73,9 @@ function JoinForm({ code, tv, info, onJoined }: { code: string; tv: boolean; inf
           <legend className="label">¿Cómo participás?</legend>
           <div className="grid grid-cols-2 gap-2">
             {(['player', 'spectator'] as const).map((r) => (
-              <label key={r} className={`btn ${role === r ? 'bg-ink text-parchment-50' : 'bg-parchment-50'} cursor-pointer`}>
+              <label key={r} className={`btn cursor-pointer border-ui-control focus-within:ring-2 focus-within:ring-accent-blue ${role === r ? 'bg-surface-inset text-accent-gold' : 'bg-surface-raised text-ui-fg'}`}>
                 <input type="radio" name="role" value={r} checked={role === r} onChange={() => setRole(r)} className="sr-only" />
-                {role === r ? <span aria-hidden>✔ </span> : null}
+                {role === r && <Check aria-hidden className="size-4 shrink-0" />}
                 {r === 'player' ? 'Jugador' : 'Espectador'}
               </label>
             ))}
@@ -81,7 +84,7 @@ function JoinForm({ code, tv, info, onJoined }: { code: string; tv: boolean; inf
             {role === 'player' ? 'Vas a tener tu personaje y tus turnos.' : 'Solo mirás: ideal para la TV. No podés modificar nada.'}
           </p>
         </fieldset>
-        {error && <p role="alert" className="font-bold text-blood">{error}</p>}
+        {error && <p role="alert" className="font-bold text-accent-wine">{error}</p>}
         <button className="btn-primary w-full" disabled={busy || !name.trim()}>{busy ? 'Entrando…' : 'Entrar'}</button>
         <p className="text-xs">Este navegador te va a recordar mientras conserve su sesión. Si cambiás de navegador o borrás los datos del sitio, vas a entrar como alguien nuevo.</p>
       </form>

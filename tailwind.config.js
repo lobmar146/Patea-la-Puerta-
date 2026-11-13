@@ -10,6 +10,24 @@ export default {
         moss: { DEFAULT: '#2f6b3a', dark: '#245230' },
         royal: { DEFAULT: '#1f4f8f', dark: '#173d70' },
         gold: { DEFAULT: '#b7791f' },
+        surface: {
+          DEFAULT: 'rgb(var(--surface) / <alpha-value>)',
+          raised: 'rgb(var(--surface-raised) / <alpha-value>)',
+          muted: 'rgb(var(--surface-muted) / <alpha-value>)',
+          inset: 'rgb(var(--surface-inset) / <alpha-value>)',
+        },
+        ui: {
+          fg: 'rgb(var(--ui-fg) / <alpha-value>)',
+          muted: 'rgb(var(--ui-muted) / <alpha-value>)',
+          line: 'rgb(var(--ui-line) / <alpha-value>)',
+          control: 'rgb(var(--ui-control) / <alpha-value>)',
+        },
+        accent: {
+          wine: 'rgb(var(--accent-wine) / <alpha-value>)',
+          moss: 'rgb(var(--accent-moss) / <alpha-value>)',
+          gold: 'rgb(var(--accent-gold) / <alpha-value>)',
+          blue: 'rgb(var(--accent-blue) / <alpha-value>)',
+        },
       },
       fontFamily: {
         display: ['"Georgia"', '"Times New Roman"', 'serif'],

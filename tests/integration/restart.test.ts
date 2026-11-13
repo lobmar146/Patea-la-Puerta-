@@ -86,6 +86,9 @@ describe('recuperación tras reinicio del backend', () => {
     };
     await step({ type: 'character.update', targetId: p1Id, patch: { level: 4, gear: 2 } });
     await step({ type: 'game.start' });
+    const startedSnapshot: Snapshot = await socket.timeout(5000).emitWithAck('sync');
+    const clockStart = startedSnapshot.state.clock.activeSince;
+    expect(clockStart).not.toBeNull();
     await step({ type: 'turn.kickDoor' });
     await step({ type: 'turn.doorResult', result: 'monster', monster: { name: 'Dragón', strength: 20, levels: 2, treasures: 4 } });
     await step({ type: 'combat.addModifier', side: 'monsters', value: 3, label: 'enojado' });
@@ -103,6 +106,8 @@ describe('recuperación tras reinicio del backend', () => {
     expect(snap.version).toBe(lost.ok ? lost.version : -1);
     expect(snap.me.isDm).toBe(true);
     expect(snap.state.status).toBe('active');
+    expect(snap.state.clock.activeSince).toBe(clockStart);
+    expect(snap.state.clock.turnElapsedMs).toBe(0);
     expect(snap.state.turn.phase).toBe('combat');
     expect(snap.state.combat?.monsters[0]).toMatchObject({ name: 'Dragón', strength: 20 });
     expect(snap.state.combat?.modifiers[0]).toMatchObject({ value: 3 });
