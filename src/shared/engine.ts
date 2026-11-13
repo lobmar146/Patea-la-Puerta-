@@ -4,7 +4,7 @@
 import type { Action, CharacterPatch, MonsterInput } from './commands.js';
 import { gearFromItems } from './novice.js';
 import { AVATAR_IDS, DEFAULT_SETS, COLORS, SEX_LABEL, WIN_LEVEL, activeParticipantId, displayName, type AvatarId } from './rules.js';
-import type { Character, Combat, GameState, Monster, Participant, Phase, PlayerStats, Role, Sex } from './types.js';
+import type { Character, Combat, GameState, Monster, Participant, Phase, PlayerStats, Role, Sex, UndoEntry } from './types.js';
 
 export class GameError extends Error {
   constructor(
@@ -194,6 +194,20 @@ function setLevel(state: GameState, c: Character, level: number, events: EngineE
   if (state.levelAlert?.participantId === c.id && c.level < WIN_LEVEL) state.levelAlert = null;
 }
 
+/** Guarda el último cambio manual del personaje para poder deshacerlo. */
+function remember(state: GameState, c: Character, before: Character, label: string, by: string) {
+  if (JSON.stringify(before) === JSON.stringify(c)) return;
+  state.undo = { ...(state.undo ?? {}), [c.id]: { label, by, before, after: structuredClone(c) } };
+}
+
+/** El cambio para deshacer, solo si el personaje sigue igual que justo después de ese cambio. */
+export function undoFor(state: GameState, characterId: string): UndoEntry | null {
+  const entry = state.undo?.[characterId];
+  const c = state.characters[characterId];
+  if (!entry || !c) return null;
+  return JSON.stringify(entry.after) === JSON.stringify(c) ? entry : null;
+}
+
 function describePatch(patch: CharacterPatch, before: Character): string {
   const parts: string[] = [];
   if (patch.level !== undefined && patch.level !== before.level) parts.push(`nivel ${before.level}→${patch.level}`);
@@ -286,9 +300,12 @@ export function applyAction(
       player(state, action.targetId);
       const c = state.characters[action.targetId];
       const summary = describePatch(action.patch, c);
+      const snapshot = structuredClone(c);
       const { level, ...rest } = action.patch;
       Object.assign(c, rest);
       if (level !== undefined) setLevel(state, c, level, events);
+      // El nombre y las notas se guardan solos al escribir: no pisan lo que se puede deshacer.
+      if (Object.keys(action.patch).some((k) => k !== 'name' && k !== 'notes')) remember(state, c, snapshot, summary, actor.id);
       const who = action.targetId === actor.id ? c.name : `${displayName(state, actor.id)} (DM) a ${c.name}`;
       events.unshift({
         type: actor.isDm && action.targetId !== actor.id ? 'dm.correction' : 'character.update',
@@ -305,13 +322,33 @@ export function applyAction(
       const c = state.characters[action.targetId];
       if (new Set(action.items.map((i) => i.id)).size !== action.items.length) throw new GameError('invalid', 'Hay objetos repetidos.');
       const before = c.gear;
+      const snapshot = structuredClone(c);
       c.items = action.items;
       c.gear = gearFromItems(action.items);
+      remember(state, c, snapshot, `equipo ${before}→${c.gear}`, actor.id);
       const who = action.targetId === actor.id ? c.name : `${displayName(state, actor.id)} (DM) a ${c.name}`;
       log(
         actor.isDm && action.targetId !== actor.id ? 'dm.correction' : 'character.update',
         `${who}: equipo ${before === c.gear ? 'reacomodado' : `${before >= 0 ? '+' : ''}${before}→${c.gear >= 0 ? '+' : ''}${c.gear}`}.`,
       );
+      break;
+    }
+
+    case 'character.undo': {
+      if (action.targetId !== actor.id && !actor.isDm) {
+        throw new GameError('forbidden', 'Solo podés deshacer cambios de tu propio personaje.');
+      }
+      player(state, action.targetId);
+      const c = state.characters[action.targetId];
+      const entry = undoFor(state, action.targetId);
+      if (!entry) throw new GameError('invalid', 'No hay nada para deshacer: después hubo otro cambio. Corregilo a mano.');
+      const restored = structuredClone(entry.before);
+      const { level, ...rest } = restored;
+      Object.assign(c, rest);
+      setLevel(state, c, level, events);
+      delete state.undo![action.targetId];
+      const who = action.targetId === actor.id ? c.name : `${displayName(state, actor.id)} (DM) a ${c.name}`;
+      events.unshift({ type: actor.isDm && action.targetId !== actor.id ? 'dm.correction' : 'character.undo', message: `${who}: deshizo «${entry.label}».` });
       break;
     }
 

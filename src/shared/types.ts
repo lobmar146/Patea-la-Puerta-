@@ -162,6 +162,16 @@ export interface GameState {
   stats?: Record<string, PlayerStats>;
   /** Revancha: sala nueva con el mismo grupo y a qué participante nuevo corresponde cada uno. */
   rematch?: { code: string; map: Record<string, string> };
+  /** Último cambio manual de cada personaje, para poder deshacerlo (opcional en salas viejas). */
+  undo?: Record<string, UndoEntry>;
+}
+
+export interface UndoEntry {
+  /** Qué se cambió, para mostrarlo en el botón ("nivel 3→4"). */
+  label: string;
+  by: string;
+  before: Character;
+  after: Character;
 }
 
 export interface EventDTO {
