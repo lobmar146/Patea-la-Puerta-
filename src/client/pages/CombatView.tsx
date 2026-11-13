@@ -31,20 +31,20 @@ export function CombatTotalsPanel({ state, combat, big = false }: { state: GameS
   const numberSize = big ? 'text-3xl min-[360px]:text-4xl sm:text-6xl' : 'text-3xl min-[360px]:text-4xl sm:text-5xl';
   return (
     <div data-testid="combat-totals">
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center">
-        <div className="min-w-0 rounded-xl border border-royal/30 bg-royal/10 p-2">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-0 text-center [&>div:nth-child(2)]:-mx-2 [&>div:nth-child(2)]:z-10">
+        <div className="min-w-0 rounded-2xl bg-gradient-to-b from-royal/25 to-royal/5 p-2 ring-1 ring-royal/30">
           <div className={`font-bold text-accent-blue ${big ? 'text-2xl' : 'text-sm'}`}>Jugadores</div>
-          <div className={`${numberSize} font-black tabular-nums`} data-testid="players-total">{totals.players}</div>
+          <div className={`${numberSize} font-display font-extrabold tabular-nums`} data-testid="players-total">{totals.players}</div>
           <div className={`break-words text-ui-muted ${big ? 'text-base' : 'text-xs'}`}>
             {displayName(state, combat.fighterId)} {totals.fighter}
             {combat.helperId ? ` + ${displayName(state, combat.helperId)} ${totals.helper}` : ''}
             {totals.playerMods ? ` ${totals.playerMods >= 0 ? '+' : ''}${totals.playerMods} temp.` : ''}
           </div>
         </div>
-        <div className={`font-black text-ui-muted ${big ? 'text-3xl' : 'text-sm'}`} aria-hidden="true">VS</div>
-        <div className="min-w-0 rounded-xl border border-blood/30 bg-blood/10 p-2">
+        <div className={`grid place-items-center rounded-full bg-surface-inset font-display font-black text-ui-muted ring-4 ring-surface ${big ? 'size-16 text-2xl' : 'size-10 text-xs'}`} aria-hidden="true">VS</div>
+        <div className="min-w-0 rounded-2xl bg-gradient-to-b from-blood/30 to-blood/5 p-2 ring-1 ring-blood/35">
           <div className={`font-bold text-accent-wine ${big ? 'text-2xl' : 'text-sm'}`}>Monstruos</div>
-          <div className={`${numberSize} font-black tabular-nums`} data-testid="monsters-total">{totals.monsters}</div>
+          <div className={`${numberSize} font-display font-extrabold tabular-nums`} data-testid="monsters-total">{totals.monsters}</div>
           <div className={`text-ui-muted ${big ? 'text-base' : 'text-xs'}`}>
             Base {totals.monsterBase}
             {totals.monsterMods ? ` ${totals.monsterMods >= 0 ? '+' : ''}${totals.monsterMods} temp.` : ''}
@@ -101,9 +101,9 @@ export function CombatView() {
 
   return (
     <section className="card space-y-4 p-4" data-testid="combat">
-      <div className="flex items-center gap-3">
-        <Illustration name="monster" className="w-16 shrink-0" />
-        <h2 className="text-2xl font-black">¡Combate!</h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-2xl font-extrabold">¡Combate!</h2>
+        <span className="chip border-transparent bg-blood/15 text-accent-wine">{displayName(state, combat.fighterId)} pelea</span>
       </div>
       <CombatTotalsPanel state={state} combat={combat} />
       {canResolve && state.status === 'active' && (

@@ -1,4 +1,4 @@
-import { Shield, Smartphone, Swords, Tv } from 'lucide-react';
+import { DoorOpen, Shield, Smartphone, Swords, Tv } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { APP_NAME, DEFAULT_SETS } from '../../shared/rules';
@@ -39,31 +39,28 @@ export function Home() {
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-4 pb-16 sm:p-6">
       <div className="flex justify-end"><ThemeToggle /></div>
-      <header className="inverse-surface relative isolate overflow-hidden rounded-[2rem] bg-ink px-5 py-7 text-parchment-50 shadow-[0_20px_60px_rgba(43,29,18,.2)] sm:px-9 sm:py-9">
-        <div aria-hidden className="absolute -right-12 -top-24 -z-10 h-80 w-80 rounded-full border-[36px] border-parchment-50/5" />
-        <div className="grid items-center gap-4 sm:grid-cols-[1fr_150px] sm:gap-8">
-          <div>
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-parchment-50/20 bg-white/5 px-3 py-1 text-xs font-bold uppercase tracking-[.16em] text-parchment-200">
-          <span className="h-2 w-2 rounded-full bg-moss" /> Compañera de mesa · juego presencial
-        </div>
-        <h1 className="max-w-2xl text-4xl font-black leading-tight tracking-tight sm:text-6xl">{APP_NAME}</h1>
-        <p className="mt-3 max-w-2xl text-base leading-relaxed text-parchment-200 sm:text-lg">Turnos, personajes y combate sincronizados en todos los móviles. Las cartas, los dados y las puñaladas por la espalda siguen siendo analógicos.</p>
-        <div className="mt-6 flex flex-wrap gap-2 text-xs font-bold text-parchment-100 sm:text-sm">
-          <span className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2"><Swords aria-hidden className="size-4 shrink-0" /> Combate en equipo</span>
-          <span className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2"><Smartphone aria-hidden className="size-4 shrink-0" /> Sincronizado</span>
-          <span className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2"><Tv aria-hidden className="size-4 shrink-0" /> Vista para TV</span>
-        </div>
+      <header className="inverse-surface relative isolate overflow-hidden rounded-[2rem] px-5 py-7 text-parchment-50 sm:px-9 sm:py-10" style={{ background: 'radial-gradient(ellipse 80% 70% at 100% 0%, rgba(240,165,49,.28), transparent 60%), radial-gradient(ellipse 60% 60% at 0% 100%, rgba(192,42,36,.25), transparent 65%), linear-gradient(160deg, #2a1c14, #140e0b)' }}>
+        <div className="grid grid-cols-[1fr_auto] items-center gap-4 sm:gap-8">
+          <div className="min-w-0">
+            <span className="grid size-12 place-items-center rounded-2xl bg-gradient-to-b from-[#f6b64a] to-[#d98a16] text-[#2a1606] shadow-[inset_0_1px_0_rgba(255,255,255,.35),0_10px_24px_-8px_rgba(240,165,49,.7)]" aria-hidden><DoorOpen className="size-7" strokeWidth={2.5} /></span>
+            <h1 className="mt-4 text-[2.6rem] font-extrabold leading-[.95] sm:text-7xl">{APP_NAME}</h1>
+            <p className="mt-3 max-w-md text-base leading-snug text-parchment-100/80 sm:text-lg">La app lleva turnos, niveles y combates. Las cartas, los dados y las traiciones quedan en la mesa.</p>
           </div>
-          <div className="mx-auto hidden w-32 rotate-3 rounded-[1.4rem] border border-white/15 bg-white/10 p-2 shadow-2xl sm:block">
+          <div className="w-24 rotate-6 rounded-2xl bg-white/10 p-1.5 shadow-[0_24px_40px_-16px_rgba(0,0,0,.8)] ring-1 ring-white/15 sm:w-36">
             <Illustration name="door" className="w-full" />
           </div>
         </div>
+        <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-parchment-100/75">
+          <li className="inline-flex items-center gap-2"><Swords aria-hidden className="size-4 shrink-0 text-[#f6b64a]" /> Combate en equipo</li>
+          <li className="inline-flex items-center gap-2"><Smartphone aria-hidden className="size-4 shrink-0 text-[#f6b64a]" /> Todos sincronizados</li>
+          <li className="inline-flex items-center gap-2"><Tv aria-hidden className="size-4 shrink-0 text-[#f6b64a]" /> Vista para la tele</li>
+        </ul>
       </header>
 
       <div className="grid gap-4 md:grid-cols-2 sm:gap-6">
         <form onSubmit={create} className="card space-y-4 p-5 sm:p-6" aria-labelledby="crear">
           <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blood/10 text-xl" ><Swords aria-hidden className="size-5 shrink-0" /></span>
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent-brand/15 text-accent-brand"><Swords aria-hidden className="size-5 shrink-0" /></span>
             <div>
               <h2 id="crear" className="text-2xl font-bold">Crear partida</h2>
               <p className="mt-1 text-sm text-ui-muted">Prepará una sala nueva para tu grupo.</p>

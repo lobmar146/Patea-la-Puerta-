@@ -60,17 +60,20 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
   return (
     <div className="min-h-dvh pb-24">
       <Toast />
-      <header className="inverse-surface sticky top-0 z-30 border-b border-white/10 bg-ink/95 px-3 py-3 text-parchment-50 shadow-lg shadow-ink/10 backdrop-blur-xl sm:px-5">
+      <header className="inverse-surface sticky top-0 z-30 border-b border-white/[.06] bg-[#120d0a]/90 px-3 py-2.5 text-parchment-50 backdrop-blur-xl sm:px-5">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-2">
-          <div>
-            <span className="font-display text-lg font-black tracking-tight sm:text-xl">{APP_NAME}</span>
-            <span className="ml-2 inline-flex rounded-lg border border-parchment-50/15 bg-white/10 px-2.5 py-1 text-xs font-black tracking-[.16em] text-parchment-100 sm:text-sm" data-testid="room-code">{snap.code}</span>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-b from-[#f6b64a] to-[#d98a16] text-[#2a1606] shadow-[inset_0_1px_0_rgba(255,255,255,.35)]" aria-hidden><DoorOpen className="size-5" strokeWidth={2.5} /></span>
+            <span className="min-w-0 leading-tight">
+              <span className="block truncate font-display text-base font-extrabold tracking-tight sm:text-lg">{APP_NAME}</span>
+              <span className="block text-[11px] font-semibold uppercase tracking-[.14em] text-parchment-100/60">Sala <b className="font-black tracking-[.2em] text-[#f6b64a]" data-testid="room-code">{snap.code}</b></span>
+            </span>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <span className="hidden text-sm sm:inline" data-testid="me-label">
               {displayName(state, me.id)} · {me.isDm ? 'DM' : me.role === 'player' ? 'Jugador' : 'Espectador'}
             </span>
-            <ConnectionBadge />
+            <ConnectionBadge quiet />
             <ThemeToggle compact />
           </div>
         </div>
@@ -104,16 +107,18 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
         </p>
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-ui-line/15 bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(43,29,18,.08)] backdrop-blur-lg" aria-label="Secciones">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-ui-line/[.08] bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl" aria-label="Secciones">
         <ul className="mx-auto flex max-w-4xl gap-1 px-2 py-1 sm:gap-2 sm:px-4">
           {tabs.map((t) => (
             <li key={t.id} className="flex-1 py-1">
               <button
-                className={`flex min-h-[56px] w-full flex-col items-center justify-center rounded-2xl text-xs font-bold transition-colors sm:text-sm ${current === t.id ? 'bg-blood text-white shadow-md shadow-blood/20' : 'text-ui-muted hover:bg-surface-muted'}`}
+                className={`group flex min-h-[56px] w-full flex-col items-center justify-center gap-1 text-xs font-bold transition-colors sm:text-sm ${current === t.id ? 'text-accent-brand' : 'text-ui-muted hover:text-ui-fg'}`}
                 aria-current={current === t.id ? 'page' : undefined}
                 onClick={() => setTab(t.id)}
               >
-                <t.icon aria-hidden className="mb-1 size-5" />
+                <span className={`grid h-8 w-14 place-items-center rounded-full transition-colors ${current === t.id ? 'bg-accent-brand/15' : 'group-hover:bg-surface-raised'}`}>
+                  <t.icon aria-hidden className="size-5" strokeWidth={current === t.id ? 2.5 : 2} />
+                </span>
                 {t.label}
               </button>
             </li>

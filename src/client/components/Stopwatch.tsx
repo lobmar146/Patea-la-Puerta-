@@ -34,10 +34,10 @@ export function ActiveStopwatch({ state, big = false }: { state: GameState; big?
   const activeId = activeParticipantId(state);
   if (!activeId || state.status === 'lobby' || state.status === 'finished') return null;
   return (
-    <div className={`flex items-center justify-between gap-3 rounded-2xl border border-ui-line/15 bg-surface-raised px-4 py-3 text-ui-fg shadow-sm ${big ? 'text-lg' : 'text-sm'}`} data-testid="active-stopwatch">
+    <div className={`flex items-center justify-between gap-3 rounded-2xl bg-surface-muted px-4 py-2.5 text-ui-fg ring-1 ring-ui-line/[.07] ${big ? 'text-lg' : 'text-sm'}`} data-testid="active-stopwatch">
       <span className="flex min-w-0 items-center gap-2 font-semibold">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blood/10 text-lg" aria-hidden><Timer aria-hidden className="size-5 shrink-0" /></span>
-        <span className="truncate">Tiempo de {displayName(state, activeId)}{state.status === 'paused' ? ' · en pausa' : ''}</span>
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent-brand/15 text-accent-brand" aria-hidden><Timer aria-hidden className="size-5 shrink-0" /></span>
+        <span className="truncate text-ui-muted">Tiempo de {displayName(state, activeId)}{state.status === 'paused' ? ' · en pausa' : ''}</span>
       </span>
       <output className={`shrink-0 font-black tabular-nums tracking-wide ${big ? 'text-3xl sm:text-4xl' : 'text-2xl'}`} aria-label={`Tiempo de turno: ${formatDuration(turnElapsed(state, now))}`}>
         {formatDuration(turnElapsed(state, now))}

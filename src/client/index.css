@@ -17,32 +17,35 @@
   --accent-moss: 47 107 58;
   --accent-gold: 104 65 15;
   --accent-blue: 31 79 143;
+  --accent-brand: 168 92 10;
   --focus-ring: #1f4f8f;
   --page-light: radial-gradient(ellipse at 50% -18%, rgba(255, 255, 255, .94), transparent 58%);
   --surface-shadow: 0 12px 32px rgba(43, 29, 18, .07);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Inter Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --page: 26 19 16;
-  --surface: 43 32 27;
-  --surface-raised: 53 38 31;
-  --surface-muted: 34 25 21;
-  --surface-inset: 64 45 33;
-  --ui-fg: 249 237 218;
-  --ui-muted: 219 195 167;
-  --ui-line: 249 226 196;
-  --ui-control: 171 135 104;
-  --accent-wine: 255 163 153;
-  --accent-moss: 174 216 162;
-  --accent-gold: 245 198 116;
-  --accent-blue: 181 206 242;
-  --focus-ring: #f5c674;
-  --page-light: radial-gradient(ellipse at 50% 0, rgba(126, 51, 37, .22), transparent 38rem);
-  --surface-shadow: 0 12px 32px rgba(0, 0, 0, .2);
+  /* Taberna de noche: fondo casi negro cálido, superficies en escalones claros y oro como acento. */
+  --page: 18 13 10;
+  --surface: 30 23 19;
+  --surface-raised: 41 32 26;
+  --surface-muted: 24 18 15;
+  --surface-inset: 52 40 31;
+  --ui-fg: 247 236 219;
+  --ui-muted: 196 176 152;
+  --ui-line: 255 232 200;
+  --ui-control: 120 96 74;
+  --accent-wine: 255 140 128;
+  --accent-moss: 150 220 140;
+  --accent-gold: 247 190 92;
+  --accent-blue: 160 196 255;
+  --accent-brand: 240 165 49;
+  --focus-ring: #f0a531;
+  --page-light: radial-gradient(ellipse 60rem 28rem at 50% -6rem, rgba(240, 165, 49, .10), transparent 70%);
+  --surface-shadow: 0 1px 0 rgba(255, 232, 200, .04) inset, 0 18px 40px -18px rgba(0, 0, 0, .6);
 }
 
 body {
@@ -50,7 +53,7 @@ body {
   min-height: 100dvh;
   background-color: rgb(var(--page));
   background-image: var(--page-light);
-  accent-color: rgb(var(--accent-wine));
+  accent-color: rgb(var(--accent-brand));
 }
 
 .inverse-surface, .tv-shell {
@@ -108,6 +111,8 @@ body {
 
 h1, h2, h3 {
   @apply font-display;
+  letter-spacing: -0.02em;
+  font-variation-settings: "wdth" 92;
 }
 
 :focus-visible {
@@ -117,21 +122,24 @@ h1, h2, h3 {
 }
 
 @layer components {
-  .card { @apply rounded-3xl border border-ui-line/[.14] bg-surface; box-shadow: var(--surface-shadow); }
-  .btn { @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-ui-line/15 px-4 py-2 text-base font-bold shadow-sm transition duration-150 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0; }
-  .btn-primary { @apply btn bg-blood text-white hover:bg-blood-dark; }
-  .btn-secondary { @apply btn border-ui-control bg-surface-raised text-ui-fg hover:bg-surface-muted; }
-  .btn-go { @apply btn bg-moss text-white hover:bg-moss-dark; }
-  .btn-blue { @apply btn bg-royal text-white hover:bg-royal-dark; }
+  .card { @apply rounded-3xl border border-ui-line/[.09] bg-surface; box-shadow: var(--surface-shadow); }
+  /* Botones de mesa: grandes, con relieve sutil y respuesta al toque (no al hover, que en móvil no existe). */
+  .btn { @apply inline-flex min-h-[48px] select-none items-center justify-center gap-2 rounded-2xl border border-transparent px-4 py-2 text-base font-bold tracking-[-.01em] transition duration-150 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100 motion-reduce:transition-none; }
+  .btn-primary { @apply btn bg-gradient-to-b from-[#c02a24] to-[#8f1717] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.2),0_8px_20px_-10px_rgba(192,42,36,.9)] hover:brightness-110; }
+  .btn-secondary { @apply btn border-ui-line/[.14] bg-surface-raised text-ui-fg shadow-[inset_0_1px_0_rgba(255,255,255,.04)] hover:bg-surface-inset; }
+  .btn-go { @apply btn bg-gradient-to-b from-[#3b8a4a] to-[#276236] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.2),0_8px_20px_-10px_rgba(47,107,58,.9)] hover:brightness-110; }
+  .btn-blue { @apply btn bg-gradient-to-b from-[#2f63ad] to-[#1b4581] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.2),0_8px_20px_-10px_rgba(31,79,143,.9)] hover:brightness-110; }
+  .btn-gold { @apply btn bg-gradient-to-b from-[#f6b64a] to-[#d98a16] text-[#2a1606] shadow-[inset_0_1px_0_rgba(255,255,255,.35),0_8px_20px_-10px_rgba(227,154,45,.9)] hover:brightness-105; }
+  .action-bar { @apply fixed inset-x-0 z-20 px-3 pb-2 pt-6 sm:px-5; bottom: calc(4.5rem + env(safe-area-inset-bottom)); background: linear-gradient(to top, rgb(var(--page)) 55%, rgb(var(--page) / 0)); }
   .choice-card { @apply flex min-h-[7rem] w-full items-center gap-4 rounded-2xl border-2 border-ui-control bg-surface-raised p-4 text-left text-ui-fg shadow-sm transition hover:border-blood hover:bg-surface-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[.99] disabled:opacity-50 motion-reduce:transition-none; }
   .btn-small { @apply min-h-[40px] rounded-lg px-3 py-1 text-sm; }
-  .input { @apply min-h-[48px] w-full rounded-xl border border-ui-control bg-surface-raised px-3 py-2 text-base text-ui-fg shadow-sm placeholder:text-ui-muted; }
-  .label { @apply mb-1 block text-sm font-bold; }
+  .input { @apply min-h-[48px] w-full rounded-xl border border-ui-control/70 bg-surface-muted px-3 py-2 text-base text-ui-fg shadow-[inset_0_1px_2px_rgba(0,0,0,.18)] transition-colors placeholder:text-ui-muted/80 focus:border-accent-brand focus:outline-none focus:ring-2 focus:ring-accent-brand/30; }
+  .label { @apply mb-1.5 block text-sm font-semibold text-ui-muted; }
   .chip { @apply inline-flex items-center gap-1 rounded-full border border-ui-line/10 bg-surface-inset px-3 py-1 text-sm font-semibold; }
   .theme-toggle { @apply inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-ui-control bg-surface-raised px-2.5 text-sm font-bold text-ui-fg transition-colors hover:bg-surface-muted; }
-  .theme-toggle[aria-pressed="true"] { @apply border-accent-gold bg-surface-inset text-accent-gold; }
-  .inverse-surface .theme-toggle { @apply border-parchment-200/50 bg-white/10 text-parchment-50 hover:bg-white/20; }
-  .inverse-surface .theme-toggle[aria-pressed="true"] { @apply border-[#f5c674] bg-[#4a301a] text-[#f5c674]; }
+  .theme-toggle[aria-pressed="true"] { @apply border-ui-line/[.12] bg-surface-raised text-accent-brand; }
+  .inverse-surface .theme-toggle { @apply border-white/10 bg-white/[.06] text-parchment-50 hover:bg-white/[.12]; }
+  .inverse-surface .theme-toggle[aria-pressed="true"] { @apply border-white/10 bg-white/[.06] text-[#f6b64a]; }
   .modal-backdrop { @apply fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-0 backdrop-blur-sm sm:items-center sm:p-4; animation: modal-fade-in 160ms ease-out; }
   .modal-panel { @apply max-h-[92dvh] w-full max-w-xl overflow-hidden rounded-t-3xl border border-ui-line/15 bg-surface text-ui-fg shadow-[0_24px_80px_rgba(0,0,0,.3)] outline-none sm:rounded-3xl; animation: modal-rise-in 180ms ease-out; }
   .modal-header { @apply flex items-center justify-between gap-4 border-b border-ui-line/10 bg-surface-raised px-5 py-4; }
@@ -139,6 +147,7 @@ h1, h2, h3 {
   .modal-close { @apply grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-ui-control bg-surface-raised text-2xl font-bold leading-none hover:bg-surface-muted; }
   .modal-tall { @apply h-[92dvh] sm:h-auto; }
   .modal-content { @apply max-h-[calc(92dvh-5rem)] overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]; }
+  .phase-hero { background: radial-gradient(ellipse 120% 90% at 0% 0%, rgb(var(--accent-brand) / .16), transparent 60%), linear-gradient(160deg, rgb(var(--surface-inset)), rgb(var(--surface-muted))); }
   .phase-transition { animation: phase-enter 220ms ease-out both; }
 }
 

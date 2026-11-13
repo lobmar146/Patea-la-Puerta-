@@ -80,3 +80,14 @@ npm run check && npm run test:e2e
 - Verificado: typecheck, lint, 38 pruebas, build y e2e completo.
 - Combate en menos toques: el modal de modificadores elige bando con dos botones (por defecto Jugadores si sos quien pelea o ayuda) y aplica con un toque (+1, +2, +3, +5, +10, −1, −2, −5) o con un valor libre. La victoria muestra el resumen precargado (niveles y tesoros) con un botón “Confirmar victoria”; ajustar niveles o agregar nota queda plegado. Verificado: typecheck, lint, 38 pruebas, build y e2e.
 - Buscador de monstruos estable: el listado arranca abierto con alto fijo y los paneles con buscador tienen alto fijo en móvil (`Modal tall`), así escribir no mueve el campo. El e2e compara la posición del campo antes y después de escribir.
+
+## Rediseño visual (2026-11-13)
+- Dirección: "taberna de noche". Fondo casi negro cálido, superficies en escalones claros, oro (`accent-brand`) como acento de marca, rojo solo para peligro/acción principal y verde para resolver.
+- Tipografías locales vía Fontsource (sin hotlinks): Bricolage Grotesque para títulos, Inter para texto.
+- Botones con relieve y respuesta al toque (`active:scale`), nuevo `btn-gold` para "Patear la puerta". Inputs hundidos con foco dorado.
+- Cabecera compacta con marca, código de sala en oro y conexión como punto verde (el cartel grande solo aparece si hay problemas). Barra inferior con indicador en píldora.
+- Turno: héroe de fase con brillo dorado y carta inclinada; la acción del turno queda fija sobre la barra inferior (`.action-bar`).
+- Combate: marcador con degradés y "VS" en medalla; se quitó la ilustración duplicada.
+- Inicio: héroe nuevo con logo, frase corta y beneficios en línea.
+- `npm run tour` (después de `npm run build`) genera capturas de todas las pantallas en modo oscuro y claro.
+- Verificado: typecheck, lint, 38 pruebas, build, e2e.
