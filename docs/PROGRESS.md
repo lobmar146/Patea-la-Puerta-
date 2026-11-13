@@ -93,3 +93,4 @@ npm run check && npm run test:e2e
 - Verificado: typecheck, lint, 38 pruebas, build, e2e.
 - Combate: la tarjeta de Ayuda pasó arriba, justo debajo del marcador y del próximo paso, con botones grandes. En fase de combate la cabecera del turno se compacta (sin carta ni texto).
 - Íconos de juego de game-icons.net (CC BY 3.0) en `GameIcon` para puerta, patada, monstruo, combate, ayuda, huida, victoria, carta, saqueo, maldición, DM, mesa, personaje y tiempo; Lucide queda para la interfaz. Crédito en el inicio y en `docs/ASSETS.md`.
+- Pulido: aviso "¡Te toca!" con vibración cuando el turno pasa a vos; mesa compacta (una fila por jugador, detalle al tocar); celebración "+N NIVEL" con confeti (también en la TV, sin confeti si se reduce el movimiento); combate con monstruos en fichas compactas y sin textos de relleno; últimos eventos plegables; razas y clases desde listas desplegables con opción "Otra"; nombre y notas con guardado automático.

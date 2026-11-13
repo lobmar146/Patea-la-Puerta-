@@ -1,10 +1,11 @@
 import { Pause, Tv } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { APP_NAME, displayName } from '../../shared/rules';
+import { APP_NAME, activeParticipantId, displayName } from '../../shared/rules';
 import { useRoom } from '../useRoom';
 import { ConnectionBadge, Toast } from '../components/ui';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { Celebration } from '../components/Celebration';
 import { CharacterEditor } from './CharacterEditor';
 import { DmPanel } from './DmPanel';
 import { Finished } from './Finished';
@@ -35,6 +36,25 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
     }
   }, [tab]);
 
+  // Aviso "¡Te toca!": vibra y muestra un cartel cuando el turno pasa a este jugador.
+  const activeId = snap ? activeParticipantId(snap.state) : null;
+  const myId = me?.id;
+  const prevActive = useRef<string | null | undefined>(undefined);
+  const [yourTurn, setYourTurn] = useState(false);
+  useEffect(() => {
+    const prev = prevActive.current;
+    prevActive.current = activeId;
+    if (prev === undefined || !myId || activeId !== myId || prev === myId || snap?.state.status !== 'active') return;
+    setYourTurn(true);
+    try {
+      navigator.vibrate?.([140, 70, 140]);
+    } catch {
+      /* sin vibración: no pasa nada */
+    }
+    const t = window.setTimeout(() => setYourTurn(false), 6000);
+    return () => window.clearTimeout(t);
+  }, [activeId, myId, snap?.state.status]);
+
   if (status === 'unauthorized') {
     return (
       <main className="mx-auto max-w-md p-6 text-center">
@@ -61,6 +81,7 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
   return (
     <div className="min-h-dvh pb-24">
       <Toast />
+      <Celebration state={state} />
       <header className="inverse-surface sticky top-0 z-30 border-b border-white/[.06] bg-[#120d0a]/90 px-3 py-2.5 text-parchment-50 backdrop-blur-xl sm:px-5">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -79,6 +100,22 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
           </div>
         </div>
       </header>
+
+      {yourTurn && (
+        <div className="fixed inset-x-3 top-16 z-40 mx-auto max-w-md" role="alert" data-testid="your-turn">
+          <button
+            type="button"
+            className="your-turn flex w-full items-center gap-3 rounded-2xl bg-gradient-to-b from-[#f6b64a] to-[#d98a16] p-3 pr-4 text-left text-[#2a1606] shadow-[0_18px_40px_-12px_rgba(240,165,49,.7)]"
+            onClick={() => { setTab('turn'); setYourTurn(false); }}
+          >
+            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-[#2a1606]/10"><GameIcon name="kick" className="size-8" /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-xl font-extrabold leading-tight">¡Te toca, {displayName(state, me.id)}!</span>
+              <span className="block text-sm font-semibold opacity-80">{current === 'turn' ? 'Andá a patear la puerta.' : 'Tocá para ir a tu turno.'}</span>
+            </span>
+          </button>
+        </div>
+      )}
 
       <main className="mx-auto max-w-4xl space-y-5 p-3 sm:p-5">
         {state.status === 'paused' && (

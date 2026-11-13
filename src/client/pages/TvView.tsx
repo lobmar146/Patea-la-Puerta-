@@ -10,6 +10,7 @@ import { ConnectionBadge, EventList, QrCode, joinUrl } from '../components/ui';
 import { useRoom } from '../useRoom';
 import { CombatTotalsPanel } from './CombatView';
 import { GameIcon } from '../components/GameIcon';
+import { Celebration } from '../components/Celebration';
 
 /** Vista de solo lectura, diseñada para verse bien tanto en una TV como en móvil. */
 export function TvView({ publicUrl }: { publicUrl: string | null }) {
@@ -30,6 +31,7 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
 
   return (
     <main className={`tv-shell inverse-surface min-h-dvh overflow-x-hidden p-3 text-parchment-50 sm:p-5 lg:p-6 ${state.status !== 'lobby' && state.status !== 'finished' ? 'tv-shell-live' : ''}`} data-testid="tv-view">
+      <Celebration state={state} big />
       <header className="tv-header mx-auto flex w-full max-w-[1800px] flex-wrap items-center justify-between gap-3 pb-4 sm:pb-6">
         <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <Link to={`/s/${snap.code}`} className="tv-control shrink-0" aria-label="Volver a la partida"><ArrowLeft aria-hidden className="size-4 shrink-0" /> <span className="hidden sm:inline">Volver a la partida</span></Link>

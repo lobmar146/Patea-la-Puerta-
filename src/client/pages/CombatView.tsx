@@ -1,4 +1,4 @@
-import { Hourglass, Plus, Sparkles } from 'lucide-react';
+import { Hourglass, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { Combat, GameState } from '../../shared/types';
 import { combatTotals, displayName, playersWinTies } from '../../shared/rules';
@@ -152,52 +152,23 @@ export function CombatView() {
           </div>
         )}
       </div>
-      <p className="text-sm text-ui-muted">Las cartas y habilidades en mesa pueden cambiar la ventaja. Confirmen cómo terminó el combate.</p>
-
       <div>
         <h3 className="font-bold">Monstruos</h3>
         {combat.monsters.length > 0 && (
           <ul className="mt-2 grid gap-2 sm:grid-cols-2">
             {combat.monsters.map((monster) => (
-              <li key={monster.id} className="rounded-xl border border-ui-line bg-surface-raised p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <strong className="min-w-0 break-words">{monster.name}</strong>
-                  {canEdit && (
-                    <div className="flex shrink-0 gap-2">
-                      <button
-                        className="btn-secondary btn-small"
-                        disabled={pending}
-                        aria-label={`Editar ${monster.name}`}
-                        onClick={() => setModal({ monsterId: monster.id })}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        className="btn-secondary btn-small"
-                        disabled={pending}
-                        aria-label={`Quitar ${monster.name}`}
-                        onClick={() => send({ type: 'combat.removeMonster', monsterId: monster.id })}
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <dl className="rounded-lg bg-blood/10 p-2 text-accent-wine">
-                    <dt className="text-xs font-semibold">Nivel de combate</dt>
-                    <dd className="text-2xl font-black tabular-nums">{monster.strength}</dd>
-                  </dl>
-                  <dl className="rounded-lg bg-gold/15 p-2 text-accent-gold">
-                    <dt className="text-xs font-semibold">Al vencer</dt>
-                    <dd className="text-sm font-bold tabular-nums">
-                      +{monster.levels} {monster.levels === 1 ? 'nivel' : 'niveles'}
-                    </dd>
-                    <dd className="text-sm font-bold tabular-nums">
-                      {monster.treasures} {monster.treasures === 1 ? 'tesoro' : 'tesoros'}
-                    </dd>
-                  </dl>
-                </div>
+              <li key={monster.id} className="flex items-center gap-3 rounded-2xl bg-surface-raised p-2 pr-2.5 ring-1 ring-ui-line/[.08]">
+                <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-blood/15 font-display text-2xl font-extrabold text-accent-wine tabular-nums" aria-label={`Nivel de combate ${monster.strength}`}>{monster.strength}</span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block truncate">{monster.name}</strong>
+                  <span className="block text-xs text-accent-gold">Al vencer: +{monster.levels} {monster.levels === 1 ? 'nivel' : 'niveles'} · {monster.treasures} {monster.treasures === 1 ? 'tesoro' : 'tesoros'}</span>
+                </span>
+                {canEdit && (
+                  <span className="flex shrink-0 gap-1">
+                    <button className="grid size-10 place-items-center rounded-xl text-ui-muted hover:bg-surface-inset hover:text-ui-fg" disabled={pending} aria-label={`Editar ${monster.name}`} onClick={() => setModal({ monsterId: monster.id })}><Pencil aria-hidden className="size-4" /></button>
+                    <button className="grid size-10 place-items-center rounded-xl text-ui-muted hover:bg-blood/15 hover:text-accent-wine" disabled={pending} aria-label={`Quitar ${monster.name}`} onClick={() => send({ type: 'combat.removeMonster', monsterId: monster.id })}><Trash2 aria-hidden className="size-4" /></button>
+                  </span>
+                )}
               </li>
             ))}
           </ul>
@@ -210,8 +181,7 @@ export function CombatView() {
       </div>
 
       <div>
-        <h3 className="font-bold">Modificadores temporales</h3>
-        <p className="text-xs">Pociones, potenciadores, maldiciones de combate… desaparecen al terminar el combate.</p>
+        <h3 className="font-bold">Cartas en juego <span className="text-xs font-normal text-ui-muted">(se van al terminar el combate)</span></h3>
         <ul className="my-1 space-y-1">
           {combat.modifiers.map((m) => (
             <li key={m.id} className="flex items-center justify-between rounded border border-ui-line bg-surface-raised px-2 py-1">

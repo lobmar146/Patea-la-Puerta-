@@ -59,6 +59,11 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await tab(p1, 'Mi personaje');
   await p1.getByRole('button', { name: 'Sumar 1 a Nivel' }).click();
   await expect(p1.getByTestId('level-value')).toHaveText('2');
+  // Raza y clase desde listas desplegables.
+  await p1.getByTestId('races-select').selectOption('Elfo');
+  await expect(p1.getByTestId('races-list')).toContainText('Elfo');
+  await p1.getByTestId('classes-select').selectOption('Mago');
+  await expect(p1.getByTestId('classes-list')).toContainText('Mago');
   await tab(dm, 'Mesa');
   await expect(dm.getByTestId('level-Pablo')).toHaveText('2');
   await tab(p2, 'Mesa');
@@ -77,6 +82,8 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(dm.getByTestId('order-list').locator('li').first()).toContainText('Pablo');
   await dm.getByTestId('start-game').click();
   await expect(tv.getByTestId('tv-active')).toContainText('Pablo');
+  await expect(p1.getByTestId('your-turn')).toContainText('¡Te toca, Pablo!');
+  await expect(p2.getByTestId('your-turn')).toHaveCount(0);
 
   // 6. Fuera de turno no se avanza (ni por la UI ni a mano).
   await tab(p2, 'Turno');
@@ -156,6 +163,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await p1.screenshot({ path: 'test-results/screens/movil-victoria.png' });
   await p1.getByRole('button', { name: 'Confirmar victoria' }).dblclick();
   await phaseIs(p1, 'Caridad');
+  await expect(tv.getByTestId('celebration')).toContainText('+1 NIVEL');
   await tab(dm, 'Mesa');
   await expect(dm.getByTestId('level-Pablo')).toHaveText('3');
   await expect(dm.getByTestId('level-Dana')).toHaveText('1'); // sin niveles automáticos al ayudante
