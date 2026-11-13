@@ -2,6 +2,7 @@
 // El servidor la ejecuta dentro de una transacción; nunca se confía en el cliente.
 
 import type { Action, CharacterPatch, MonsterInput } from './commands.js';
+import { gearFromItems } from './novice.js';
 import { AVATAR_IDS, DEFAULT_SETS, COLORS, WIN_LEVEL, activeParticipantId, displayName, type AvatarId } from './rules.js';
 import type { Character, Combat, GameState, Monster, Participant, Phase, PlayerStats, Role } from './types.js';
 
@@ -65,7 +66,7 @@ export function createInitialState(code: string, ttlDays: number, sets?: string[
 /** Agrega un participante (y su personaje si es jugador). No es un comando: lo usa el alta por HTTP. */
 export function addParticipant(
   state: GameState,
-  p: { id: string; name: string; role: Role; isDm: boolean; now: string; avatar?: AvatarId; color?: string },
+  p: { id: string; name: string; role: Role; isDm: boolean; now: string; avatar?: AvatarId; color?: string; bot?: boolean },
 ): GameState {
   const next = structuredClone(state);
   const participant: Participant = {
@@ -75,6 +76,7 @@ export function addParticipant(
     isDm: p.isDm,
     joinedAt: p.now,
     removed: false,
+    ...(p.bot ? { bot: true } : {}),
   };
   next.participants[p.id] = participant;
   if (p.role === 'player') {
@@ -290,6 +292,24 @@ export function applyAction(
         type: actor.isDm && action.targetId !== actor.id ? 'dm.correction' : 'character.update',
         message: `${who}: ${summary}.`,
       });
+      break;
+    }
+
+    case 'character.setItems': {
+      if (action.targetId !== actor.id && !actor.isDm) {
+        throw new GameError('forbidden', 'Solo podés editar tu propio personaje.');
+      }
+      player(state, action.targetId);
+      const c = state.characters[action.targetId];
+      if (new Set(action.items.map((i) => i.id)).size !== action.items.length) throw new GameError('invalid', 'Hay objetos repetidos.');
+      const before = c.gear;
+      c.items = action.items;
+      c.gear = gearFromItems(action.items);
+      const who = action.targetId === actor.id ? c.name : `${displayName(state, actor.id)} (DM) a ${c.name}`;
+      log(
+        actor.isDm && action.targetId !== actor.id ? 'dm.correction' : 'character.update',
+        `${who}: equipo ${before === c.gear ? 'reacomodado' : `${before >= 0 ? '+' : ''}${before}→${c.gear >= 0 ? '+' : ''}${c.gear}`}.`,
+      );
       break;
     }
 
@@ -517,18 +537,20 @@ export function applyAction(
       const c = requireCombat(state);
       const r = c.helpRequests.find((x) => x.id === action.requestId);
       if (!r) throw new GameError('not_found', 'Esa solicitud de ayuda ya no existe.');
-      if (r.toId !== actor.id) throw new GameError('forbidden', 'Esa solicitud no es para vos.');
+      // En las salas de práctica, el DM responde por los jugadores de mentira.
+      const forBot = state.config.practice && actor.isDm && state.participants[r.toId]?.bot;
+      if (r.toId !== actor.id && !forBot) throw new GameError('forbidden', 'Esa solicitud no es para vos.');
       if (r.status !== 'pending') throw new GameError('invalid', 'Esa solicitud ya fue respondida.');
       if (action.accept) {
         if (c.helperId) throw new GameError('invalid', 'Ya hay un ayudante en este combate.');
         r.status = 'accepted';
-        c.helperId = actor.id;
+        c.helperId = r.toId;
         for (const other of c.helpRequests) if (other.status === 'pending') other.status = 'cancelled';
-        log('help.accept', `${displayName(state, actor.id)} se suma al combate como ayudante.`);
+        log('help.accept', `${displayName(state, r.toId)} se suma al combate como ayudante.`);
       } else {
         r.status = 'rejected';
-        bump(state, actor.id, 'helpRefused');
-        log('help.reject', `${displayName(state, actor.id)} rechazó ayudar. Que lo disfrute.`);
+        bump(state, r.toId, 'helpRefused');
+        log('help.reject', `${displayName(state, r.toId)} rechazó ayudar. Que lo disfrute.`);
       }
       break;
     }

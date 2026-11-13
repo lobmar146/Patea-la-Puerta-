@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronRight, Shield, Smartphone, Tv } from 'lucide-react';
+import { ArrowLeft, ChevronRight, GraduationCap, Shield, Smartphone, Tv } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { APP_NAME, DEFAULT_SETS } from '../../shared/rules';
@@ -12,8 +12,9 @@ export function Home() {
   const nav = useNavigate();
   // El paso elegido vive en la URL (?modo=crear|unirse) para que "atrás" del celular vuelva a la elección.
   const [params, setParams] = useSearchParams();
-  const mode = params.get('modo') === 'crear' ? 'create' : params.get('modo') === 'unirse' ? 'join' : null;
-  const choose = (m: 'crear' | 'unirse') => setParams({ modo: m });
+  const modo = params.get('modo');
+  const mode = modo === 'crear' ? 'create' : modo === 'unirse' ? 'join' : modo === 'practica' ? 'practice' : null;
+  const choose = (m: 'crear' | 'unirse' | 'practica') => setParams({ modo: m });
   const back = () => (window.history.state?.idx > 0 ? nav(-1) : setParams({}, { replace: true }));
   const [name, setName] = useState('');
   const [sets, setSets] = useState<string[]>(DEFAULT_SETS);
@@ -30,6 +31,20 @@ export function Home() {
     try {
       const extraSets = extra.split(',').map((s) => s.trim()).filter(Boolean);
       const r = await api.createRoom({ name: name.trim(), sets, extraSets, ...look });
+      nav(`/s/${r.code}`);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function practice(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await api.practice({ name: name.trim(), ...look });
       nav(`/s/${r.code}`);
     } catch (err) {
       setError((err as Error).message);
@@ -84,7 +99,37 @@ export function Home() {
             </span>
             <ChevronRight aria-hidden className="size-5 shrink-0 text-ui-muted" />
           </button>
+          <button type="button" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-dashed border-ui-line/25 px-4 text-sm font-semibold text-ui-muted hover:border-accent-blue hover:text-ui-fg sm:col-span-2" data-testid="home-practice" onClick={() => choose('practica')}>
+            <GraduationCap aria-hidden className="size-5 shrink-0 text-accent-blue" /> ¿Primera vez? Probá una partida de práctica
+          </button>
         </section>
+      )}
+
+      {mode === 'practice' && (
+        <div className="phase-transition mx-auto max-w-xl">
+          <form onSubmit={practice} className="card space-y-4 p-5 sm:p-6" aria-labelledby="practica">
+            <button type="button" className="btn-secondary btn-small" onClick={back}><ArrowLeft aria-hidden className="size-4 shrink-0" /> Volver</button>
+            <div className="flex items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent-blue/15 text-accent-blue"><GraduationCap aria-hidden className="size-5 shrink-0" /></span>
+              <div>
+                <h2 id="practica" className="text-2xl font-bold">Partida de práctica</h2>
+                <p className="mt-1 text-sm text-ui-muted">Para aprender a usar la app antes de juntarte.</p>
+              </div>
+            </div>
+            <ul className="list-disc space-y-1 rounded-xl bg-surface-muted p-3 pl-8 text-sm">
+              <li>Jugás con dos personajes de mentira, Grog y Lía. Sus turnos los manejás vos.</li>
+              <li>Los consejos del modo novato te guían en cada paso.</li>
+              <li>No necesitás cartas: inventá monstruos y números para probar. La sala se borra sola en un día.</li>
+            </ul>
+            <div>
+              <label className="label" htmlFor="practice-name">Tu nombre</label>
+              <input id="practice-name" className="input" autoFocus required maxLength={40} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej.: Novata valiente" />
+            </div>
+            <AvatarPicker avatar={look.avatar} color={look.color} onChange={setLook} idPrefix="practice" />
+            {error && <p role="alert" className="font-bold text-accent-wine">{error}</p>}
+            <button className="btn-blue w-full" disabled={busy || !name.trim()}>{busy ? 'Preparando…' : 'Empezar práctica'}</button>
+          </form>
+        </div>
       )}
 
       {mode === 'create' && (

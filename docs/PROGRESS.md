@@ -107,3 +107,9 @@ npm run check && npm run test:e2e
 - Reacciones rápidas (😂 💀 🔥 🐔 👏 😱): evento de Socket.IO efímero, validado y limitado a una cada 600 ms por conexión; flotan en todos los celulares y en la tele. No cambian la versión de la partida.
 - Sonidos sintetizados (patada, nivel, victoria, huida, fin y "te toca") con botón de silencio en el encabezado; la preferencia queda en el navegador.
 - El aviso "¡Estás perdiendo!" ya no reaparece al cambiar de sección.
+- Ayudas para novatos (`src/shared/novice.ts`, paráfrasis breves de las reglas del juego base):
+  - Modo novato (prendido por defecto, se apaga por dispositivo): consejos según fase, rol y combate, más "¿Qué puedo hacer ahora?".
+  - Equipo por espacios (`character.setItems`): cabeza, armadura, calzado, manos y objetos grandes; la bonificación se calcula sola y los límites son avisos, no prohibiciones.
+  - Guía "Me morí" con pasos tildables y botón para vaciar el equipo en la app.
+  - Calculadora de venta: 1000 de oro por nivel, sin llegar al nivel 10 vendiendo.
+  - Partida de práctica (`POST /api/practice`): arranca sola con dos jugadores de mentira (`bot`) que maneja quien la crea; el DM responde pedidos de ayuda por ellos; vence en un día.

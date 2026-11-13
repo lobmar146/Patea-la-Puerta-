@@ -1,8 +1,10 @@
-import { X } from 'lucide-react';
+import { Coins, Skull, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { CharacterPatch } from '../../shared/commands';
 import { CLASS_SUGGESTIONS, RACE_SUGGESTIONS, avatarOf, basePower } from '../../shared/rules';
 import { Avatar, AvatarPicker } from '../components/Avatar';
+import { EquipmentEditor } from '../components/EquipmentEditor';
+import { DeathGuide, SellCalculator } from '../components/NoviceHelp';
 import { Section, Stepper } from '../components/ui';
 import { useRoom } from '../useRoom';
 
@@ -63,6 +65,7 @@ export function CharacterEditor({ targetId }: { targetId: string }) {
   const c = snap?.state.characters[targetId];
   const [name, setName] = useState(c?.name ?? '');
   const [notes, setNotes] = useState(c?.notes ?? '');
+  const [guide, setGuide] = useState<'sell' | 'death' | null>(null);
   useEffect(() => {
     setName(c?.name ?? '');
     setNotes(c?.notes ?? '');
@@ -104,9 +107,26 @@ export function CharacterEditor({ targetId }: { targetId: string }) {
       <Section title="Estadísticas">
         <div className="space-y-2">
           <Stepper label="Nivel" testId="level" value={c.level} min={1} max={99} disabled={pending} onChange={(v) => patch({ level: v })} />
-          <Stepper label="Equipo (bonificación total)" testId="gear" value={c.gear} disabled={pending} onChange={(v) => patch({ gear: v })} />
+          {c.items?.length ? (
+            <p className="flex min-h-12 items-center justify-between rounded-2xl bg-surface-muted px-4 text-sm font-semibold" data-testid="gear-from-items">Equipo (se calcula con tus objetos) <b className="font-display text-2xl tabular-nums" data-testid="gear-value">{c.gear >= 0 ? '+' : ''}{c.gear}</b></p>
+          ) : (
+            <Stepper label="Equipo (bonificación total)" testId="gear" value={c.gear} disabled={pending} onChange={(v) => patch({ gear: v })} />
+          )}
           <Stepper label="Otros modificadores permanentes" testId="mods" value={c.otherMods} disabled={pending} onChange={(v) => patch({ otherMods: v })} />
         </div>
+      </Section>
+
+      {targetId === snap.me.participantId && (
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" className="btn-secondary" onClick={() => setGuide('sell')} data-testid="open-sell"><Coins aria-hidden className="size-4" /> Vender objetos</button>
+          <button type="button" className="btn-secondary" onClick={() => setGuide('death')} data-testid="open-death"><Skull aria-hidden className="size-4" /> Me morí</button>
+          <SellCalculator open={guide === 'sell'} onClose={() => setGuide(null)} />
+          <DeathGuide open={guide === 'death'} onClose={() => setGuide(null)} />
+        </div>
+      )}
+
+      <Section title="Equipo">
+        <EquipmentEditor c={c} disabled={pending} onChange={(items) => void send({ type: 'character.setItems', targetId, items })} />
       </Section>
 
       <Section title="Razas y clases">

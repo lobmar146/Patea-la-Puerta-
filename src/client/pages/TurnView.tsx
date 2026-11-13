@@ -12,6 +12,7 @@ import { CombatView } from './CombatView';
 import { GameIcon } from '../components/GameIcon';
 import { Avatar } from '../components/Avatar';
 import { ReactionBar } from '../components/Reactions';
+import { CoachCard } from '../components/NoviceHelp';
 
 type TurnModal = 'door' | 'trouble' | 'curse' | 'loot' | 'charity' | 'endTurn' | null;
 
@@ -75,7 +76,7 @@ export function TurnView() {
               {state.status === 'paused' ? 'Partida en pausa.' : `Esperando a ${displayName(state, activeId)}. Mientras tanto podés editar tus estadísticas.`}
             </p>
           )}
-          {canAct && !mine && phase !== 'combat' && <p className="rounded-2xl bg-accent-blue/10 p-3 text-sm font-semibold text-accent-blue">Sos DM: podés avanzar este turno como corrección.</p>}
+          {canAct && !mine && phase !== 'combat' && <p className="rounded-2xl bg-accent-blue/10 p-3 text-sm font-semibold text-accent-blue">{state.config.practice && activeId && state.participants[activeId]?.bot ? `Turno de ${displayName(state, activeId)}: jugalo vos para practicar.` : 'Sos DM: podés avanzar este turno como corrección.'}</p>}
         </div>
       </section>
       {/* La acción del turno queda fija sobre la barra inferior: siempre a mano del pulgar. */}
@@ -87,6 +88,8 @@ export function TurnView() {
       )}
 
       {phase === 'combat' && state.combat && <CombatView />}
+
+      <CoachCard />
 
       {state.status === 'active' && <ReactionBar />}
 

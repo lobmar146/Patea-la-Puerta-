@@ -28,6 +28,8 @@ export interface RoomInfo {
 }
 
 export const api = {
+  practice: (body: { name: string; avatar?: string; color?: string }) =>
+    request<{ code: string }>('/api/practice', { method: 'POST', body: JSON.stringify(body) }),
   createRoom: (body: { name: string; sets: string[]; extraSets: string[]; avatar?: string; color?: string }) =>
     request<{ code: string }>('/api/rooms', { method: 'POST', body: JSON.stringify(body) }),
   roomInfo: (code: string) => request<RoomInfo>(`/api/rooms/${encodeURIComponent(code)}`),

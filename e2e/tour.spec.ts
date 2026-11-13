@@ -90,3 +90,36 @@ for (const theme of ['dark', 'light'] as const) {
     await shot(tv, `${theme}-14-tv-podio`);
   });
 }
+
+test('tour novato', async ({ browser }) => {
+  const c = await browser.newContext({ baseURL: 'http://localhost:3300', ...PHONE });
+  await c.addInitScript(() => localStorage.setItem('pp-theme', 'dark'));
+  const page = await c.newPage();
+  const go = (name: string) => tab(page, name);
+  await page.goto('/?modo=practica');
+  await shot(page, 'novato-01-practica', true);
+  await page.getByLabel('Tu nombre').fill('Nova');
+  await page.getByRole('button', { name: 'Empezar práctica' }).click();
+  await expect(page.getByTestId('coach')).toBeVisible();
+  await shot(page, 'novato-02-turno', true);
+  await page.getByTestId('what-can-i-do').click();
+  await shot(page, 'novato-03-que-hago');
+  await page.getByRole('button', { name: 'Vender objetos' }).click();
+  for (const v of ['+500', '+400', '+300']) await page.getByRole('button', { name: v }).click();
+  await shot(page, 'novato-04-venta');
+  await page.keyboard.press('Escape');
+  await go('Mi personaje');
+  const eq = page.getByTestId('equipment');
+  for (const [name, slot, bonus] of [['Casco de valentía', 'Cabeza', '1'], ['Espada larga', 'Una mano', '3'], ['Garrote enorme', 'Dos manos', '4']] as const) {
+    await eq.getByLabel('Nombre del objeto').fill(name);
+    await eq.getByLabel('Bonus').fill(bonus);
+    await eq.getByLabel('Dónde va').selectOption({ label: slot });
+    await eq.getByRole('button', { name: 'Agregar objeto' }).click();
+  }
+  await expect(page.getByTestId('equipment-warnings')).toBeVisible();
+  await eq.scrollIntoViewIfNeeded();
+  await shot(page, 'novato-05-equipo');
+  await page.getByTestId('open-death').click();
+  await shot(page, 'novato-06-me-mori');
+  await c.close();
+});
