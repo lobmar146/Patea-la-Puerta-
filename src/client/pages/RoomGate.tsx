@@ -3,7 +3,8 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, ApiError, type RoomInfo } from '../api';
 import { ThemeToggle } from '../components/ThemeToggle';
-import { AvatarPicker, type Look } from '../components/Avatar';
+import { AvatarPicker, SexPicker, type Look } from '../components/Avatar';
+import type { Sex } from '../../shared/types';
 import { NoviceSwitch } from '../components/NoviceHelp';
 import { RoomProvider } from '../useRoom';
 import { RoomApp } from './RoomApp';
@@ -48,12 +49,13 @@ function JoinForm({ code, tv, info, onJoined }: { code: string; tv: boolean; inf
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [look, setLook] = useState<Look>({});
+  const [sex, setSex] = useState<Sex | undefined>();
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
-      await api.join(code, { name: name.trim(), role, ...(role === 'player' ? look : {}) });
+      await api.join(code, { name: name.trim(), role, ...(role === 'player' ? { ...look, sex } : {}) });
       onJoined();
     } catch (err) {
       setError((err as Error).message);
@@ -87,10 +89,11 @@ function JoinForm({ code, tv, info, onJoined }: { code: string; tv: boolean; inf
             {role === 'player' ? 'Vas a tener tu personaje y tus turnos.' : 'Solo mirás: ideal para la TV. No podés modificar nada.'}
           </p>
         </fieldset>
+        {role === 'player' && <SexPicker value={sex} onChange={setSex} idPrefix="join" />}
         {role === 'player' && <AvatarPicker avatar={look.avatar} color={look.color} onChange={setLook} idPrefix="join" />}
         {role === 'player' && <NoviceSwitch />}
         {error && <p role="alert" className="font-bold text-accent-wine">{error}</p>}
-        <button className="btn-primary w-full" disabled={busy || !name.trim()}>{busy ? 'Entrando…' : 'Entrar'}</button>
+        <button className="btn-primary w-full" disabled={busy || !name.trim() || (role === 'player' && !sex)}>{busy ? 'Entrando…' : 'Entrar'}</button>
         <p className="text-xs">Este navegador te va a recordar mientras conserve su sesión. Si cambiás de navegador o borrás los datos del sitio, vas a entrar como alguien nuevo.</p>
       </form>
     </main>

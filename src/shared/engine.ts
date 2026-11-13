@@ -3,8 +3,8 @@
 
 import type { Action, CharacterPatch, MonsterInput } from './commands.js';
 import { gearFromItems } from './novice.js';
-import { AVATAR_IDS, DEFAULT_SETS, COLORS, WIN_LEVEL, activeParticipantId, displayName, type AvatarId } from './rules.js';
-import type { Character, Combat, GameState, Monster, Participant, Phase, PlayerStats, Role } from './types.js';
+import { AVATAR_IDS, DEFAULT_SETS, COLORS, SEX_LABEL, WIN_LEVEL, activeParticipantId, displayName, type AvatarId } from './rules.js';
+import type { Character, Combat, GameState, Monster, Participant, Phase, PlayerStats, Role, Sex } from './types.js';
 
 export class GameError extends Error {
   constructor(
@@ -66,7 +66,7 @@ export function createInitialState(code: string, ttlDays: number, sets?: string[
 /** Agrega un participante (y su personaje si es jugador). No es un comando: lo usa el alta por HTTP. */
 export function addParticipant(
   state: GameState,
-  p: { id: string; name: string; role: Role; isDm: boolean; now: string; avatar?: AvatarId; color?: string; bot?: boolean },
+  p: { id: string; name: string; role: Role; isDm: boolean; now: string; avatar?: AvatarId; color?: string; bot?: boolean; sex?: Sex },
 ): GameState {
   const next = structuredClone(state);
   const participant: Participant = {
@@ -90,6 +90,7 @@ export function addParticipant(
       name: p.name,
       color,
       avatar,
+      ...(p.sex ? { sex: p.sex } : {}),
       level: 1,
       classes: [],
       races: [],
@@ -199,6 +200,7 @@ function describePatch(patch: CharacterPatch, before: Character): string {
   if (patch.gear !== undefined && patch.gear !== before.gear) parts.push(`equipo ${before.gear}→${patch.gear}`);
   if (patch.otherMods !== undefined && patch.otherMods !== before.otherMods)
     parts.push(`modificadores ${before.otherMods}→${patch.otherMods}`);
+  if (patch.sex && patch.sex !== before.sex) parts.push(`sexo: ${SEX_LABEL[patch.sex].toLowerCase()}`);
   if (patch.races) parts.push(`razas: ${patch.races.join(', ') || 'humano'}`);
   if (patch.classes) parts.push(`clases: ${patch.classes.join(', ') || 'ninguna'}`);
   if (patch.name && patch.name !== before.name) parts.push(`nombre: ${patch.name}`);

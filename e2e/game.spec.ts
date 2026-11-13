@@ -11,6 +11,7 @@ async function join(page: Page, code: string, name: string, role: 'Jugador' | 'E
   await page.goto(`/s/${code}${tv ? '/tv' : ''}`);
   await page.getByLabel('Tu nombre').fill(name);
   await page.locator('label', { hasText: role }).click();
+  if (role === 'Jugador') await page.locator('label', { hasText: 'Mujer' }).click();
   await page.getByRole('button', { name: 'Entrar' }).click();
 }
 
@@ -50,6 +51,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(dm.getByLabel('Munchkin 3: Errores clericales (Clerical Errors)')).toBeChecked();
   await dm.getByLabel('Tu nombre').fill('Dana');
   await dm.getByTestId('create-avatars').getByRole('button', { name: 'Pollo' }).click();
+  await dm.locator('label', { hasText: 'Hombre' }).click();
   await dm.getByRole('button', { name: 'Crear partida' }).click();
   const code = (await dm.getByTestId('lobby-code').textContent())!.trim();
   expect(code).toMatch(/^[A-Z0-9]{5}$/);
@@ -221,8 +223,13 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await p1.reload();
   await tab(p1, 'Mi personaje');
   await expect(p1.getByTestId('char-name')).toHaveText('Pablo');
+  // Sexo: se eligió al entrar y se cambia con el switch (por ejemplo, por una maldición).
+  await expect(p1.getByTestId('char-identity')).toContainText('Mujer');
+  await p1.getByTestId(/^edit-.*-sex$/).locator('label', { hasText: 'Hombre' }).click();
+  await expect(p1.getByTestId('char-identity')).toContainText('♂ Hombre');
   await tab(dm, 'Mesa');
   await expect(dm.getByTestId('table').locator('> li')).toHaveCount(3);
+  await expect(dm.getByTestId('table')).toContainText('♂ Hombre');
 
   // 13. Desconectarse y volver recupera el estado vigente.
   await p2.goto('about:blank');

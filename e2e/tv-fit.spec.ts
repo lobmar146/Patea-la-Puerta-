@@ -20,6 +20,7 @@ test('vista TV en combate a 960×540, 1280×720 y 1920×1080', async ({ browser 
   const dm = await dmCtx.newPage();
   await dm.goto('/?modo=crear');
   await dm.getByLabel('Tu nombre').fill('Gordo Tuerto');
+  await dm.locator('label', { hasText: 'Hombre' }).click();
   await dm.getByRole('button', { name: 'Crear partida' }).click();
   const code = (await dm.getByTestId('lobby-code').textContent())!.trim();
   for (const name of ['Pablo', 'Lu', 'Sofi', 'Nico']) {
@@ -28,6 +29,7 @@ test('vista TV en combate a 960×540, 1280×720 y 1920×1080', async ({ browser 
     await p.goto(`/s/${code}`);
     await p.getByLabel('Tu nombre').fill(name);
     await p.locator('label', { hasText: 'Jugador' }).click();
+    await p.locator('label', { hasText: 'Mujer' }).click();
     await p.getByRole('button', { name: 'Entrar' }).click();
     await expect(p.getByTestId('room-code')).toBeVisible();
     await c.close();

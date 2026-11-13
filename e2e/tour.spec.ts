@@ -14,6 +14,7 @@ async function join(page: Page, code: string, name: string, role: string, tv = f
   await page.goto(`/s/${code}${tv ? '/tv' : ''}`);
   await page.getByLabel('Tu nombre').fill(name);
   await page.locator('label', { hasText: role }).click();
+  if (role === 'Jugador') await page.locator('label', { hasText: 'Mujer' }).click();
   await page.getByRole('button', { name: 'Entrar' }).click();
 }
 const shot = async (page: Page, name: string, full = false) => { await page.waitForTimeout(450); await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: full }); };
@@ -35,12 +36,14 @@ for (const theme of ['dark', 'light'] as const) {
     await shot(p1, `${theme}-01b-home-create`, true);
     await dm.goto('/?modo=crear');
     await dm.getByLabel('Tu nombre').fill('Dana');
+    await dm.locator('label', { hasText: 'Hombre' }).click();
     await dm.getByRole('button', { name: 'Crear partida' }).click();
     const code = (await dm.getByTestId('lobby-code').textContent())!.trim();
     await p1.goto(`/s/${code}`);
     await shot(p1, `${theme}-02-join`, true);
     await p1.getByLabel('Tu nombre').fill('Pablo');
     await p1.locator('label', { hasText: 'Jugador' }).click();
+    await p1.locator('label', { hasText: 'Mujer' }).click();
     await p1.getByRole('button', { name: 'Entrar' }).click();
     await join(p2, code, 'Lu', 'Jugador');
     await join(tv, code, 'Pantalla', 'Espectador', true);
@@ -100,6 +103,7 @@ test('tour novato', async ({ browser }) => {
   await page.goto('/?modo=practica');
   await shot(page, 'novato-01-practica', true);
   await page.getByLabel('Tu nombre').fill('Nova');
+  await page.locator('label', { hasText: 'Hombre' }).click();
   await page.getByRole('button', { name: 'Empezar práctica' }).click();
   await expect(page.getByTestId('coach')).toBeVisible();
   await shot(page, 'novato-02-turno');

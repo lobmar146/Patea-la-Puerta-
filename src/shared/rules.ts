@@ -1,4 +1,4 @@
-import type { Character, Combat, GameState } from './types.js';
+import type { Character, Combat, GameState, Sex } from './types.js';
 
 export const APP_NAME = 'Pateá la Puerta!';
 
@@ -43,6 +43,17 @@ export const AVATARS = [
   { id: 'goblin', label: 'Goblin' },
 ] as const;
 export type AvatarId = (typeof AVATARS)[number]['id'];
+/** Sexo del personaje: algunas cartas y monstruos afectan solo a hombres o solo a mujeres. */
+export const SEX_LABEL: Record<Sex, string> = { male: 'Hombre', female: 'Mujer' };
+export const SEX_SYMBOL: Record<Sex, string> = { male: '♂', female: '♀' };
+
+/** "♀ Mujer · Elfo · Mago": sexo, razas y clases en una línea. */
+export function identityLine(c: Pick<Character, 'sex' | 'races' | 'classes'>): string {
+  const sex = c.sex ? `${SEX_SYMBOL[c.sex]} ${SEX_LABEL[c.sex]}` : null;
+  const rest = [...c.races, ...c.classes];
+  return [sex, ...(rest.length ? rest : ['Humano'])].filter(Boolean).join(' · ');
+}
+
 export const AVATAR_IDS = AVATARS.map((a) => a.id) as [AvatarId, ...AvatarId[]];
 
 /** Avatar del personaje; las salas creadas antes de los avatares reciben uno estable según su id. */

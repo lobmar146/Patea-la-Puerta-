@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
-import { AVATARS, COLORS, avatarOf, type AvatarId } from '../../shared/rules';
-import type { Character } from '../../shared/types';
+import { AVATARS, COLORS, SEX_LABEL, SEX_SYMBOL, avatarOf, type AvatarId } from '../../shared/rules';
+import type { Character, Sex } from '../../shared/types';
 import { AVATAR_SVG } from './avatarIcons';
 
 const SIZES = {
@@ -42,6 +42,23 @@ export interface Look {
 }
 
 /** Selector de avatar y color. Controlado: no guarda nada. Sin elección, el servidor asigna uno libre. */
+/** Hombre o mujer: importa porque hay cartas y monstruos que afectan según el sexo. Se puede cambiar en la partida. */
+export function SexPicker({ value, onChange, disabled, idPrefix = 'sex' }: { value?: Sex; onChange: (v: Sex) => void; disabled?: boolean; idPrefix?: string }) {
+  return (
+    <fieldset data-testid={`${idPrefix}-sex`}>
+      <legend className="label">Sexo del personaje{!value && <span className="font-normal text-accent-wine"> · elegí uno</span>}</legend>
+      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-surface-muted p-1 ring-1 ring-ui-line/[.08]">
+        {(['male', 'female'] as const).map((s) => (
+          <label key={s} className={`flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl text-base font-bold transition-colors focus-within:ring-2 focus-within:ring-accent-blue ${value === s ? 'bg-accent-brand text-[#2a1606] shadow' : 'text-ui-muted hover:text-ui-fg'} ${disabled ? 'opacity-60' : ''}`}>
+            <input type="radio" name={`${idPrefix}-sex`} value={s} checked={value === s} disabled={disabled} onChange={() => onChange(s)} className="sr-only" />
+            <span aria-hidden className="text-xl leading-none">{SEX_SYMBOL[s]}</span>{SEX_LABEL[s]}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 export function AvatarPicker({ avatar, color, onChange, disabled, idPrefix = 'av' }: { avatar?: AvatarId; color?: string; onChange: (v: Look) => void; disabled?: boolean; idPrefix?: string }) {
   return (
     <div className="space-y-3">

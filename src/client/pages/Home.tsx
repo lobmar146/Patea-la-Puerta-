@@ -6,7 +6,8 @@ import { api } from '../api';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { GameIcon } from '../components/GameIcon';
 import { InstallApp } from '../components/InstallApp';
-import { AvatarPicker, type Look } from '../components/Avatar';
+import { AvatarPicker, SexPicker, type Look } from '../components/Avatar';
+import type { Sex } from '../../shared/types';
 import { NoviceSwitch } from '../components/NoviceHelp';
 
 export function Home() {
@@ -22,6 +23,7 @@ export function Home() {
   const [extra, setExtra] = useState('');
   const [code, setCode] = useState('');
   const [look, setLook] = useState<Look>({});
+  const [sex, setSex] = useState<Sex | undefined>();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -31,7 +33,7 @@ export function Home() {
     setError(null);
     try {
       const extraSets = extra.split(',').map((s) => s.trim()).filter(Boolean);
-      const r = await api.createRoom({ name: name.trim(), sets, extraSets, ...look });
+      const r = await api.createRoom({ name: name.trim(), sets, extraSets, ...look, sex });
       nav(`/s/${r.code}`);
     } catch (err) {
       setError((err as Error).message);
@@ -45,7 +47,7 @@ export function Home() {
     setBusy(true);
     setError(null);
     try {
-      const r = await api.practice({ name: name.trim(), ...look });
+      const r = await api.practice({ name: name.trim(), ...look, sex });
       nav(`/s/${r.code}`);
     } catch (err) {
       setError((err as Error).message);
@@ -126,9 +128,10 @@ export function Home() {
               <label className="label" htmlFor="practice-name">Tu nombre</label>
               <input id="practice-name" className="input" autoFocus required maxLength={40} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej.: Novata valiente" />
             </div>
+            <SexPicker value={sex} onChange={setSex} idPrefix="practice" />
             <AvatarPicker avatar={look.avatar} color={look.color} onChange={setLook} idPrefix="practice" />
             {error && <p role="alert" className="font-bold text-accent-wine">{error}</p>}
-            <button className="btn-blue w-full" disabled={busy || !name.trim()}>{busy ? 'Preparando…' : 'Empezar práctica'}</button>
+            <button className="btn-blue w-full" disabled={busy || !name.trim() || !sex}>{busy ? 'Preparando…' : 'Empezar práctica'}</button>
           </form>
         </div>
       )}
@@ -149,6 +152,7 @@ export function Home() {
               <label className="label" htmlFor="dm-name">Tu nombre</label>
               <input id="dm-name" className="input" autoFocus required maxLength={40} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej.: Gonzalo el Implacable" />
             </div>
+            <SexPicker value={sex} onChange={setSex} idPrefix="create" />
             <AvatarPicker avatar={look.avatar} color={look.color} onChange={setLook} idPrefix="create" />
             <NoviceSwitch />
             <fieldset>
@@ -163,7 +167,7 @@ export function Home() {
               <input id="extra-sets" className="input" value={extra} onChange={(e) => setExtra(e.target.value)} placeholder="Opcional: sus reglas quedan a cargo de la mesa" />
             </fieldset>
             {error && <p role="alert" className="font-bold text-accent-wine">{error}</p>}
-            <button className="btn-primary w-full" disabled={busy || !name.trim()}>
+            <button className="btn-primary w-full" disabled={busy || !name.trim() || !sex}>
               {busy ? 'Creando…' : 'Crear partida'}
             </button>
           </form>

@@ -17,7 +17,7 @@ describe('revancha', () => {
   it('el DM la arma con el mismo grupo y cada uno entra con su sesión vieja', async () => {
     const r = await createRoom({ name: 'Dana' });
     rooms.push(r.roomId);
-    const p1 = await joinRoom(r.code, undefined, { name: 'Pablo', role: 'player', avatar: 'mago', color: '#2563eb' });
+    const p1 = await joinRoom(r.code, undefined, { name: 'Pablo', role: 'player', avatar: 'mago', color: '#2563eb', sex: 'female' });
     const tv = await joinRoom(r.code, undefined, { name: 'TV', role: 'spectator' });
     const cmd = async (token: string, action: Action) => {
       const res = await processCommand(r.code, hashToken(token), { commandId: randomUUID(), expectedVersion: (await loadRoom(r.roomId)).version, action });
@@ -46,6 +46,7 @@ describe('revancha', () => {
     expect(pablo?.level).toBe(1);
     expect(pablo?.avatar).toBe('mago');
     expect(pablo?.color).toBe('#2563eb');
+    expect(pablo?.sex).toBe('female');
 
     const old = await loadRoom(r.roomId);
     expect(old.state.rematch?.code).toBe(made.code);

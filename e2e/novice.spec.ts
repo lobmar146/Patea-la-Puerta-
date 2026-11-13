@@ -15,6 +15,7 @@ test('partida de práctica con modo novato', async ({ browser }) => {
   await page.goto('/');
   await page.getByTestId('home-practice').click();
   await page.getByLabel('Tu nombre').fill('Nova');
+  await page.locator('label', { hasText: 'Hombre' }).click();
   await page.getByRole('button', { name: 'Empezar práctica' }).click();
 
   // Arranca sola, con consejos y dos jugadores de mentira.
@@ -79,6 +80,7 @@ test('modo novato: apagado por defecto, se prende al crear y se cambia en Mi per
   await sw.click();
   await expect(sw).toHaveAttribute('aria-checked', 'true');
   await page.getByLabel('Tu nombre').fill('Nova');
+  await page.locator('label', { hasText: 'Hombre' }).click();
   await page.getByRole('button', { name: 'Crear partida' }).click();
   await expect(page.getByTestId('coach')).toBeVisible();
   await tab('Mi personaje');
