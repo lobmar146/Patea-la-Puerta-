@@ -50,13 +50,13 @@ export function TurnView() {
               {mine ? '¡Tu turno!' : `Juega ${displayName(state, activeId)}`}
             </span>
           </div>
-          <div className="mt-4 flex items-center gap-4 sm:gap-6">
-            <div className="w-[5.25rem] shrink-0 -rotate-3 rounded-2xl bg-surface-raised/60 p-1.5 shadow-[0_14px_30px_-12px_rgba(0,0,0,.7)] ring-1 ring-ui-line/10 sm:w-28">
+          <div className={`flex items-center gap-4 sm:gap-6 ${phase === 'combat' ? 'mt-1' : 'mt-4'}`}>
+            <div className={`${phase === 'combat' ? 'hidden' : ''} w-[5.25rem] shrink-0 -rotate-3 rounded-2xl bg-surface-raised/60 p-1.5 shadow-[0_14px_30px_-12px_rgba(0,0,0,.7)] ring-1 ring-ui-line/10 sm:w-28`}>
               <Illustration name={guide.illustration} className="w-full" />
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-[1.75rem] font-extrabold leading-[1.05] sm:text-4xl" data-testid="phase-title">{guide.title}</h2>
-              <p className="mt-2 text-[15px] leading-snug text-ui-muted sm:text-lg">{guide.reminder}</p>
+              {phase !== 'combat' && <p className="mt-2 text-[15px] leading-snug text-ui-muted sm:text-lg">{guide.reminder}</p>}
             </div>
           </div>
         </div>

@@ -119,6 +119,38 @@ export function CombatView() {
           onOpen={setModal}
         />
       )}
+      <div className="rounded-2xl bg-gradient-to-b from-royal/20 to-royal/5 p-3 ring-1 ring-royal/30" data-testid="combat-help">
+        <div className="flex items-center gap-3">
+          <Illustration name="help" className="w-12 shrink-0 -rotate-3" />
+          <div className="min-w-0 flex-1">
+            <h3 className="text-lg font-extrabold text-accent-blue">Ayuda</h3>
+            {combat.helperId ? (
+              <p className="text-sm">Te ayuda <b>{displayName(state, combat.helperId)}</b> y suma su poder.</p>
+            ) : (
+              <p className="text-sm text-ui-muted">{isFighter ? 'Pedile a alguien que pelee con vos. Solo uno a la vez.' : 'Sin ayudante por ahora. Solo se permite uno a la vez.'}</p>
+            )}
+          </div>
+          {combat.helperId && (isFighter || combat.helperId === me.id || me.isDm) && (
+            <button className="btn-secondary btn-small shrink-0" disabled={pending} onClick={() => send({ type: 'help.dismissHelper' })}>Quitar</button>
+          )}
+        </div>
+        {pendingReqs.map((r) => (
+          <p key={r.id} className="mt-2 flex items-center gap-2 rounded-xl bg-surface/60 px-3 py-2 text-sm font-semibold">
+            <Hourglass aria-hidden className="size-4 shrink-0 animate-pulse motion-reduce:animate-none" />
+            <span className="flex-1">Esperando respuesta de {displayName(state, r.toId)}…</span>
+            {(isFighter || me.isDm) && <button className="underline" onClick={() => send({ type: 'help.cancel', requestId: r.id })}>cancelar</button>}
+          </p>
+        ))}
+        {isFighter && !combat.helperId && candidates.length > 0 && !(losing && canAskHelp) && (
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {candidates.map((id) => (
+              <button key={id} className="btn-blue w-full" disabled={pending || pendingReqs.some((r) => r.toId === id)} onClick={() => send({ type: 'help.request', toId: id })}>
+                <HandHelping aria-hidden className="size-5 shrink-0" /> Pedir ayuda a {displayName(state, id)}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <p className="text-sm text-ui-muted">Las cartas y habilidades en mesa pueden cambiar la ventaja. Confirmen cómo terminó el combate.</p>
 
       <div>
@@ -188,36 +220,6 @@ export function CombatView() {
           ))}
         </ul>
         {isPlayer && <button className="btn-secondary mt-2 w-full sm:w-auto" onClick={() => setModal('modifier')}><Plus aria-hidden className="size-4 shrink-0" /> Añadir modificador</button>}
-      </div>
-
-      <div>
-        <div className="flex items-center gap-2">
-          <Illustration name="help" className="w-10 shrink-0" />
-          <h3 className="font-bold">Ayuda</h3>
-        </div>
-        {combat.helperId ? (
-          <p className="mt-1">
-            Ayuda: <b>{displayName(state, combat.helperId)}</b> (suma su poder).{' '}
-            {(isFighter || combat.helperId === me.id || me.isDm) && <button className="btn-secondary btn-small" disabled={pending} onClick={() => send({ type: 'help.dismissHelper' })}>Quitar ayudante</button>}
-          </p>
-        ) : (
-          <p className="mt-1 text-sm">Sin ayudante. Solo se permite uno a la vez.</p>
-        )}
-        {pendingReqs.map((r) => (
-          <p key={r.id} className="mt-1 text-sm">
-            <Hourglass aria-hidden className="mr-1 inline size-4" />Esperando respuesta de {displayName(state, r.toId)}{' '}
-            {(isFighter || me.isDm) && <button className="underline" onClick={() => send({ type: 'help.cancel', requestId: r.id })}>cancelar</button>}
-          </p>
-        ))}
-        {isFighter && !combat.helperId && candidates.length > 0 && !(losing && canAskHelp) && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {candidates.map((id) => (
-              <button key={id} className="btn-blue btn-small" disabled={pending || pendingReqs.some((r) => r.toId === id)} onClick={() => send({ type: 'help.request', toId: id })}>
-                Pedir ayuda a {displayName(state, id)}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {canResolve && (
