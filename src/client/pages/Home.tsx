@@ -7,6 +7,7 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { GameIcon } from '../components/GameIcon';
 import { InstallApp } from '../components/InstallApp';
 import { AvatarPicker, type Look } from '../components/Avatar';
+import { NoviceSwitch } from '../components/NoviceHelp';
 
 export function Home() {
   const nav = useNavigate();
@@ -149,6 +150,7 @@ export function Home() {
               <input id="dm-name" className="input" autoFocus required maxLength={40} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej.: Gonzalo el Implacable" />
             </div>
             <AvatarPicker avatar={look.avatar} color={look.color} onChange={setLook} idPrefix="create" />
+            <NoviceSwitch />
             <fieldset>
               <legend className="label">Conjuntos en juego</legend>
               {DEFAULT_SETS.map((s) => (

@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { api, ApiError, type RoomInfo } from '../api';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { AvatarPicker, type Look } from '../components/Avatar';
+import { NoviceSwitch } from '../components/NoviceHelp';
 import { RoomProvider } from '../useRoom';
 import { RoomApp } from './RoomApp';
 import { TvView } from './TvView';
@@ -87,6 +88,7 @@ function JoinForm({ code, tv, info, onJoined }: { code: string; tv: boolean; inf
           </p>
         </fieldset>
         {role === 'player' && <AvatarPicker avatar={look.avatar} color={look.color} onChange={setLook} idPrefix="join" />}
+        {role === 'player' && <NoviceSwitch />}
         {error && <p role="alert" className="font-bold text-accent-wine">{error}</p>}
         <button className="btn-primary w-full" disabled={busy || !name.trim()}>{busy ? 'Entrando…' : 'Entrar'}</button>
         <p className="text-xs">Este navegador te va a recordar mientras conserve su sesión. Si cambiás de navegador o borrás los datos del sitio, vas a entrar como alguien nuevo.</p>

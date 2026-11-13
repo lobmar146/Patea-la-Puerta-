@@ -113,3 +113,4 @@ npm run check && npm run test:e2e
   - Guía "Me morí" con pasos tildables y botón para vaciar el equipo en la app.
   - Calculadora de venta: 1000 de oro por nivel, sin llegar al nivel 10 vendiendo.
   - Partida de práctica (`POST /api/practice`): arranca sola con dos jugadores de mentira (`bot`) que maneja quien la crea; el DM responde pedidos de ayuda por ellos; vence en un día.
+- Modo novato: apagado por defecto; switch al crear/unirse y en "Mi personaje" (siempre activo en la práctica). La tarjeta ya no tiene ✕.

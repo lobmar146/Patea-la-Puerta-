@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 
-// Preferencia por dispositivo: el modo novato viene prendido y se puede apagar.
+// Preferencia por dispositivo: el modo novato viene apagado; se prende al entrar o desde "Mi personaje".
 const KEY = 'pp-novato';
 const listeners = new Set<(on: boolean) => void>();
 
 export function noviceEnabled(): boolean {
   try {
-    return localStorage.getItem(KEY) !== 'off';
+    return localStorage.getItem(KEY) === 'on';
   } catch {
-    return true;
+    return false;
   }
 }
 
