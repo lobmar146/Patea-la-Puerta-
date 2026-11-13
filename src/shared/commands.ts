@@ -35,8 +35,18 @@ export const characterPatch = z
   .strict();
 export type CharacterPatch = z.infer<typeof characterPatch>;
 
+export const itemInput = z.object({
+  id: id,
+  name: z.string().trim().min(1, 'Poné un nombre al objeto').max(40),
+  bonus: int(-20, 20),
+  slot: z.enum(['head', 'armor', 'feet', 'hand', 'twoHands', 'other']),
+  big: z.boolean().default(false),
+  equipped: z.boolean().default(true),
+});
+
 export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('character.update'), targetId: id, patch: characterPatch }),
+  z.object({ type: z.literal('character.setItems'), targetId: id, items: z.array(itemInput).max(24) }),
   z.object({
     type: z.literal('room.updateConfig'),
     sets: z.array(z.string().trim().min(1).max(60)).max(12),
@@ -126,6 +136,12 @@ export const createRoomSchema = z.object({
   name,
   sets: z.array(z.string().trim().min(1).max(60)).max(12).optional(),
   extraSets: z.array(z.string().trim().min(1).max(60)).max(12).optional(),
+  avatar: avatar.optional(),
+  color: color.optional(),
+});
+
+export const practiceRoomSchema = z.object({
+  name,
   avatar: avatar.optional(),
   color: color.optional(),
 });

@@ -69,25 +69,54 @@ export interface Joined {
   ttlDays: number;
 }
 
-export async function createRoom(input: { name: string; sets?: string[]; extraSets?: string[]; avatar?: AvatarId; color?: string }): Promise<Joined> {
+/** Jugadores de mentira de las salas de práctica. Los maneja quien creó la sala (es DM). */
+export const PRACTICE_BOTS = [
+  { name: 'Grog (práctica)', avatar: 'goblin' as AvatarId, color: '#2f6b3a' },
+  { name: 'Lía (práctica)', avatar: 'elfo' as AvatarId, color: '#7c3aed' },
+];
+
+export async function createRoom(input: { name: string; sets?: string[]; extraSets?: string[]; avatar?: AvatarId; color?: string; practice?: boolean }): Promise<Joined> {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = newRoomCode();
     const roomId = randomUUID();
     const participantId = randomUUID();
     const token = newToken();
     const now = new Date();
-    let state = createInitialState(code, config.ttlDays, input.sets, input.extraSets);
+    let state = createInitialState(code, input.practice ? 1 : config.ttlDays, input.sets, input.extraSets);
     state = addParticipant(state, { id: participantId, name: input.name, role: 'player', isDm: true, now: now.toISOString(), avatar: input.avatar, color: input.color });
+    const botIds: string[] = [];
+    const extraEvents: EngineEvent[] = [];
+    if (input.practice) {
+      state.config.practice = true;
+      for (const b of PRACTICE_BOTS) {
+        const id = randomUUID();
+        botIds.push(id);
+        state = addParticipant(state, { id, name: b.name, role: 'player', isDm: false, now: now.toISOString(), avatar: b.avatar, color: b.color, bot: true });
+      }
+      const started = applyAction(state, participantId, { type: 'game.start' }, { now: now.toISOString() });
+      state = started.state;
+      extraEvents.push(...started.events);
+    }
     try {
       await prisma.$transaction(async (tx) => {
         await tx.room.create({
           data: { id: roomId, code, version: 1, state: state as unknown as Prisma.InputJsonValue, expiresAt: expiry(state, now) },
         });
         await tx.participant.create({ data: { id: participantId, roomId } });
+        for (const id of botIds) await tx.participant.create({ data: { id, roomId } });
         await tx.session.create({ data: { tokenHash: hashToken(token), roomId, participantId } });
         await tx.gameEvent.create({
-          data: { roomId, version: 1, type: 'room.create', actorId: participantId, message: `${input.name} abrió la sala y es el Dungeon Master.` },
+          data: {
+            roomId,
+            version: 1,
+            type: 'room.create',
+            actorId: participantId,
+            message: input.practice
+              ? `${input.name} abrió una partida de práctica con dos jugadores de mentira. Vos manejás sus turnos.`
+              : `${input.name} abrió la sala y es el Dungeon Master.`,
+          },
         });
+        for (const e of extraEvents) await tx.gameEvent.create({ data: { roomId, version: 1, type: e.type, actorId: participantId, message: e.message } });
       });
       return { code, token, participantId, roomId, ttlDays: state.config.ttlDays };
     } catch (e) {

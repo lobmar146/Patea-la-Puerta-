@@ -22,6 +22,20 @@ export interface Participant {
   isDm: boolean;
   joinedAt: string;
   removed: boolean;
+  /** Jugador de mentira de una sala de práctica (sin sesión). */
+  bot?: boolean;
+}
+
+export type EquipSlot = 'head' | 'armor' | 'feet' | 'hand' | 'twoHands' | 'other';
+
+/** Objeto del personaje. Solo los puestos (equipped) suman a la bonificación. */
+export interface Item {
+  id: string;
+  name: string;
+  bonus: number;
+  slot: EquipSlot;
+  big: boolean;
+  equipped: boolean;
 }
 
 export interface Character {
@@ -36,6 +50,8 @@ export interface Character {
   gear: number;
   otherMods: number;
   notes: string;
+  /** Opcional: si hay objetos cargados, `gear` se calcula con ellos. */
+  items?: Item[];
 }
 
 export interface Monster {
@@ -81,6 +97,8 @@ export interface RoomConfig {
   sets: string[];
   extraSets: string[];
   ttlDays: number;
+  /** Sala de práctica: jugadores de mentira que maneja quien la creó. */
+  practice?: boolean;
 }
 
 export type DoorResult = 'monster' | 'curse' | 'other';

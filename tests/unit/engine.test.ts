@@ -4,7 +4,8 @@ import { GameError, addParticipant, applyAction, createInitialState } from '../.
 import { activeParticipantId, avatarOf, combatTotals } from '../../src/shared/rules';
 import { actionSchema } from '../../src/shared/commands';
 import { computeAwards, podium } from '../../src/shared/awards';
-import type { GameState } from '../../src/shared/types';
+import { coaching, equipmentWarnings, gearFromItems, sale } from '../../src/shared/novice';
+import type { GameState, Item } from '../../src/shared/types';
 
 let n = 0;
 const id = () => `id-${++n}`;
@@ -287,5 +288,73 @@ describe('avatares, estadísticas y premios', () => {
     const s = started();
     delete s.stats;
     expect(computeAwards(s)).toEqual([]);
+  });
+});
+
+describe('ayudas para novatos', () => {
+  const item = (over: Partial<Item> = {}): Item => ({ id: `i-${++n}`, name: 'Casco', bonus: 1, slot: 'head', big: false, equipped: true, ...over });
+
+  it('equipo por espacios: calcula el bonus y valida permisos', () => {
+    let s = started();
+    const items = [item({ bonus: 2 }), item({ slot: 'twoHands', bonus: 3, big: true }), item({ slot: 'feet', bonus: 1, equipped: false })];
+    s = run(s, 'p1', { type: 'character.setItems', targetId: 'p1', items });
+    expect(s.characters.p1.gear).toBe(5);
+    expect(s.characters.p1.items).toHaveLength(3);
+    expectError(() => applyAction(s, 'p1', { type: 'character.setItems', targetId: 'p2', items: [] }), 'forbidden');
+    s = run(s, 'dm', { type: 'character.setItems', targetId: 'p1', items: [] });
+    expect(s.characters.p1.gear).toBe(0);
+    expectError(() => applyAction(s, 'p1', { type: 'character.setItems', targetId: 'p1', items: [items[0], items[0]] }), 'invalid');
+  });
+
+  it('avisos de equipo: un casco, dos manos, un objeto grande salvo Enano', () => {
+    const items = [item(), item(), item({ slot: 'twoHands' }), item({ slot: 'hand' }), item({ slot: 'other', big: true }), item({ slot: 'armor', big: true })];
+    const w = equipmentWarnings(items, { races: [] });
+    expect(w.join(' ')).toContain('cabeza');
+    expect(w.join(' ')).toContain('3 manos');
+    expect(w.join(' ')).toContain('Grande');
+    expect(equipmentWarnings(items, { races: ['Enano'] }).join(' ')).not.toContain('Grande');
+    expect(equipmentWarnings([item(), item({ equipped: false })], { races: [] })).toEqual([]);
+    expect(gearFromItems([item({ bonus: 3 }), item({ bonus: 2, equipped: false })])).toBe(3);
+  });
+
+  it('venta: 1000 de oro por nivel y nunca hasta el nivel 10', () => {
+    expect(sale([400, 300, 500], 3)).toEqual({ total: 1200, levels: 1, leftover: 200, capped: false });
+    expect(sale([1000, 1000, 1000], 8)).toMatchObject({ levels: 1, capped: true });
+    expect(sale([500], 9)).toMatchObject({ levels: 0, capped: false });
+  });
+
+  it('consejos según la fase y el rol', () => {
+    let s = started(); // le toca a dm
+    expect(coaching(s, 'dm').now.join(' ')).toContain('Patear la puerta');
+    expect(coaching(s, 'p1').now.join(' ')).toContain('Es el turno de Dana');
+    s = run(s, 'dm', { type: 'turn.kickDoor' }, { type: 'turn.doorResult', result: 'monster', monster: { ...monster, strength: 9 } });
+    expect(coaching(s, 'dm').now.join(' ')).toContain('Vas perdiendo');
+    expect(coaching(s, 'dm').now.join(' ')).toContain('5 o 6');
+    expect(coaching(s, 'p1').now.join(' ')).toContain('está peleando');
+    s = run(s, 'dm', { type: 'character.update', targetId: 'dm', patch: { level: 9, gear: 2, races: ['Enano'] } });
+    expect(coaching(s, 'dm').now.join(' ')).toContain('Vas ganando');
+    expect(coaching(s, 'dm').now.join(' ')).toContain('nivel 9');
+    s = run(s, 'dm', { type: 'combat.resolveVictory', rewards: [], note: '' });
+    expect(coaching(s, 'dm').now.join(' ')).toContain('máximo es 6');
+  });
+
+  it('práctica: el DM responde pedidos de ayuda por los jugadores de mentira', () => {
+    let s = createInitialState('ABCDE', 1);
+    s.config.practice = true;
+    s = addParticipant(s, { id: 'dm', name: 'Dana', role: 'player', isDm: true, now });
+    s = addParticipant(s, { id: 'bot', name: 'Grog', role: 'player', isDm: false, now, bot: true });
+    s = addParticipant(s, { id: 'p1', name: 'Pablo', role: 'player', isDm: false, now });
+    s = run(s, 'dm', { type: 'game.start' }, { type: 'turn.kickDoor' }, { type: 'turn.doorResult', result: 'monster', monster });
+    s = run(s, 'dm', { type: 'help.request', toId: 'bot' }, { type: 'help.request', toId: 'p1' });
+    const [toBot, toP1] = s.combat!.helpRequests;
+    expectError(() => applyAction(s, 'dm', { type: 'help.respond', requestId: toP1.id, accept: true }), 'forbidden');
+    s = run(s, 'dm', { type: 'help.respond', requestId: toBot.id, accept: true });
+    expect(s.combat!.helperId).toBe('bot');
+    // Fuera de una sala de práctica no vale.
+    const normal = structuredClone(s);
+    normal.config.practice = false;
+    normal.combat!.helperId = null;
+    normal.combat!.helpRequests[0].status = 'pending';
+    expectError(() => applyAction(normal, 'dm', { type: 'help.respond', requestId: toBot.id, accept: true }), 'forbidden');
   });
 });

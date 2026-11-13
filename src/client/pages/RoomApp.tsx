@@ -142,7 +142,7 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
           </div>
         )}
         <HelpInbox />
-        {isPlayer && current !== 'dm' && <PushCard code={snap.code} hideWhenOn={current !== 'me'} />}
+        {isPlayer && !state.config.practice && current !== 'dm' && <PushCard code={snap.code} hideWhenOn={current !== 'me'} />}
 
         {current === 'me' && isPlayer && <CharacterEditor targetId={me.id} />}
         {current === 'turn' && (state.status === 'lobby' ? <Lobby publicUrl={publicUrl} /> : <TurnView />)}

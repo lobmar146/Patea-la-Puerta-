@@ -4,6 +4,7 @@ import { DEFAULT_SETS, displayName } from '../../shared/rules';
 import { PresenceDot, QrCode, Section, joinUrl } from '../components/ui';
 import { useRoom } from '../useRoom';
 import { Avatar } from '../components/Avatar';
+import { CoachCard } from '../components/NoviceHelp';
 import { GameIcon } from '../components/GameIcon';
 
 export function Lobby({ publicUrl }: { publicUrl: string | null }) {
@@ -24,6 +25,7 @@ export function Lobby({ publicUrl }: { publicUrl: string | null }) {
 
   return (
     <div className="space-y-4">
+      <CoachCard />
       <Section title="Invitá a la mesa">
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
           <QrCode text={url} />

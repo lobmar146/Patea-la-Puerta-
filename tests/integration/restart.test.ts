@@ -157,6 +157,24 @@ describe('recuperación tras reinicio del backend', () => {
     b.socket.disconnect();
   });
 
+  it('partida de práctica: arranca sola con dos jugadores de mentira y vence en un día', async () => {
+    const r = await post('/api/practice', { name: 'Nova', avatar: 'mago' });
+    expect(r.status).toBe(201);
+    const { socket, snap } = await connect(r.json.code, r.cookie!);
+    expect(snap.state.status).toBe('active');
+    expect(snap.state.config).toMatchObject({ practice: true, ttlDays: 1 });
+    const bots = Object.values(snap.state.participants).filter((p) => p.bot);
+    expect(bots).toHaveLength(2);
+    expect(snap.state.turn.order).toHaveLength(3);
+    expect(snap.me.isDm).toBe(true);
+    expect(Date.parse(snap.expiresAt) - Date.now()).toBeLessThan(26 * 3600 * 1000);
+    // El DM avanza el turno de un jugador de mentira.
+    const v = snap.version;
+    const res = await send(socket, { type: 'turn.kickDoor' }, v);
+    expect(res.ok).toBe(true);
+    socket.disconnect();
+  });
+
   it('las rutas del frontend no interceptan la API', async () => {
     const r = await fetch(`${BASE}/api/no-existe`);
     expect(r.status).toBe(404);

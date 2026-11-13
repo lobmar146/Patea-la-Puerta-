@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { parse as parseCookie } from 'cookie';
 import { ZodError } from 'zod';
-import { createRoomSchema, joinRoomSchema } from '../shared/commands.js';
+import { createRoomSchema, joinRoomSchema, practiceRoomSchema } from '../shared/commands.js';
 import { config } from './config.js';
 import { prisma } from './db.js';
 import { rateLimit } from './rateLimit.js';
@@ -52,6 +52,14 @@ export function createApp(hooks: HttpHooks) {
   app.post('/api/rooms', createLimit, wrap(async (req, res) => {
     const body = createRoomSchema.parse(req.body);
     const joined = await createRoom(body);
+    hooks.onActivity?.();
+    res.cookie(cookieName(joined.code), joined.token, cookieOptions(joined.ttlDays));
+    res.status(201).json({ code: joined.code, participantId: joined.participantId });
+  }));
+
+  app.post('/api/practice', createLimit, wrap(async (req, res) => {
+    const body = practiceRoomSchema.parse(req.body);
+    const joined = await createRoom({ ...body, practice: true });
     hooks.onActivity?.();
     res.cookie(cookieName(joined.code), joined.token, cookieOptions(joined.ttlDays));
     res.status(201).json({ code: joined.code, participantId: joined.participantId });
