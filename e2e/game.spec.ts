@@ -94,19 +94,35 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await p1.getByRole('button', { name: /Otra carta/ }).click();
   await phaseIs(p1, 'Sin monstruo');
   await p1.getByRole('button', { name: /Elegir: buscar problemas/ }).click();
-  await p1.getByTestId('monster-strength').fill('3');
+  await expect(p1.getByTestId('monster-form')).toHaveCount(0);
+  await expect(p1.getByRole('button', { name: /Saquear la sala/ })).toBeVisible();
+  await p1.waitForTimeout(400);
+  await p1.screenshot({ path: 'test-results/screens/movil-elegir-sin-monstruo.png' });
+  await p1.getByRole('button', { name: /Buscar problemas/ }).click();
   await expect(p1.getByRole('button', { name: 'Pelear contra este monstruo' })).toBeDisabled();
-  await p1.getByLabel('Confirmo que juego un monstruo de mi mano').check();
+  // El buscador muestra las coincidencias justo debajo del campo.
+  await p1.getByPlaceholder(/Buscá por nombre/).fill('co');
+  await expect(p1.getByRole('listbox', { name: 'Monstruos del catálogo' })).toBeVisible();
+  await p1.screenshot({ path: 'test-results/screens/movil-buscar-monstruo.png' });
+  await p1.getByPlaceholder(/Buscá por nombre/).fill('');
+  await p1.getByRole('button', { name: 'Ocultar listado' }).click();
+  await p1.getByTestId('monster-strength').fill('3');
   await p1.getByRole('button', { name: 'Pelear contra este monstruo' }).click();
   await expect(p1.getByTestId('combat')).toBeVisible();
   await expect(tv.getByTestId('tv-combat')).toBeVisible();
 
-  // 9. Ayuda: Lu rechaza, Dana acepta desde su dispositivo.
-  await p1.getByRole('button', { name: 'Pedir ayuda a Lu' }).click();
+  // 9. Ayuda: al ir perdiendo aparece el aviso guiado. Lu rechaza, Dana acepta desde su dispositivo.
+  await expect(p1.getByTestId('losing-alert')).toBeVisible();
+  await p1.screenshot({ path: 'test-results/screens/movil-aviso-perdiendo.png' });
+  await expect(p1.getByTestId('combat-next-step')).toContainText('Vas perdiendo');
+  await p1.getByTestId('losing-alert').getByRole('button', { name: 'Pedir ayuda a Lu' }).click();
+  await expect(p1.getByTestId('losing-alert')).toHaveCount(0);
   await expect(p2.getByTestId('help-inbox')).toBeVisible();
   await p2.getByRole('button', { name: 'Rechazar' }).click();
   await expect(p2.getByTestId('help-inbox')).toHaveCount(0);
-  await p1.getByRole('button', { name: 'Pedir ayuda a Dana' }).click();
+  // Tras el rechazo, el aviso vuelve a ofrecer ayuda solo a quien no se la negó.
+  await expect(p1.getByTestId('losing-alert').getByRole('button', { name: /Pedir ayuda a/ })).toHaveCount(1);
+  await p1.getByTestId('losing-alert').getByRole('button', { name: 'Pedir ayuda a Dana' }).click();
   await dm.getByRole('button', { name: 'Acepto ayudar' }).click();
   await expect(p1.getByTestId('players-total')).toHaveText('3'); // Pablo 2 + Dana 1
   await expect(p1.getByTestId('monsters-total')).toHaveText('3');
@@ -121,6 +137,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await p1.getByRole('combobox').selectOption('players');
   await p1.getByRole('button', { name: 'Aplicar modificador' }).click();
   await expect(tv.getByTestId('players-total')).toHaveText('7');
+  await expect(p1.getByTestId('combat-next-step')).toContainText('¡Vas ganando!');
 
   // 10. Victoria confirmada a mano; doble clic no duplica la recompensa.
   await p1.getByRole('button', { name: /Victoria/ }).click();
@@ -150,7 +167,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await dm.getByRole('button', { name: /Registrar que resolví la maldición/ }).click();
   await dm.getByRole('button', { name: /Sí, seguir al camino/ }).click();
   await dm.getByRole('button', { name: /Elegir: buscar problemas o saquear/ }).click();
-  await dm.getByRole('button', { name: /Saquear: robar una Puerta/ }).click();
+  await dm.getByRole('button', { name: /Saquear la sala/ }).click();
   await phaseIs(dm, 'Saquear la habitación');
   await dm.getByRole('button', { name: 'Confirmar saqueo' }).click();
   await dm.getByRole('button', { name: /Sí, saqué una Puerta/ }).click();
@@ -166,7 +183,8 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await p2.getByTestId('monster-strength').fill('10');
   await p2.getByRole('button', { name: 'Entrar en combate' }).click();
   await expect(tv.getByTestId('monsters-total')).toHaveText('10');
-  await p2.getByRole('button', { name: /Huida/ }).click();
+  await expect(p2.getByTestId('losing-alert')).toBeVisible();
+  await p2.getByTestId('losing-alert').getByRole('button', { name: /Huir/ }).click();
   await p2.getByText('Lo atrapó').click();
   await p2.getByRole('button', { name: 'Registrar huida' }).click();
   await phaseIs(p2, 'Caridad');

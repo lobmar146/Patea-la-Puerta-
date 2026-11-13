@@ -6,8 +6,4 @@ dist/
 test-results/
 playwright-report/
 *.log
-public/cards/*.jpg
-public/cards/*.png
-public/cards/*.webp
-!public/cards/.gitkeep
 public/cards/available.json

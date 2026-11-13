@@ -89,6 +89,7 @@ describe('recuperación tras reinicio del backend', () => {
     const startedSnapshot: Snapshot = await socket.timeout(5000).emitWithAck('sync');
     const clockStart = startedSnapshot.state.clock.activeSince;
     expect(clockStart).not.toBeNull();
+    expect(Number.isFinite(Date.parse(startedSnapshot.serverTime))).toBe(true);
     await step({ type: 'turn.kickDoor' });
     await step({ type: 'turn.doorResult', result: 'monster', monster: { name: 'Dragón', strength: 20, levels: 2, treasures: 4 } });
     await step({ type: 'combat.addModifier', side: 'monsters', value: 3, label: 'enojado' });

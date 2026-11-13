@@ -6,6 +6,7 @@ import { ZodError } from 'zod';
 import { createRoomSchema, joinRoomSchema } from '../shared/commands.js';
 import { config } from './config.js';
 import { prisma } from './db.js';
+import { rateLimit } from './rateLimit.js';
 import { HttpError, createRoom, findSession, getRoomPublic, joinRoom } from './rooms.js';
 import { cookieName, cookieOptions, normalizeCode } from './sessions.js';
 
@@ -19,6 +20,7 @@ export function readCookie(header: string | undefined, name: string): string | u
 
 export interface HttpHooks {
   onJoined: (roomId: string) => void;
+  onActivity?: () => void;
 }
 
 export function createApp(hooks: HttpHooks) {
@@ -27,14 +29,23 @@ export function createApp(hooks: HttpHooks) {
   app.set('trust proxy', 1);
   app.use(express.json({ limit: '32kb' }));
 
+  // Sin base de datos: lo usa el keep-alive para no despertar a PostgreSQL.
+  app.get('/api/ping', (_req, res) => {
+    res.json({ ok: true, time: new Date().toISOString() });
+  });
+
   app.get('/api/health', wrap(async (_req, res) => {
     await prisma.$queryRaw`SELECT 1`;
     res.json({ ok: true, db: 'up', time: new Date().toISOString() });
   }));
 
-  app.post('/api/rooms', wrap(async (req, res) => {
+  const createLimit = rateLimit({ windowMs: 10 * 60 * 1000, max: 10 });
+  const joinLimit = rateLimit({ windowMs: 10 * 60 * 1000, max: 60 });
+
+  app.post('/api/rooms', createLimit, wrap(async (req, res) => {
     const body = createRoomSchema.parse(req.body);
     const joined = await createRoom(body);
+    hooks.onActivity?.();
     res.cookie(cookieName(joined.code), joined.token, cookieOptions(joined.ttlDays));
     res.status(201).json({ code: joined.code, participantId: joined.participantId });
   }));
@@ -47,11 +58,12 @@ export function createApp(hooks: HttpHooks) {
     res.json({ ...room, hasSession: Boolean(session), publicUrl: config.publicUrl || null });
   }));
 
-  app.post('/api/rooms/:code/join', wrap(async (req, res) => {
+  app.post('/api/rooms/:code/join', joinLimit, wrap(async (req, res) => {
     const code = normalizeCode(req.params.code);
     const body = joinRoomSchema.parse(req.body);
     const joined = await joinRoom(code, readCookie(req.headers.cookie, cookieName(code)), body);
     res.cookie(cookieName(code), joined.token, cookieOptions(joined.ttlDays));
+    hooks.onActivity?.();
     if (!joined.reused) hooks.onJoined(joined.roomId);
     res.json({ code, participantId: joined.participantId, reused: joined.reused });
   }));

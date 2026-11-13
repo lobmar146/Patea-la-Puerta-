@@ -142,6 +142,8 @@ export interface Snapshot {
   me: Me;
   online: string[];
   expiresAt: string;
+  /** Hora del servidor al armar el snapshot: corrige relojes desfasados en el cronómetro. */
+  serverTime: string;
 }
 
 export type CommandResult =

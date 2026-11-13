@@ -70,3 +70,11 @@ npm run check && npm run test:e2e
 - Se unificaron las cabeceras y tarjetas de Mi personaje, Mesa y DM con la paleta de Munchkin y controles de mayor jerarquía visual.
 - Se reforzaron combinaciones de contraste de la interfaz para apuntar a WCAG AA (4,5:1 en texto normal); no se ejecutó una auditoría completa automatizada de accesibilidad.
 - Verificado en esta actualización: `npm run typecheck`, `npm run lint`, `npx vite build` y `git diff --check` pasan. No se ejecutaron pruebas funcionales/e2e.
+
+## Render Free, imágenes y combate guiado (2026-11-13)
+- **Keep-alive:** en producción el servidor llama a `/api/ping` (sin base de datos) por su URL pública cada 10 min mientras haya sockets conectados o actividad en las últimas `KEEPALIVE_IDLE_HOURS` (2 por defecto). Así Render Free no lo duerme en plena partida y Neon puede suspenderse cuando no hay juego. Fuera de partida el servidor sí se duerme y el primer ingreso tarda ~1 min.
+- **Límite de pedidos:** `POST /api/rooms` (10 cada 10 min por IP) y `POST /api/rooms/:code/join` (60 cada 10 min), en memoria.
+- **Cronómetro:** el snapshot trae `serverTime` y el cliente corrige el desfase de su reloj.
+- **Imágenes:** `npm run build` descarga las ilustraciones (`scripts/fetch-assets.mjs`, tolera fallas). Uso privado entre amigos por decisión del usuario.
+- **UI:** el buscador de monstruos muestra los resultados justo debajo del campo; “Sin monstruo” ofrece dos tarjetas grandes (Buscar problemas / Saquear la sala) y el formulario aparece recién al elegir Buscar problemas; el combate muestra un “próximo paso” según el marcador y un aviso “¡Estás perdiendo!” con botones para pedir ayuda, jugar una carta o huir.
+- Verificado: typecheck, lint, 38 pruebas, build y e2e completo.

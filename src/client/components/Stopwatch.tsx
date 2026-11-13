@@ -2,12 +2,13 @@ import { Timer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { activeParticipantId, displayName } from '../../shared/rules';
 import type { GameState } from '../../shared/types';
+import { serverNow } from '../serverClock';
 
 function useClockNow(running: boolean) {
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() => serverNow());
   useEffect(() => {
     if (!running) return;
-    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    const interval = window.setInterval(() => setNow(serverNow()), 1000);
     return () => window.clearInterval(interval);
   }, [running]);
   return now;

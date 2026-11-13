@@ -20,7 +20,7 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
   const [catalogQuery, setCatalogQuery] = useState<string | null>(null);
   const [selectedSet, setSelectedSet] = useState('');
   const catalogId = useId();
-  const strengthField = useRef<HTMLInputElement>(null);
+  const nameField = useRef<HTMLInputElement>(null);
   const catalogOpen = catalogQuery !== null;
   const matches = catalogQuery === null ? [] : searchMonsters(catalogQuery)
     .filter((monster) => !selectedSet || monster.set === selectedSet);
@@ -45,7 +45,8 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
     setLevels(String(preset.levels));
     setTreasures(String(preset.treasures));
     setCatalogQuery(null);
-    strengthField.current?.focus();
+    // Cierra el teclado para que se vean los valores cargados y el botón de confirmar.
+    nameField.current?.blur();
   }
 
   function submit(e: FormEvent) {
@@ -53,76 +54,72 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
     if (!valid || disabled) return;
     onSubmit({ name: name.trim(), strength: monsterLevel, levels: Number(levels) || 0, treasures: Number(treasures) || 0 });
   }
+
+  const searching = catalogOpen && catalogQuery.trim() !== '';
   return (
     <form onSubmit={submit} className="space-y-3" data-testid="monster-form">
       <label className="block">
         <span className="label">Nombre (opcional)</span>
         <input
+          ref={nameField}
           className="input"
           value={name}
           maxLength={60}
           autoComplete="off"
+          enterKeyHint="search"
+          role="combobox"
+          aria-expanded={catalogOpen && matches.length > 0}
+          aria-controls={catalogId}
+          aria-autocomplete="list"
+          onFocus={(event) => {
+            // En móvil el teclado tapa la mitad inferior: el buscador sube para dejar ver los resultados.
+            const input = event.currentTarget;
+            window.setTimeout(() => input.scrollIntoView({ block: 'start', behavior: 'smooth' }), 250);
+          }}
           onChange={(event) => {
             setName(event.target.value);
             if (!catalogOpen) setSelectedSet('');
             setCatalogQuery(event.target.value);
           }}
+          onKeyDown={(event) => {
+            // Enter elige la primera coincidencia en vez de enviar el formulario.
+            if (event.key === 'Enter' && searching && matches[0]) {
+              event.preventDefault();
+              selectMonster(matches[0]);
+            }
+          }}
           placeholder="Buscá por nombre, ej.: Nariz Flotante"
         />
       </label>
-      <button
-        type="button"
-        className="btn-secondary btn-small"
-        aria-expanded={catalogOpen}
-        aria-controls={catalogId}
-        onClick={() => {
-          if (!catalogOpen) setSelectedSet('');
-          setCatalogQuery(catalogOpen ? null : '');
-        }}
-      >
-        <List aria-hidden className="size-4" />
-        {catalogOpen ? 'Ocultar listado' : 'Ver listado de monstruos'}
-      </button>
-      <div id={catalogId} hidden={!catalogOpen}>
-        <p className="mb-2 text-xs text-ui-muted">Catálogo parcial de Buró. Si tu carta no figura, podés cargarla a mano.</p>
+      <div id={catalogId} hidden={!catalogOpen} className="space-y-2">
         {catalogOpen && (
           <p className="sr-only" role="status">{matches.length} {matches.length === 1 ? 'coincidencia' : 'coincidencias'}</p>
         )}
-        <label className="mb-2 block">
-          <span className="label">Edición</span>
-          <select className="input" value={selectedSet} onChange={(event) => setSelectedSet(event.target.value)}>
-            <option value="">Todos los mazos</option>
-            {monsterSets.map((set) => <option key={set}>{set}</option>)}
-          </select>
-        </label>
-        {fighterId && matches.length > 0 && (
-          <p className="mb-2 text-xs text-ui-muted">Comparación con los valores base de cada carta.</p>
-        )}
         {matches.length > 0 ? (
-          <ul aria-label="Monstruos del catálogo" className="max-h-56 space-y-1 overflow-y-auto rounded-xl border border-ui-line/15 bg-surface-muted p-2">
+          <ul aria-label="Monstruos del catálogo" role="listbox" className={`${searching ? 'max-h-48' : 'max-h-64'} space-y-1 overflow-y-auto overscroll-contain rounded-xl border border-ui-line/15 bg-surface-muted p-1.5`}>
             {matches.map((preset) => {
               const needed = existingPower + preset.strength - players + (winTies ? 0 : 1);
               return (
-                <li key={`${preset.set}:${preset.name}`}>
+                <li key={`${preset.set}:${preset.name}`} role="option" aria-selected={false}>
                   <button
                     type="button"
-                    className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-surface-raised px-3 py-2 text-left hover:bg-surface-inset"
+                    className="flex min-h-12 w-full items-center gap-3 rounded-lg bg-surface-raised px-3 py-2 text-left hover:bg-surface-inset active:bg-surface-inset"
                     onClick={() => selectMonster(preset)}
                   >
-                    <span className="min-w-0 flex-1 basis-40">
-                      <span className="block break-words font-bold">{preset.name}</span>
-                      <span className="block text-xs text-ui-muted">{preset.set}</span>
+                    <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-blood/10 text-lg font-black tabular-nums" aria-label={`Nivel de combate ${preset.strength}`}>{preset.strength}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-bold">{preset.name}</span>
+                      <span className="block truncate text-xs text-ui-muted">
+                        +{preset.levels} {preset.levels === 1 ? 'nivel' : 'niveles'} · {preset.treasures} {preset.treasures === 1 ? 'tesoro' : 'tesoros'} · {preset.set.replace(/:.*$/, '')}
+                      </span>
                     </span>
-                    <span className="text-xs font-bold text-ui-muted">
-                      <span className="block">Nivel de combate {preset.strength}</span>
-                      <span className="block">Al vencer: +{preset.levels} {preset.levels === 1 ? 'nivel' : 'niveles'} · {preset.treasures} {preset.treasures === 1 ? 'tesoro' : 'tesoros'}</span>
-                      {fighterId && (
-                        <span className={`mt-0.5 flex items-center gap-1 ${needed > 0 ? 'text-accent-wine' : 'text-accent-moss'}`}>
-                          <Swords aria-hidden className="size-3.5 shrink-0" />
-                          {needed > 0 ? `Faltan ${needed} ${needed === 1 ? 'punto' : 'puntos'}` : 'Jugadores con ventaja'}
-                        </span>
-                      )}
-                    </span>
+                    {fighterId && (
+                      <span className={`flex shrink-0 items-center gap-1 text-xs font-bold ${needed > 0 ? 'text-accent-wine' : 'text-accent-moss'}`}>
+                        <Swords aria-hidden className="size-3.5 shrink-0" />
+                        {needed > 0 ? `−${needed}` : 'Ventaja'}
+                        <span className="sr-only">{needed > 0 ? `faltan ${needed} puntos` : 'jugadores con ventaja'}</span>
+                      </span>
+                    )}
                   </button>
                 </li>
               );
@@ -130,10 +127,34 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
           </ul>
         ) : <p className="text-sm text-ui-muted">No hay coincidencias. Podés cargar los datos de la carta a mano.</p>}
       </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          className="btn-secondary btn-small"
+          aria-expanded={catalogOpen}
+          aria-controls={catalogId}
+          onClick={() => {
+            if (!catalogOpen) setSelectedSet('');
+            setCatalogQuery(catalogOpen ? null : '');
+          }}
+        >
+          <List aria-hidden className="size-4" />
+          {catalogOpen ? 'Ocultar listado' : 'Ver listado de monstruos'}
+        </button>
+        {catalogOpen && (
+          <select className="input min-w-0 flex-1" aria-label="Edición" value={selectedSet} onChange={(event) => setSelectedSet(event.target.value)}>
+            <option value="">Todos los mazos</option>
+            {monsterSets.map((set) => <option key={set}>{set}</option>)}
+          </select>
+        )}
+      </div>
+      {catalogOpen && (
+        <p className="text-xs text-ui-muted">Catálogo parcial de Buró. El número es el nivel de combate; la espada indica cuánto les falta a los jugadores con los valores base.</p>
+      )}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <label>
           <span className="label">Nivel de combate</span>
-          <input ref={strengthField} className="input" required inputMode="numeric" type="number" min={0} max={999} value={strength} onChange={(e) => setStrength(e.target.value)} data-testid="monster-strength" />
+          <input className="input" required inputMode="numeric" type="number" min={0} max={999} value={strength} onChange={(e) => setStrength(e.target.value)} data-testid="monster-strength" />
         </label>
         <label>
           <span className="label">Niveles al vencer</span>
