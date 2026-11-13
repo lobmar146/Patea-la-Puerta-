@@ -21,12 +21,13 @@ const keepAlive = config.keepAliveUrl
   : null;
 if (keepAlive) {
   keepAlive.start();
-  console.log(`Keep-alive activo contra ${config.keepAliveUrl} (se apaga tras ${config.keepAliveIdleHours} h sin actividad).`);
+  console.log(`Keep-alive activo contra ${config.keepAliveUrl} (${Number.isFinite(config.keepAliveIdleHours) ? `se apaga tras ${config.keepAliveIdleHours} h sin actividad` : 'siempre despierto'}).`);
 }
 
 const cleanup = setInterval(() => {
   deleteExpiredRooms().catch((e) => console.error('cleanup', e));
-}, 60 * 60 * 1000);
+  // Cada 6 h: el keep-alive no toca la base, así Neon puede suspenderse entre partidas.
+}, 6 * 60 * 60 * 1000);
 cleanup.unref();
 
 server.listen(config.port, config.host, () => {
