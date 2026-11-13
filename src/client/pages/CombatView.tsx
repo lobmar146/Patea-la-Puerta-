@@ -122,6 +122,23 @@ export function CombatView() {
         <span className="chip border-transparent bg-blood/15 text-accent-wine">{displayName(state, combat.fighterId)} pelea</span>
       </div>
       <CombatTotalsPanel state={state} combat={combat} />
+      {/* Opciones rápidas arriba de todo: se ven sin scrollear en el celular. */}
+      {state.status === 'active' && combat.monsters.length > 0 && (canResolve || isPlayer) && (
+        <div data-testid="combat-quick">
+          {canResolve && <p className="mb-1.5 text-xs font-bold uppercase tracking-[.12em] text-ui-muted">Resolver combate</p>}
+          <div className={`grid gap-2 ${canResolve ? 'grid-cols-3' : 'grid-cols-1'}`}>
+            {canResolve ? (
+              <>
+                <button className="btn-go w-full px-2" onClick={() => setModal('victory')}><GameIcon name="victory" className="size-4 shrink-0" /> Victoria</button>
+                <button className="btn-secondary w-full px-2" onClick={() => setModal('flee')}><GameIcon name="flee" className="size-4 shrink-0" /> Huida</button>
+                <button className="btn-secondary w-full px-2" onClick={() => setModal('other')}><Sparkles aria-hidden className="size-4 shrink-0" /> Otra</button>
+              </>
+            ) : (
+              <button className="btn-secondary w-full" onClick={() => setModal('modifier')}><GameIcon name="card" className="size-5" /> Jugar una carta</button>
+            )}
+          </div>
+        </div>
+      )}
       {canResolve && state.status === 'active' && (
         <NextStep
           hasMonsters={combat.monsters.length > 0}
@@ -207,18 +224,6 @@ export function CombatView() {
         </ul>
         {isPlayer && <button className="btn-secondary mt-2 w-full sm:w-auto" onClick={() => setModal('modifier')}><GameIcon name="card" className="size-5" /> Añadir modificador</button>}
       </div>
-
-      {canResolve && (
-        <div className="border-t border-ui-line pt-3">
-          <h3 className="font-bold">Resolver combate</h3>
-          <p className="mt-1 text-sm">Elegí cómo terminó en la mesa y registralo.</p>
-          <div className="mt-2 grid gap-2 sm:grid-cols-3">
-            <button className="btn-go w-full" onClick={() => setModal('victory')}><GameIcon name="victory" className="size-4 shrink-0" /> Victoria</button>
-            <button className="btn-secondary w-full" onClick={() => setModal('flee')}><GameIcon name="flee" className="size-4 shrink-0" /> Huida</button>
-            <button className="btn-secondary w-full" onClick={() => setModal('other')}><Sparkles aria-hidden className="size-4 shrink-0" /> Otra resolución</button>
-          </div>
-        </div>
-      )}
 
       <Modal open={showLosingAlert} title="¡Estás perdiendo!" onClose={() => setSeenAlert(alertKey)}>
         <div className="space-y-3" data-testid="losing-alert">

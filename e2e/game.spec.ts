@@ -100,7 +100,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
 
   // 8a. Pablo: otra carta -> buscar problemas -> combate con ayuda.
   await tab(p1, 'Turno');
-  await expect(p1.getByTestId('active-stopwatch')).toBeVisible();
+  await expect(p1.getByTestId('turn-timer')).toBeVisible();
   await expect(tv.getByTestId('active-stopwatch')).toBeVisible();
   await p1.getByRole('button', { name: /Patear la puerta/ }).click();
   await phaseIs(p1, 'Patear la puerta');

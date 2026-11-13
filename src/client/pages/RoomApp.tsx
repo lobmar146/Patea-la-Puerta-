@@ -143,7 +143,8 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
           </div>
         )}
         <HelpInbox />
-        {isPlayer && !state.config.practice && current !== 'dm' && <PushCard code={snap.code} hideWhenOn={current !== 'me'} />}
+        {/* El aviso de notificaciones no ocupa lugar durante el turno: va en la sala de espera y en Mi personaje. */}
+        {isPlayer && !state.config.practice && (current === 'me' || (current === 'turn' && state.status === 'lobby')) && <PushCard code={snap.code} hideWhenOn={current !== 'me'} />}
 
         {current === 'me' && isPlayer && <CharacterEditor targetId={me.id} />}
         {current === 'turn' && (state.status === 'lobby' ? <Lobby publicUrl={publicUrl} /> : <TurnView />)}
