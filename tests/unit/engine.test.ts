@@ -212,6 +212,22 @@ describe('combate', () => {
     expect(s.turn.phase).toBe('combat'); // nunca se declara victoria automática
   });
 
+  it('objetos de un solo uso: no suman al equipo, se gastan en el combate y su bonus se va al terminar', () => {
+    let s = inCombat();
+    const potion = { id: 'pot-1', name: 'Poción de fuego', bonus: 3, slot: 'other' as const, big: false, equipped: true, oneShot: true };
+    const sword = { id: 'sw-1', name: 'Espada', bonus: 2, slot: 'hand' as const, big: false, equipped: true };
+    s = run(s, 'p2', { type: 'character.setItems', targetId: 'p2', items: [potion, sword] });
+    expect(s.characters.p2.gear).toBe(2);
+    expectError(() => applyAction(s, 'p2', { type: 'combat.useItem', itemId: 'sw-1', side: 'players' }, { now, id }), 'invalid');
+    expectError(() => applyAction(s, 'p1', { type: 'combat.useItem', itemId: 'pot-1', side: 'players' }, { now, id }), 'invalid');
+    s = run(s, 'p2', { type: 'combat.useItem', itemId: 'pot-1', side: 'players' });
+    expect(s.characters.p2.items?.map((i) => i.id)).toEqual(['sw-1']);
+    expect(s.combat!.modifiers).toMatchObject([{ side: 'players', value: 3, label: 'Poción de fuego', addedBy: 'p2' }]);
+    expect(combatTotals(s, s.combat!).playerMods).toBe(3);
+    s = run(s, 'p1', { type: 'combat.resolveVictory', rewards: [{ participantId: 'p1', levels: 1, note: '' }], note: '' });
+    expect(s.combat).toBeNull();
+  });
+
   it('ayuda: no a uno mismo, solo el invitado responde, un solo ayudante', () => {
     let s = inCombat();
     expectError(() => applyAction(s, 'p1', { type: 'help.request', toId: 'p1' }), 'invalid');

@@ -145,12 +145,12 @@ export const SLOT_LABEL: Record<EquipSlot, string> = {
 
 /** Bonificación total del equipo puesto. */
 export function gearFromItems(items: Item[]): number {
-  return items.filter((i) => i.equipped).reduce((a, i) => a + i.bonus, 0);
+  return items.filter((i) => i.equipped && !i.oneShot).reduce((a, i) => a + i.bonus, 0);
 }
 
 /** Avisos (no prohibiciones) sobre el equipo puesto. Las cartas pueden cambiar estos límites. */
 export function equipmentWarnings(items: Item[], c: Pick<Character, 'races'>): string[] {
-  const on = items.filter((i) => i.equipped);
+  const on = items.filter((i) => i.equipped && !i.oneShot);
   const count = (s: EquipSlot) => on.filter((i) => i.slot === s).length;
   const out: string[] = [];
   if (count('head') > 1) out.push('Tenés más de un objeto de cabeza puesto: solo se permite uno.');
@@ -158,7 +158,7 @@ export function equipmentWarnings(items: Item[], c: Pick<Character, 'races'>): s
   if (count('feet') > 1) out.push('Tenés más de un calzado puesto: solo se permite uno.');
   const hands = count('hand') + count('twoHands') * 2;
   if (hands > 2) out.push(`Estás usando ${hands} manos: solo tenés 2.`);
-  const big = items.filter((i) => i.big).length;
+  const big = items.filter((i) => i.big && !i.oneShot).length;
   const dwarf = c.races.some((r) => ['enano', 'dwarf'].includes(r.trim().toLowerCase()));
   if (big > 1 && !dwarf) out.push('Llevás más de un objeto Grande: solo se permite uno (los Enanos pueden llevar varios).');
   return out;

@@ -45,6 +45,7 @@ export const itemInput = z.object({
   slot: z.enum(['head', 'armor', 'feet', 'hand', 'twoHands', 'other']),
   big: z.boolean().default(false),
   equipped: z.boolean().default(true),
+  oneShot: z.boolean().optional(),
 });
 
 export const actionSchema = z.discriminatedUnion('type', [
@@ -92,6 +93,7 @@ export const actionSchema = z.discriminatedUnion('type', [
     value: int(-99, 99),
   }),
   z.object({ type: z.literal('combat.removeModifier'), modifierId: id }),
+  z.object({ type: z.literal('combat.useItem'), itemId: id, side: z.enum(['players', 'monsters']) }),
   z.object({ type: z.literal('help.request'), toId: id }),
   z.object({ type: z.literal('help.respond'), requestId: id, accept: z.boolean() }),
   z.object({ type: z.literal('help.cancel'), requestId: id }),
