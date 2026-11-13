@@ -128,21 +128,27 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(p1.getByTestId('monsters-total')).toHaveText('3');
   await expect(p1.getByRole('button', { name: /Pedir ayuda a/ })).toHaveCount(0);
   await p2.getByRole('button', { name: /Añadir modificador/ }).click();
-  await p2.getByTestId('mod-value').fill('2');
-  await p2.getByRole('button', { name: 'Aplicar modificador' }).click();
+  await expect(p2.getByRole('button', { name: 'Monstruos', pressed: true })).toBeVisible();
+  await p2.waitForTimeout(400);
+  await p2.screenshot({ path: 'test-results/screens/movil-modificador.png' });
+  await p2.getByTestId('mod-quick').getByRole('button', { name: '+2' }).click();
   await expect(tv.getByTestId('monsters-total')).toHaveText('5');
   await expect(p1.getByTestId('combat-diff')).toContainText('Los monstruos superan por 2');
   await p1.getByRole('button', { name: /Añadir modificador/ }).click();
+  await expect(p1.getByRole('button', { name: 'Jugadores', pressed: true })).toBeVisible();
   await p1.getByTestId('mod-value').fill('4');
-  await p1.getByRole('combobox').selectOption('players');
   await p1.getByRole('button', { name: 'Aplicar modificador' }).click();
   await expect(tv.getByTestId('players-total')).toHaveText('7');
   await expect(p1.getByTestId('combat-next-step')).toContainText('¡Vas ganando!');
 
   // 10. Victoria confirmada a mano; doble clic no duplica la recompensa.
   await p1.getByRole('button', { name: /Victoria/ }).click();
+  await expect(p1.getByTestId('victory-summary')).toContainText('Pablo: +1 nivel');
+  await p1.getByText('Ajustar niveles o agregar una nota').click();
   await p1.getByTestId('reward-fighter').fill('1');
-  await p1.getByRole('button', { name: 'Confirmar victoria y aplicar una sola vez' }).dblclick();
+  await p1.waitForTimeout(400);
+  await p1.screenshot({ path: 'test-results/screens/movil-victoria.png' });
+  await p1.getByRole('button', { name: 'Confirmar victoria' }).dblclick();
   await phaseIs(p1, 'Caridad');
   await tab(dm, 'Mesa');
   await expect(dm.getByTestId('level-Pablo')).toHaveText('3');

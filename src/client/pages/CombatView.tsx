@@ -73,9 +73,6 @@ type CombatModal = 'monster' | 'modifier' | 'victory' | 'flee' | 'other' | { mon
 export function CombatView() {
   const { snap, me, send, pending } = useRoom();
   const [modal, setModal] = useState<CombatModal>(null);
-  const [modSide, setModSide] = useState<'players' | 'monsters'>('monsters');
-  const [modValue, setModValue] = useState('');
-  const [modLabel, setModLabel] = useState('');
   const [seenAlert, setSeenAlert] = useState<string | null>(null);
   if (!snap || !me || !snap.state.combat) return null;
   const { state } = snap;
@@ -271,24 +268,13 @@ export function CombatView() {
           />
         ) : <p className="text-sm text-ui-muted">Este monstruo ya salió del combate.</p>}
       </Modal>
-      <Modal open={modal === 'modifier'} title="Añadir modificador" onClose={() => setModal(null)}>
-        <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); const value = Number(modValue); if (!modValue || Number.isNaN(value)) return; void send({ type: 'combat.addModifier', side: modSide, value, label: modLabel.trim() }); setModValue(''); setModLabel(''); setModal(null); }}>
-          <label className="block">
-            <span className="label">¿A qué bando afecta?</span>
-            <select className="input" value={modSide} onChange={(e) => setModSide(e.target.value as 'players' | 'monsters')}>
-              <option value="monsters">Monstruos</option><option value="players">Jugadores</option>
-            </select>
-          </label>
-          <label className="block">
-            <span className="label">Bonificación o penalización</span>
-            <input className="input" type="number" min={-99} max={99} value={modValue} onChange={(e) => setModValue(e.target.value)} placeholder="Ej.: +5 o -2" data-testid="mod-value" />
-          </label>
-          <label className="block">
-            <span className="label">Motivo (opcional)</span>
-            <input className="input" maxLength={60} value={modLabel} onChange={(e) => setModLabel(e.target.value)} placeholder="Ej.: poción" />
-          </label>
-          <button className="btn-primary w-full" disabled={pending || !modValue}>Aplicar modificador</button>
-        </form>
+      <Modal open={modal === 'modifier'} title="Jugar una carta o modificador" onClose={() => setModal(null)}>
+        <ModifierForm
+          key={modal === 'modifier' ? 'open' : 'closed'}
+          defaultSide={isFighter || combat.helperId === me.id ? 'players' : 'monsters'}
+          pending={pending}
+          onApply={(side, value, label) => { void send({ type: 'combat.addModifier', side, value, label }); setModal(null); }}
+        />
       </Modal>
       <Modal open={modal === 'victory'} title="Registrar victoria" onClose={() => setModal(null)}><VictoryForm combat={combat} /></Modal>
       <Modal open={modal === 'flee'} title="Registrar huida" onClose={() => setModal(null)}><FleeForm combat={combat} /></Modal>
@@ -360,26 +346,91 @@ function VictoryForm({ combat }: { combat: Combat }) {
   const [note, setNote] = useState('');
   if (!snap) return null;
   const treasures = combat.monsters.reduce((a, m) => a + m.treasures, 0);
-  const rewards = [{ participantId: combat.fighterId, levels: Number(fighter) || 0, note: '' }];
-  if (combat.helperId) rewards.push({ participantId: combat.helperId, levels: Number(helper) || 0, note: '' });
+  const fighterLevels = Number(fighter) || 0;
+  const helperLevels = Number(helper) || 0;
+  const rewards = [{ participantId: combat.fighterId, levels: fighterLevels, note: '' }];
+  if (combat.helperId) rewards.push({ participantId: combat.helperId, levels: helperLevels, note: '' });
+  const signed = (n: number) => `${n >= 0 ? '+' : ''}${n} ${Math.abs(n) === 1 ? 'nivel' : 'niveles'}`;
   return (
-    <form className="mt-3 space-y-2" onSubmit={(e) => { e.preventDefault(); void send({ type: 'combat.resolveVictory', rewards, note: note.trim() }); }} data-testid="victory-form">
-      <div className="flex items-center gap-3">
-        <Illustration name="rewards" className="w-14 shrink-0" />
-        <p>Tesoros a robar según los monstruos cargados: <b>{treasures}</b>. Revisá y confirmá los niveles que corresponden.</p>
+    <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void send({ type: 'combat.resolveVictory', rewards, note: note.trim() }); }} data-testid="victory-form">
+      <div className="flex items-center gap-3 rounded-2xl bg-moss/10 p-3">
+        <Illustration name="rewards" className="w-16 shrink-0" />
+        <ul className="space-y-1 text-lg font-bold" data-testid="victory-summary">
+          <li>{displayName(snap.state, combat.fighterId)}: {signed(fighterLevels)}</li>
+          {combat.helperId && helperLevels !== 0 && <li>{displayName(snap.state, combat.helperId)}: {signed(helperLevels)}</li>}
+          <li>Roban {treasures} {treasures === 1 ? 'tesoro' : 'tesoros'} en la mesa</li>
+        </ul>
       </div>
-      <label className="flex items-center justify-between gap-2">
-        <span>Niveles para {displayName(snap.state, combat.fighterId)}</span>
-        <input className="input w-24" type="number" min={-10} max={10} value={fighter} onChange={(e) => setFighter(e.target.value)} data-testid="reward-fighter" />
+      <button className="btn-go w-full text-lg" disabled={pending}><Trophy aria-hidden className="size-5 shrink-0" /> Confirmar victoria</button>
+      <details className="rounded-2xl bg-surface-muted/75 px-4">
+        <summary className="min-h-12 cursor-pointer py-3 font-bold">Ajustar niveles o agregar una nota</summary>
+        <div className="space-y-2 pb-4">
+          <label className="flex items-center justify-between gap-2">
+            <span>Niveles para {displayName(snap.state, combat.fighterId)}</span>
+            <input className="input w-24" type="number" min={-10} max={10} value={fighter} onChange={(e) => setFighter(e.target.value)} data-testid="reward-fighter" />
+          </label>
+          {combat.helperId && (
+            <label className="flex items-center justify-between gap-2">
+              <span>Niveles para {displayName(snap.state, combat.helperId)} (ayudante; solo si una carta o raza lo indica)</span>
+              <input className="input w-24" type="number" min={-10} max={10} value={helper} onChange={(e) => setHelper(e.target.value)} />
+            </label>
+          )}
+          <input className="input" maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota opcional (ej.: el ayudante se lleva 2 tesoros)" />
+        </div>
+      </details>
+    </form>
+  );
+}
+
+const QUICK_VALUES = [1, 2, 3, 5, 10, -1, -2, -5] as const;
+
+/** Modificador en un toque: elegir bando y tocar un valor. El valor libre queda para casos raros. */
+function ModifierForm({ defaultSide, pending, onApply }: {
+  defaultSide: 'players' | 'monsters';
+  pending: boolean;
+  onApply: (side: 'players' | 'monsters', value: number, label: string) => void;
+}) {
+  const [side, setSide] = useState(defaultSide);
+  const [value, setValue] = useState('');
+  const [label, setLabel] = useState('');
+  const custom = Number(value);
+  const sideButton = (key: 'players' | 'monsters', text: string, active: string) => (
+    <button
+      type="button"
+      aria-pressed={side === key}
+      className={`btn w-full ${side === key ? active : 'bg-surface-raised text-ui-fg'}`}
+      onClick={() => setSide(key)}
+    >
+      {text}
+    </button>
+  );
+  return (
+    <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); if (!value || Number.isNaN(custom)) return; onApply(side, custom, label.trim()); }}>
+      <div>
+        <span className="label">¿A quién ayuda la carta?</span>
+        <div className="grid grid-cols-2 gap-2">
+          {sideButton('players', 'Jugadores', 'bg-royal text-white')}
+          {sideButton('monsters', 'Monstruos', 'bg-blood text-white')}
+        </div>
+      </div>
+      <label className="block">
+        <span className="label">Carta o motivo (opcional)</span>
+        <input className="input" maxLength={60} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Ej.: poción, enfurecido" />
       </label>
-      {combat.helperId && (
-        <label className="flex items-center justify-between gap-2">
-          <span>Niveles para {displayName(snap.state, combat.helperId)} (ayudante; solo si una carta o raza lo indica)</span>
-          <input className="input w-24" type="number" min={-10} max={10} value={helper} onChange={(e) => setHelper(e.target.value)} />
-        </label>
-      )}
-      <input className="input" maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota opcional (ej.: el ayudante se lleva 2 tesoros)" />
-      <button className="btn-go w-full" disabled={pending}>Confirmar victoria y aplicar una sola vez</button>
+      <div>
+        <span className="label">Tocá el valor para aplicarlo</span>
+        <div className="grid grid-cols-4 gap-2" data-testid="mod-quick">
+          {QUICK_VALUES.map((n) => (
+            <button key={n} type="button" className={`btn text-lg tabular-nums ${n > 0 ? 'bg-moss/15 text-accent-moss' : 'bg-blood/10 text-accent-wine'}`} disabled={pending} onClick={() => onApply(side, n, label.trim())}>
+              {n > 0 ? `+${n}` : `−${-n}`}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <input className="input min-w-0 flex-1" type="number" inputMode="numeric" min={-99} max={99} value={value} onChange={(e) => setValue(e.target.value)} placeholder="Otro valor" aria-label="Otro valor" data-testid="mod-value" />
+        <button className="btn-primary shrink-0" disabled={pending || !value}>Aplicar modificador</button>
+      </div>
     </form>
   );
 }
