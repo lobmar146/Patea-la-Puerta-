@@ -1,1 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="6" y="4" width="52" height="56" rx="6" fill="#2b1d12"/><rect x="14" y="10" width="36" height="46" rx="4" fill="#b7791f"/><circle cx="42" cy="34" r="3.5" fill="#2b1d12"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="glow" cx="58%" cy="40%" r="60%"><stop offset="0" stop-color="#6b3a14"/><stop offset=".55" stop-color="#2c1b10"/><stop offset="1" stop-color="#140d09"/></radialGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d08a3c"/><stop offset="1" stop-color="#8a4a1c"/></linearGradient>
+    <linearGradient id="burst" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2382f"/><stop offset="1" stop-color="#a0181a"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#glow)"/>
+  <polygon points="322.0,52.0 347.4,119.3 397.0,84.1 391.3,144.7 462.3,133.0 416.7,188.6 472.0,214.0 416.7,239.4 462.3,295.0 391.3,283.3 397.0,343.9 347.4,308.7 322.0,376.0 296.6,308.7 247.0,343.9 252.7,283.3 181.7,295.0 227.3,239.4 172.0,214.0 227.3,188.6 181.7,133.0 252.7,144.7 247.0,84.1 296.6,119.3" fill="url(#burst)" stroke="#f6b64a" stroke-width="10" stroke-linejoin="round"/>
+  <ellipse cx="250" cy="438" rx="150" ry="18" fill="#000" opacity=".35"/>
+  <g transform="rotate(-9 150 430)">
+    <path d="M140 430 V250 A110 110 0 0 1 360 250 V430 Z" fill="url(#wood)" stroke="#2a1606" stroke-width="16" stroke-linejoin="round"/>
+    <g stroke="#5c3214" stroke-width="7" stroke-linecap="round" opacity=".85">
+      <line x1="195" y1="172" x2="195" y2="422"/><line x1="250" y1="146" x2="250" y2="422"/><line x1="305" y1="172" x2="305" y2="422"/>
+    </g>
+    <rect x="140" y="262" width="220" height="24" fill="#3a2a22"/>
+    <rect x="140" y="370" width="220" height="24" fill="#3a2a22"/>
+    <g fill="#f6b64a"><circle cx="160" cy="274" r="5"/><circle cx="340" cy="274" r="5"/><circle cx="160" cy="382" r="5"/><circle cx="340" cy="382" r="5"/></g>
+    <circle cx="322" cy="328" r="14" fill="#f6b64a" stroke="#2a1606" stroke-width="7"/>
+  </g>
+  <g stroke="#f6b64a" stroke-width="14" stroke-linecap="round">
+    <line x1="392" y1="392" x2="446" y2="380"/><line x1="388" y1="430" x2="448" y2="440"/>
+  </g>
+</svg>

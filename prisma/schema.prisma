@@ -25,6 +25,7 @@ model Room {
   sessions     Session[]
   events       GameEvent[]
   commands     ProcessedCommand[]
+  pushSubs     PushSubscription[]
 }
 
 model Participant {
@@ -33,6 +34,7 @@ model Participant {
   createdAt DateTime @default(now())
   room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   sessions  Session[]
+  pushSubs  PushSubscription[]
 
   @@index([roomId])
 }
@@ -74,4 +76,24 @@ model ProcessedCommand {
   room          Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@id([roomId, commandId])
+}
+
+// Suscripciones Web Push de cada dispositivo (avisos de "te toca" y pedidos de ayuda).
+model PushSubscription {
+  endpoint      String      @id
+  roomId        String
+  participantId String
+  p256dh        String
+  auth          String
+  createdAt     DateTime    @default(now())
+  room          Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([participantId])
+}
+
+// Configuración persistente del servidor (por ejemplo, las claves VAPID generadas una sola vez).
+model AppSetting {
+  key   String @id
+  value String
 }

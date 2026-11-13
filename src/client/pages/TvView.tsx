@@ -1,4 +1,4 @@
-import { ArrowLeft, Maximize, Minimize, Pause, Play, Swords, Trophy, Wifi, WifiOff } from 'lucide-react';
+import { ArrowLeft, Maximize, Minimize, Pause, Play, Wifi, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PHASE_GUIDE } from '../../shared/phases';
@@ -9,6 +9,8 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { ConnectionBadge, EventList, QrCode, joinUrl } from '../components/ui';
 import { useRoom } from '../useRoom';
 import { CombatTotalsPanel } from './CombatView';
+import { GameIcon } from '../components/GameIcon';
+import { Celebration } from '../components/Celebration';
 
 /** Vista de solo lectura, diseñada para verse bien tanto en una TV como en móvil. */
 export function TvView({ publicUrl }: { publicUrl: string | null }) {
@@ -29,6 +31,7 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
 
   return (
     <main className={`tv-shell inverse-surface min-h-dvh overflow-x-hidden p-3 text-parchment-50 sm:p-5 lg:p-6 ${state.status !== 'lobby' && state.status !== 'finished' ? 'tv-shell-live' : ''}`} data-testid="tv-view">
+      <Celebration state={state} big />
       <header className="tv-header mx-auto flex w-full max-w-[1800px] flex-wrap items-center justify-between gap-3 pb-4 sm:pb-6">
         <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <Link to={`/s/${snap.code}`} className="tv-control shrink-0" aria-label="Volver a la partida"><ArrowLeft aria-hidden className="size-4 shrink-0" /> <span className="hidden sm:inline">Volver a la partida</span></Link>
@@ -52,7 +55,7 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
 
         {state.status === 'finished' ? (
           <section className="tv-panel flex min-h-[65dvh] flex-col items-center justify-center gap-5 p-6 text-center sm:p-12" data-testid="tv-finished">
-            <Trophy aria-hidden className="size-14 text-accent-gold" /><p className="text-sm font-black uppercase tracking-[.25em] text-accent-wine">Partida terminada</p>
+            <GameIcon name="victory" className="size-14 text-accent-gold" /><p className="text-sm font-black uppercase tracking-[.25em] text-accent-wine">Partida terminada</p>
             <p className="font-display text-4xl font-black sm:text-7xl">{state.winnerId ? `¡${displayName(state, state.winnerId)} gana!` : 'Fin de la partida'}</p>
             <p className="text-ui-muted">Una aventura para recordar… y discutir en la revancha.</p>
           </section>
@@ -92,7 +95,7 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
             {state.combat && (
               <section className="tv-panel tv-combat-panel border-accent-wine/25 p-3 sm:p-5" data-testid="tv-combat">
                 <div className="mb-2 flex items-center gap-3">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blood/10 text-xl" ><Swords aria-hidden className="size-5 shrink-0" /></span>
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blood/10 text-xl" ><GameIcon name="combat" className="size-5 shrink-0" /></span>
                   <div className="min-w-0">
                     <p className="text-xs font-black uppercase tracking-[.18em] text-accent-wine">Combate activo</p>
                     <h2 className="truncate font-display text-lg font-black sm:text-2xl">
@@ -103,7 +106,7 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
                 <CombatTotalsPanel state={state} combat={state.combat} big />
               </section>
             )}
-            {state.levelAlert && <p className="tv-level-alert rounded-2xl border border-gold/50 bg-[#68410f] p-3 text-center text-base font-black text-white sm:text-xl"><Trophy aria-hidden className="mr-1 inline size-5" />{displayName(state, state.levelAlert.participantId)} llegó a nivel {state.levelAlert.level}. El DM confirma.</p>}
+            {state.levelAlert && <p className="tv-level-alert rounded-2xl border border-gold/50 bg-[#68410f] p-3 text-center text-base font-black text-white sm:text-xl"><GameIcon name="victory" className="mr-1 inline size-5" />{displayName(state, state.levelAlert.participantId)} llegó a nivel {state.levelAlert.level}. El DM confirma.</p>}
             </div>
 
             <section className="tv-section tv-roster" data-testid="tv-table">
@@ -112,7 +115,7 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
                 {players.map((c) => (
                   <li key={c.id} className={`tv-player ${active === c.id ? 'tv-player-active' : ''}`}>
                     <div className="flex items-center gap-2"><span className="h-9 w-1.5 shrink-0 rounded-full" style={{ background: c.color }} /><div className="min-w-0 flex-1"><p className="truncate text-base font-black sm:text-lg">{active === c.id && <Play aria-hidden className="mr-1 inline size-4 text-[#ffd36a]" />}{c.name}</p><p className="truncate text-xs text-parchment-50/80">{[...c.races, ...c.classes].join(' · ') || 'Humano sin clase'}</p></div><div className="text-center"><span className="block text-[9px] font-black uppercase tracking-widest text-parchment-50/80">Nivel</span><strong className="font-display text-2xl font-black tabular-nums sm:text-3xl">{c.level}</strong></div></div>
-                    <div className="mt-2 flex items-center justify-between border-t border-white/15 pt-2"><span className="inline-flex items-center gap-1 text-xs font-semibold text-parchment-50/80">{online.has(c.id) ? <Wifi aria-hidden className="size-3 shrink-0" /> : <WifiOff aria-hidden className="size-3 shrink-0" />}{online.has(c.id) ? 'En línea' : 'Desconectado'}</span><span className="rounded-lg bg-[#692424] px-2.5 py-1 inline-flex items-center gap-1 text-xs font-black text-white"><Swords aria-hidden className="size-3 shrink-0" /> Poder {basePower(c)}</span></div>
+                    <div className="mt-2 flex items-center justify-between border-t border-white/15 pt-2"><span className="inline-flex items-center gap-1 text-xs font-semibold text-parchment-50/80">{online.has(c.id) ? <Wifi aria-hidden className="size-3 shrink-0" /> : <WifiOff aria-hidden className="size-3 shrink-0" />}{online.has(c.id) ? 'En línea' : 'Desconectado'}</span><span className="rounded-lg bg-[#692424] px-2.5 py-1 inline-flex items-center gap-1 text-xs font-black text-white"><GameIcon name="combat" className="size-3 shrink-0" /> Poder {basePower(c)}</span></div>
                   </li>
                 ))}
               </ul>

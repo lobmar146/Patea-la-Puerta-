@@ -11,9 +11,18 @@ const STATUS: Record<ConnStatus, { text: string; icon: LucideIcon; cls: string }
   unauthorized: { text: 'Sin acceso', icon: WifiOff, cls: 'bg-blood text-white' },
 };
 
-export function ConnectionBadge({ big = false }: { big?: boolean }) {
+export function ConnectionBadge({ big = false, quiet = false }: { big?: boolean; quiet?: boolean }) {
   const { status } = useRoom();
   const s = STATUS[status];
+  // En la cabecera del celular, "conectado" es un punto verde: el cartel grande queda para los problemas.
+  if (quiet && status === 'online') {
+    return (
+      <span role="status" aria-live="polite" data-testid="conn-status" data-status={status} className="inline-flex items-center gap-1.5 px-1 text-xs font-semibold text-parchment-100/80">
+        <span className="relative flex size-2.5" aria-hidden><span className="absolute inline-flex size-full animate-ping rounded-full bg-[#7ed38a] opacity-40 motion-reduce:hidden" /><span className="relative inline-flex size-2.5 rounded-full bg-[#7ed38a]" /></span>
+        <span className="sr-only sm:not-sr-only">{s.text}</span>
+      </span>
+    );
+  }
   return (
     <span
       role="status"

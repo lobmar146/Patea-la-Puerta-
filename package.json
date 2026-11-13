@@ -19,6 +19,7 @@
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:e2e": "playwright test --trace off",
+    "tour": "dotenv -v TOUR=1 -- playwright test e2e/tour.spec.ts --trace off",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:test:migrate": "dotenv -e .env.test -- prisma migrate deploy",
@@ -26,6 +27,8 @@
     "check": "npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/inter": "^5.3.0",
     "@prisma/client": "^6.19.3",
     "cookie": "^1.1.1",
     "express": "^4.22.3",
@@ -36,6 +39,7 @@
     "react-router-dom": "^6.30.6",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
+    "web-push": "^3.6.7",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -46,6 +50,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
+    "@types/web-push": "^3.6.4",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.6.2",
     "concurrently": "^9.2.5",

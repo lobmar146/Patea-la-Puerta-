@@ -1,9 +1,9 @@
-import { Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { basePower, displayName } from '../../shared/rules';
 import { EventList } from '../components/ui';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useRoom } from '../useRoom';
+import { GameIcon } from '../components/GameIcon';
 
 export function Finished() {
   const { snap } = useRoom();
@@ -17,7 +17,7 @@ export function Finished() {
       <div className="flex justify-end"><ThemeToggle /></div>
       <section className="card p-6 text-center">
         <p className="text-sm font-bold uppercase">Partida terminada</p>
-        {state.winnerId && <Trophy aria-hidden className="mx-auto mt-3 size-9 text-accent-gold" />}
+        {state.winnerId && <GameIcon name="victory" className="mx-auto mt-3 size-9 text-accent-gold" />}
         <h1 className="mt-2 text-4xl font-black">{state.winnerId ? `¡${displayName(state, state.winnerId)} gana!` : 'Fin de la partida'}</h1>
         <p className="mt-2">Las amistades se reparan con el tiempo. Probablemente.</p>
       </section>

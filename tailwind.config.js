@@ -9,7 +9,7 @@ export default {
         blood: { DEFAULT: '#9b1c1c', dark: '#7a1414' },
         moss: { DEFAULT: '#2f6b3a', dark: '#245230' },
         royal: { DEFAULT: '#1f4f8f', dark: '#173d70' },
-        gold: { DEFAULT: '#b7791f' },
+        gold: { DEFAULT: '#e39a2d', dark: '#c47f17' },
         surface: {
           DEFAULT: 'rgb(var(--surface) / <alpha-value>)',
           raised: 'rgb(var(--surface-raised) / <alpha-value>)',
@@ -27,10 +27,12 @@ export default {
           moss: 'rgb(var(--accent-moss) / <alpha-value>)',
           gold: 'rgb(var(--accent-gold) / <alpha-value>)',
           blue: 'rgb(var(--accent-blue) / <alpha-value>)',
+          brand: 'rgb(var(--accent-brand) / <alpha-value>)',
         },
       },
       fontFamily: {
-        display: ['"Georgia"', '"Times New Roman"', 'serif'],
+        display: ['"Bricolage Grotesque Variable"', '"Inter Variable"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['"Inter Variable"', 'ui-sans-serif', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
       },
     },
   },

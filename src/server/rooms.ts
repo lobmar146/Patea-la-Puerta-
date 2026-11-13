@@ -5,6 +5,8 @@ import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import type { Command } from '../shared/commands.js';
 import { GameError, addParticipant, applyAction, createInitialState, type EngineEvent } from '../shared/engine.js';
+import { activeParticipantId, displayName } from '../shared/rules.js';
+import type { PushMessage } from './push.js';
 import type { CommandResult, EventDTO, GameState, Role } from '../shared/types.js';
 import { config } from './config.js';
 import { prisma } from './db.js';
@@ -165,6 +167,25 @@ export interface ProcessOutcome {
   result: CommandResult;
   changed: boolean;
   revokedParticipant?: string;
+  /** Avisos push a enviar después del commit. */
+  notify?: PushMessage[];
+}
+
+/** Qué avisar tras un cambio: a quien le empieza el turno y a quien le piden ayuda. */
+export function pushMessagesFor(before: GameState, after: GameState): PushMessage[] {
+  const out: PushMessage[] = [];
+  const prev = activeParticipantId(before);
+  const next = activeParticipantId(after);
+  if (after.status === 'active' && next && (next !== prev || before.status === 'lobby')) {
+    out.push({ participantId: next, title: '¡Te toca!', body: `${displayName(after, next)}, es tu turno: andá a patear la puerta.`, tag: 'turn' });
+  }
+  const known = new Set(before.combat?.helpRequests.map((r) => r.id) ?? []);
+  for (const r of after.combat?.helpRequests ?? []) {
+    if (r.status === 'pending' && !known.has(r.id)) {
+      out.push({ participantId: r.toId, title: '¡Te piden ayuda!', body: `${displayName(after, r.fromId)} necesita ayuda en un combate.`, tag: 'help' });
+    }
+  }
+  return out;
 }
 
 /**
@@ -214,7 +235,7 @@ export async function processCommand(code: string, tokenHash: string, cmd: Comma
     if (outcome.revokeParticipant) {
       await tx.session.updateMany({ where: { participantId: outcome.revokeParticipant }, data: { revokedAt: new Date() } });
     }
-    return { changed: true, revokedParticipant: outcome.revokeParticipant, result: { ok: true, version, duplicate: false } };
+    return { changed: true, revokedParticipant: outcome.revokeParticipant, notify: pushMessagesFor(room.state, outcome.state), result: { ok: true, version, duplicate: false } };
   });
 }
 

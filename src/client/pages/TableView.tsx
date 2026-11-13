@@ -1,8 +1,9 @@
-import { Crown, NotebookPen, Play } from 'lucide-react';
+import { NotebookPen } from 'lucide-react';
 import { activeParticipantId, basePower } from '../../shared/rules';
-import { PresenceDot, Section } from '../components/ui';
+
 import { PlayerTime } from '../components/Stopwatch';
 import { useRoom } from '../useRoom';
+import { GameIcon } from '../components/GameIcon';
 
 export function TableView() {
   const { snap, online } = useRoom();
@@ -13,40 +14,57 @@ export function TableView() {
   const spectators = Object.values(state.participants).filter((p) => !p.removed && p.role === 'spectator');
   return (
     <div className="space-y-4" data-testid="table-screen">
-      <div className="inverse-surface rounded-3xl bg-gradient-to-br from-ink via-[#3a261b] to-blood/90 p-5 text-parchment-50 shadow-[0_18px_45px_rgba(43,29,18,.18)] sm:p-7">
-        <p className="text-[10px] font-black uppercase tracking-[.24em] text-parchment-50 sm:text-xs">Estado de la aventura</p>
-        <div className="mt-2 flex items-end justify-between gap-4"><div><h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">La mesa</h1><p className="mt-1 text-sm text-parchment-50 sm:text-base">Personajes, nivel y poder de combate.</p></div><span className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-sm font-bold">{players.length} {players.length === 1 ? 'jugador' : 'jugadores'}</span></div>
+      <div className="flex items-end justify-between gap-3 px-1">
+        <div>
+          <h1 className="font-display text-3xl font-extrabold">La mesa</h1>
+          <p className="text-sm text-ui-muted">Tocá a alguien para ver el detalle.</p>
+        </div>
+        <span className="chip border-transparent bg-surface-raised font-bold">{players.length} {players.length === 1 ? 'jugador' : 'jugadores'}</span>
       </div>
-      <Section title="Personajes">
-      <ul className="grid gap-3 sm:grid-cols-2" data-testid="table">
-        {players.map((c) => {
+      <ul className="card divide-y divide-ui-line/[.07] overflow-hidden p-0" data-testid="table">
+        {players.map((c, i) => {
           const p = state.participants[c.id];
+          const isActive = active === c.id;
           return (
-            <li key={c.id} className={`overflow-hidden rounded-2xl border bg-surface-raised shadow-sm transition ${active === c.id ? 'border-accent-gold/70 ring-2 ring-accent-gold/35 shadow-md' : 'border-ui-line/10'}`} data-testid={`table-${c.name}`}>
-              <div className="h-1.5" style={{ background: c.color }} />
-              <div className="p-4 sm:p-5">
-                <div className="flex items-center gap-3">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-lg font-black text-white shadow-inner" style={{ background: c.color }}>{c.name.slice(0, 1).toUpperCase()}</span>
-                  <div className="min-w-0 flex-1"><h3 className="truncate text-lg font-black tracking-tight sm:text-xl">{c.name}</h3><div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><PresenceDot online={online.has(c.id)} />{p.isDm && <span className="inline-flex items-center gap-1 text-xs font-bold text-accent-gold"><Crown aria-hidden className="size-3 shrink-0" /> DM</span>}</div></div>
-                  <div className="min-w-14 text-center"><span className="block text-[9px] font-black uppercase tracking-widest text-ui-muted">Nivel</span><span className="font-display text-3xl font-black tabular-nums" data-testid={`level-${c.name}`}>{c.level}</span></div>
+            <li key={c.id} className={isActive ? 'bg-accent-brand/[.08]' : ''} data-testid={`table-${c.name}`}>
+              <details className="group">
+                <summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-3 sm:px-4 [&::-webkit-details-marker]:hidden">
+                  <span className="relative shrink-0">
+                    <span className="grid size-11 place-items-center rounded-2xl font-display text-lg font-extrabold text-white shadow-[inset_0_-3px_0_rgba(0,0,0,.2)]" style={{ background: c.color }}>{c.name.slice(0, 1).toUpperCase()}</span>
+                    <span className={`absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full ring-2 ring-surface ${online.has(c.id) ? 'bg-[#7ed38a]' : 'bg-ui-muted/50'}`} title={online.has(c.id) ? 'En línea' : 'Desconectado'} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate text-base font-bold">{c.name}</span>
+                      {p.isDm && <GameIcon name="dm" className="size-4 text-accent-gold" title="DM" />}
+                      {c.notes && <NotebookPen aria-label="Tiene notas" className="size-3.5 shrink-0 text-ui-muted" />}
+                    </span>
+                    <span className="block truncate text-xs text-ui-muted">
+                      {isActive ? <b className="text-accent-brand">▶ Su turno · </b> : <span className="tabular-nums">#{i + 1} · </span>}
+                      {c.races.join(', ') || 'Humano'} · {c.classes.join(', ') || 'sin clase'}
+                    </span>
+                  </span>
+                  <span className="shrink-0 rounded-xl bg-accent-wine/10 px-2 py-1 text-center">
+                    <span className="block text-[9px] font-bold uppercase tracking-wider text-accent-wine">Poder</span>
+                    <b className="font-display text-lg font-extrabold leading-none text-accent-wine tabular-nums" data-testid={`power-${c.name}`}>{basePower(c)}</b>
+                  </span>
+                  <span className="w-12 shrink-0 text-center">
+                    <span className="block text-[9px] font-bold uppercase tracking-wider text-ui-muted">Nivel</span>
+                    <span className="font-display text-3xl font-extrabold leading-none tabular-nums" data-testid={`level-${c.name}`}>{c.level}</span>
+                  </span>
+                </summary>
+                <div className="space-y-2 px-3 pb-3 pl-[4.25rem] text-sm sm:px-4 sm:pl-[4.75rem]">
+                  <p className="text-ui-muted">Equipo <b className="text-ui-fg">{c.gear >= 0 ? '+' : ''}{c.gear}</b> · Otros <b className="text-ui-fg">{c.otherMods >= 0 ? '+' : ''}{c.otherMods}</b></p>
+                  <PlayerTime state={state} participantId={c.id} />
+                  {c.notes && <p className="rounded-xl bg-surface-muted p-2 italic"><NotebookPen aria-hidden className="mr-1 inline size-4" />{c.notes}</p>}
                 </div>
-                {active === c.id && <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-accent-gold/15 px-2.5 py-1 text-xs font-black text-accent-gold"><Play aria-hidden className="size-3 shrink-0" /> Su turno</div>}
-                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-xl bg-surface-muted/75 p-2"><span className="block text-[10px] font-bold uppercase tracking-wide text-ui-muted">Equipo</span><b className="text-base">{c.gear}</b></div>
-                  <div className="rounded-xl bg-surface-muted/75 p-2"><span className="block text-[10px] font-bold uppercase tracking-wide text-ui-muted">Otros</span><b className="text-base">{c.otherMods}</b></div>
-                  <div className="rounded-xl bg-accent-wine/10 p-2"><span className="block text-[10px] font-bold uppercase tracking-wide text-accent-wine">Poder</span><b className="text-lg font-black text-accent-wine" data-testid={`power-${c.name}`}>{basePower(c)}</b></div>
-                </div>
-                <p className="mt-3 truncate text-sm text-ui-muted">{c.races.join(', ') || 'Humano'} · {c.classes.join(', ') || 'sin clase'}</p>
-                <div className="mt-3 border-t border-ui-line/10 pt-2"><PlayerTime state={state} participantId={c.id} /></div>
-                {c.notes && <p className="mt-2 rounded-xl bg-surface-muted/70 p-2 text-sm italic"><NotebookPen aria-hidden className="mr-1 inline size-4" />{c.notes}</p>}
-              </div>
+              </details>
             </li>
           );
         })}
       </ul>
-      </Section>
       {spectators.length > 0 && (
-        <p className="rounded-2xl border border-ui-line/10 bg-surface-raised/60 px-4 py-3 text-sm text-ui-muted">
+        <p className="px-1 text-sm text-ui-muted">
           Espectadores: {spectators.map((s) => `${s.name}${online.has(s.id) ? ' (en línea)' : ''}`).join(', ')}
         </p>
       )}

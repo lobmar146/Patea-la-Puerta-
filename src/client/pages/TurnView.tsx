@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Backpack, ChevronRight, DoorOpen, Layers, Skull, Swords, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { PHASE_GUIDE } from '../../shared/phases';
 import { activeParticipantId, displayName, upcoming } from '../../shared/rules';
@@ -9,6 +9,7 @@ import { ActiveStopwatch } from '../components/Stopwatch';
 import { EventList } from '../components/ui';
 import { useRoom } from '../useRoom';
 import { CombatView } from './CombatView';
+import { GameIcon } from '../components/GameIcon';
 
 type TurnModal = 'door' | 'trouble' | 'curse' | 'loot' | 'charity' | 'endTurn' | null;
 
@@ -29,7 +30,7 @@ export function TurnView() {
 
   const actionButton = () => {
     if (!canAct) return null;
-    if (phase === 'setup') return <button className="btn-primary w-full text-lg sm:text-xl" disabled={pending} onClick={() => send({ type: 'turn.kickDoor' })}><DoorOpen aria-hidden className="size-5 shrink-0" /> Patear la puerta</button>;
+    if (phase === 'setup') return <button className="btn-gold min-h-14 w-full text-lg sm:text-xl" disabled={pending} onClick={() => send({ type: 'turn.kickDoor' })}><GameIcon name="kick" className="size-6 shrink-0" /> Patear la puerta</button>;
     if (phase === 'kickDoor') return <button className="btn-primary w-full text-lg sm:text-xl" onClick={() => open('door')}>¿Qué salió detrás de la puerta? <ChevronRight aria-hidden className="size-4 shrink-0" /></button>;
     if (phase === 'curse') return <button className="btn-go w-full text-lg" onClick={() => open('curse')}>Registrar que resolví la maldición</button>;
     if (phase === 'noMonster') return <button className="btn-primary w-full text-lg sm:text-xl" onClick={() => open('trouble')}>Elegir: buscar problemas o saquear</button>;
@@ -43,28 +44,28 @@ export function TurnView() {
   return (
     <div className="space-y-4">
       <section key={phase} className="card phase-transition overflow-hidden" data-testid="turn-panel" data-phase={phase}>
-        <div className="bg-gradient-to-br from-surface-inset via-surface-muted to-surface-raised p-4 sm:p-6">
+        <div className="phase-hero p-4 sm:p-6">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-xs font-black uppercase tracking-[.16em] text-ui-muted sm:text-sm">Turno {state.turn.turnNumber}</p>
-            <span className={`chip ${mine ? 'border-moss/15 bg-moss text-white' : 'bg-surface-raised/80'}`}>
-              {mine ? 'Tu turno' : `Juega ${displayName(state, activeId)}`}
+            <p className="text-xs font-bold uppercase tracking-[.18em] text-ui-muted">Turno {state.turn.turnNumber}</p>
+            <span className={`chip border-transparent font-bold ${mine ? 'bg-accent-brand text-[#2a1606]' : 'bg-surface-raised/80'}`}>
+              {mine ? '¡Tu turno!' : `Juega ${displayName(state, activeId)}`}
             </span>
           </div>
-          <div className="mt-4 flex items-center gap-4 sm:gap-6">
-            <div className="w-[5.5rem] shrink-0 rounded-[1.4rem] border border-ui-line/15 bg-surface-raised/70 p-2 shadow-lg sm:w-32">
+          <div className={`flex items-center gap-4 sm:gap-6 ${phase === 'combat' ? 'mt-1' : 'mt-4'}`}>
+            <div className={`${phase === 'combat' ? 'hidden' : ''} w-[5.25rem] shrink-0 -rotate-3 rounded-2xl bg-surface-raised/60 p-1.5 shadow-[0_14px_30px_-12px_rgba(0,0,0,.7)] ring-1 ring-ui-line/10 sm:w-28`}>
               <Illustration name={guide.illustration} className="w-full" />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-2xl font-black leading-tight tracking-tight sm:text-3xl" data-testid="phase-title">{guide.title}</h2>
-              <p className="mt-2 text-base leading-snug text-ui-muted sm:text-lg">{guide.reminder}</p>
+              <h2 className="text-[1.75rem] font-extrabold leading-[1.05] sm:text-4xl" data-testid="phase-title">{guide.title}</h2>
+              {phase !== 'combat' && <p className="mt-2 text-[15px] leading-snug text-ui-muted sm:text-lg">{guide.reminder}</p>}
             </div>
           </div>
         </div>
-        <div className="space-y-4 p-4 sm:p-6">
+        <div className="space-y-3 p-4 sm:p-6">
           <ActiveStopwatch state={state} />
-          <details className="rounded-2xl bg-surface-muted/75 px-4">
-            <summary className="min-h-12 cursor-pointer py-3 font-bold">Ver ayuda de esta fase</summary>
-            <ul className="list-inside list-disc space-y-2 pb-4 text-sm text-ui-muted">{guide.details.map((d) => <li key={d}>{d}</li>)}</ul>
+          <details className="group rounded-2xl px-1">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ui-muted hover:text-ui-fg [&::-webkit-details-marker]:hidden"><span aria-hidden className="grid size-6 place-items-center rounded-full bg-surface-raised text-xs transition-transform group-open:rotate-90">›</span>Ver ayuda de esta fase</summary>
+            <ul className="list-inside list-disc space-y-2 px-1 pb-3 text-sm text-ui-muted">{guide.details.map((d) => <li key={d}>{d}</li>)}</ul>
           </details>
           {!canAct && phase !== 'combat' && (
             <p className="rounded-2xl bg-surface-muted p-4 font-semibold" role="status">
@@ -72,27 +73,39 @@ export function TurnView() {
             </p>
           )}
           {canAct && !mine && phase !== 'combat' && <p className="rounded-2xl bg-accent-blue/10 p-3 text-sm font-semibold text-accent-blue">Sos DM: podés avanzar este turno como corrección.</p>}
-          {action && <div className="pt-1">{action}</div>}
         </div>
       </section>
+      {/* La acción del turno queda fija sobre la barra inferior: siempre a mano del pulgar. */}
+      {action && (
+        <>
+          <div className="action-bar" data-testid="turn-action"><div className="mx-auto max-w-4xl [&>button]:min-h-14 [&>button]:shadow-xl">{action}</div></div>
+          <div aria-hidden className="h-16" />
+        </>
+      )}
 
       {phase === 'combat' && state.combat && <CombatView />}
 
       <section className="card p-4">
-        <h2 className="mb-2 text-lg font-bold">Últimos eventos</h2>
-        <EventList events={snap.events} limit={5} />
+        <h2 className="mb-2 text-sm font-bold uppercase tracking-[.14em] text-ui-muted">Últimos eventos</h2>
+        <EventList events={snap.events} limit={2} />
+        {snap.events.length > 2 && (
+          <details className="group mt-1">
+            <summary className="min-h-10 cursor-pointer list-none py-2 text-sm font-semibold text-accent-brand [&::-webkit-details-marker]:hidden"><span className="group-open:hidden">Ver más</span><span className="hidden group-open:inline">Ver menos</span></summary>
+            <EventList events={snap.events.slice(2)} limit={8} />
+          </details>
+        )}
       </section>
 
       <Modal open={modal === 'door'} title="¿Qué carta apareció?" onClose={() => setModal(null)}>
         <div className="space-y-3">
           <p className="text-sm">Elegí el resultado de la carta que robaste en la mesa.</p>
-          <button className="btn-primary w-full" disabled={pending} onClick={() => setModal('trouble')}><Skull aria-hidden className="size-5 shrink-0" /> Monstruo: cargarlo y entrar en combate</button>
-          <button className="btn-secondary w-full" disabled={pending} onClick={() => { void send({ type: 'turn.doorResult', result: 'curse' }); setModal(null); }}><Zap aria-hidden className="size-5 shrink-0" /> Maldición</button>
-          <button className="btn-secondary w-full" disabled={pending} onClick={() => { void send({ type: 'turn.doorResult', result: 'other' }); setModal(null); }}><Layers aria-hidden className="size-5 shrink-0" /> Otra carta</button>
+          <button className="btn-primary w-full" disabled={pending} onClick={() => setModal('trouble')}><GameIcon name="monster" className="size-5 shrink-0" /> Monstruo: cargarlo y entrar en combate</button>
+          <button className="btn-secondary w-full" disabled={pending} onClick={() => { void send({ type: 'turn.doorResult', result: 'curse' }); setModal(null); }}><GameIcon name="curse" className="size-5 shrink-0" /> Maldición</button>
+          <button className="btn-secondary w-full" disabled={pending} onClick={() => { void send({ type: 'turn.doorResult', result: 'other' }); setModal(null); }}><GameIcon name="otherCard" className="size-5 shrink-0" /> Otra carta</button>
         </div>
       </Modal>
 
-      <Modal open={modal === 'trouble'} title={phase === 'kickDoor' ? 'Cargar monstruo' : troubleStep ? 'Buscar problemas' : '¿Qué vas a hacer?'} onClose={closeTrouble}>
+      <Modal tall={phase === 'kickDoor' || troubleStep} open={modal === 'trouble'} title={phase === 'kickDoor' ? 'Cargar monstruo' : troubleStep ? 'Buscar problemas' : '¿Qué vas a hacer?'} onClose={closeTrouble}>
         {phase === 'kickDoor' ? (
           <MonsterForm state={state} submitLabel="Entrar en combate" disabled={pending} onSubmit={(monster) => { void send({ type: 'turn.doorResult', result: 'monster', monster }); setModal(null); }} />
         ) : troubleStep ? (
@@ -114,7 +127,7 @@ export function TurnView() {
                 <button type="button" className="choice-card" disabled={pending} onClick={() => setTroubleStep(true)}>
                   <Illustration name="trouble" className="w-20 shrink-0 sm:w-24" />
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2 text-xl font-black"><Swords aria-hidden className="size-5 shrink-0" />Buscar problemas</span>
+                    <span className="flex items-center gap-2 text-xl font-black"><GameIcon name="combat" className="size-5 shrink-0" />Buscar problemas</span>
                     <span className="mt-1 block text-sm text-ui-muted">Jugás un monstruo de tu mano y peleás contra él. Si ganás, subís de nivel y te llevás tesoros.</span>
                   </span>
                 </button>
@@ -122,7 +135,7 @@ export function TurnView() {
               <button type="button" className="choice-card" disabled={pending} onClick={() => { void send({ type: 'turn.lootRoom' }); closeTrouble(); }}>
                 <Illustration name="loot" className="w-20 shrink-0 sm:w-24" />
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2 text-xl font-black"><Backpack aria-hidden className="size-5 shrink-0" />Saquear la sala</span>
+                  <span className="flex items-center gap-2 text-xl font-black"><GameIcon name="loot" className="size-5 shrink-0" />Saquear la sala</span>
                   <span className="mt-1 block text-sm text-ui-muted">Robás una carta de Puerta boca abajo y la guardás en tu mano. Sin pelea.</span>
                 </span>
               </button>

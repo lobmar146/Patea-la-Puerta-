@@ -59,6 +59,11 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await tab(p1, 'Mi personaje');
   await p1.getByRole('button', { name: 'Sumar 1 a Nivel' }).click();
   await expect(p1.getByTestId('level-value')).toHaveText('2');
+  // Raza y clase desde listas desplegables.
+  await p1.getByTestId('races-select').selectOption('Elfo');
+  await expect(p1.getByTestId('races-list')).toContainText('Elfo');
+  await p1.getByTestId('classes-select').selectOption('Mago');
+  await expect(p1.getByTestId('classes-list')).toContainText('Mago');
   await tab(dm, 'Mesa');
   await expect(dm.getByTestId('level-Pablo')).toHaveText('2');
   await tab(p2, 'Mesa');
@@ -77,6 +82,8 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(dm.getByTestId('order-list').locator('li').first()).toContainText('Pablo');
   await dm.getByTestId('start-game').click();
   await expect(tv.getByTestId('tv-active')).toContainText('Pablo');
+  await expect(p1.getByTestId('your-turn')).toContainText('¡Te toca, Pablo!');
+  await expect(p2.getByTestId('your-turn')).toHaveCount(0);
 
   // 6. Fuera de turno no se avanza (ni por la UI ni a mano).
   await tab(p2, 'Turno');
@@ -101,8 +108,14 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await p1.getByRole('button', { name: /Buscar problemas/ }).click();
   await expect(p1.getByRole('button', { name: 'Pelear contra este monstruo' })).toBeDisabled();
   // El buscador muestra las coincidencias justo debajo del campo.
-  await p1.getByPlaceholder(/Buscá por nombre/).fill('co');
+  // El listado ya está abierto y escribir no mueve el campo ni el panel.
   await expect(p1.getByRole('listbox', { name: 'Monstruos del catálogo' })).toBeVisible();
+  const before = await p1.getByPlaceholder(/Buscá por nombre/).boundingBox();
+  await p1.getByPlaceholder(/Buscá por nombre/).fill('co');
+  await p1.getByPlaceholder(/Buscá por nombre/).fill('zzzz');
+  await expect(p1.getByTestId('monster-results')).toContainText('No hay coincidencias');
+  expect((await p1.getByPlaceholder(/Buscá por nombre/).boundingBox())?.y).toBe(before?.y);
+  await p1.getByPlaceholder(/Buscá por nombre/).fill('co');
   await p1.screenshot({ path: 'test-results/screens/movil-buscar-monstruo.png' });
   await p1.getByPlaceholder(/Buscá por nombre/).fill('');
   await p1.getByRole('button', { name: 'Ocultar listado' }).click();
@@ -128,22 +141,29 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(p1.getByTestId('monsters-total')).toHaveText('3');
   await expect(p1.getByRole('button', { name: /Pedir ayuda a/ })).toHaveCount(0);
   await p2.getByRole('button', { name: /Añadir modificador/ }).click();
-  await p2.getByTestId('mod-value').fill('2');
-  await p2.getByRole('button', { name: 'Aplicar modificador' }).click();
+  await expect(p2.getByRole('button', { name: 'Monstruos', pressed: true })).toBeVisible();
+  await p2.waitForTimeout(400);
+  await p2.screenshot({ path: 'test-results/screens/movil-modificador.png' });
+  await p2.getByTestId('mod-quick').getByRole('button', { name: '+2' }).click();
   await expect(tv.getByTestId('monsters-total')).toHaveText('5');
   await expect(p1.getByTestId('combat-diff')).toContainText('Los monstruos superan por 2');
   await p1.getByRole('button', { name: /Añadir modificador/ }).click();
+  await expect(p1.getByRole('button', { name: 'Jugadores', pressed: true })).toBeVisible();
   await p1.getByTestId('mod-value').fill('4');
-  await p1.getByRole('combobox').selectOption('players');
   await p1.getByRole('button', { name: 'Aplicar modificador' }).click();
   await expect(tv.getByTestId('players-total')).toHaveText('7');
   await expect(p1.getByTestId('combat-next-step')).toContainText('¡Vas ganando!');
 
   // 10. Victoria confirmada a mano; doble clic no duplica la recompensa.
   await p1.getByRole('button', { name: /Victoria/ }).click();
+  await expect(p1.getByTestId('victory-summary')).toContainText('Pablo: +1 nivel');
+  await p1.getByText('Ajustar niveles o agregar una nota').click();
   await p1.getByTestId('reward-fighter').fill('1');
-  await p1.getByRole('button', { name: 'Confirmar victoria y aplicar una sola vez' }).dblclick();
+  await p1.waitForTimeout(400);
+  await p1.screenshot({ path: 'test-results/screens/movil-victoria.png' });
+  await p1.getByRole('button', { name: 'Confirmar victoria' }).dblclick();
   await phaseIs(p1, 'Caridad');
+  await expect(tv.getByTestId('celebration')).toContainText('+1 NIVEL');
   await tab(dm, 'Mesa');
   await expect(dm.getByTestId('level-Pablo')).toHaveText('3');
   await expect(dm.getByTestId('level-Dana')).toHaveText('1'); // sin niveles automáticos al ayudante

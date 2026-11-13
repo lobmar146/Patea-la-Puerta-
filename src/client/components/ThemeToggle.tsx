@@ -16,9 +16,9 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   }
 
   return (
-    <button type="button" className="theme-toggle" aria-pressed={dark} title="Modo oscuro" onClick={toggle}>
+    <button type="button" className="theme-toggle" aria-pressed={dark} title={dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'} onClick={toggle}>
       {dark ? <Sun aria-hidden className="size-5 shrink-0" /> : <Moon aria-hidden className="size-5 shrink-0" />}
-      <span className={compact ? 'sr-only' : undefined}>Modo oscuro</span>
+      <span className={compact ? 'sr-only' : undefined}>{dark ? 'Modo claro' : 'Modo oscuro'}</span>
     </button>
   );
 }

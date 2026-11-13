@@ -78,3 +78,25 @@ npm run check && npm run test:e2e
 - **Imágenes:** `npm run build` descarga las ilustraciones (`scripts/fetch-assets.mjs`, tolera fallas). Uso privado entre amigos por decisión del usuario.
 - **UI:** el buscador de monstruos muestra los resultados justo debajo del campo; “Sin monstruo” ofrece dos tarjetas grandes (Buscar problemas / Saquear la sala) y el formulario aparece recién al elegir Buscar problemas; el combate muestra un “próximo paso” según el marcador y un aviso “¡Estás perdiendo!” con botones para pedir ayuda, jugar una carta o huir.
 - Verificado: typecheck, lint, 38 pruebas, build y e2e completo.
+- Combate en menos toques: el modal de modificadores elige bando con dos botones (por defecto Jugadores si sos quien pelea o ayuda) y aplica con un toque (+1, +2, +3, +5, +10, −1, −2, −5) o con un valor libre. La victoria muestra el resumen precargado (niveles y tesoros) con un botón “Confirmar victoria”; ajustar niveles o agregar nota queda plegado. Verificado: typecheck, lint, 38 pruebas, build y e2e.
+- Buscador de monstruos estable: el listado arranca abierto con alto fijo y los paneles con buscador tienen alto fijo en móvil (`Modal tall`), así escribir no mueve el campo. El e2e compara la posición del campo antes y después de escribir.
+
+## Rediseño visual (2026-11-13)
+- Dirección: "taberna de noche". Fondo casi negro cálido, superficies en escalones claros, oro (`accent-brand`) como acento de marca, rojo solo para peligro/acción principal y verde para resolver.
+- Tipografías locales vía Fontsource (sin hotlinks): Bricolage Grotesque para títulos, Inter para texto.
+- Botones con relieve y respuesta al toque (`active:scale`), nuevo `btn-gold` para "Patear la puerta". Inputs hundidos con foco dorado.
+- Cabecera compacta con marca, código de sala en oro y conexión como punto verde (el cartel grande solo aparece si hay problemas). Barra inferior con indicador en píldora.
+- Turno: héroe de fase con brillo dorado y carta inclinada; la acción del turno queda fija sobre la barra inferior (`.action-bar`).
+- Combate: marcador con degradés y "VS" en medalla; se quitó la ilustración duplicada.
+- Inicio: héroe nuevo con logo, frase corta y beneficios en línea.
+- `npm run tour` (después de `npm run build`) genera capturas de todas las pantallas en modo oscuro y claro.
+- Verificado: typecheck, lint, 38 pruebas, build, e2e.
+- Combate: la tarjeta de Ayuda pasó arriba, justo debajo del marcador y del próximo paso, con botones grandes. En fase de combate la cabecera del turno se compacta (sin carta ni texto).
+- Íconos de juego de game-icons.net (CC BY 3.0) en `GameIcon` para puerta, patada, monstruo, combate, ayuda, huida, victoria, carta, saqueo, maldición, DM, mesa, personaje y tiempo; Lucide queda para la interfaz. Crédito en el inicio y en `docs/ASSETS.md`.
+- Pulido: aviso "¡Te toca!" con vibración cuando el turno pasa a vos; mesa compacta (una fila por jugador, detalle al tocar); celebración "+N NIVEL" con confeti (también en la TV, sin confeti si se reduce el movimiento); combate con monstruos en fichas compactas y sin textos de relleno; últimos eventos plegables; razas y clases desde listas desplegables con opción "Otra"; nombre y notas con guardado automático.
+
+## App instalable y notificaciones push (2026-11-13)
+- **Logo propio** (`public/logo.svg`): puerta de madera pateada con estallido rojo. Íconos PNG 192/512, maskable y apple-touch en `public/icons/` (generados desde el SVG).
+- **PWA:** `manifest.webmanifest` (standalone, tema oscuro) y `sw.js` (instalable, abre la pantalla de inicio sin conexión, muestra los push y abre la sala al tocarlos). `sw.js` y el manifiesto se sirven con `no-cache`. En el inicio aparece "Instalar la app" (Android/escritorio) o las instrucciones para iPhone.
+- **Push:** modelos `PushSubscription` y `AppSetting` (migración `push_notifications`). Las claves VAPID salen del entorno o se generan una vez y quedan en la base. Tras cada comando se avisa a quien le empieza el turno y a quien le piden ayuda; las suscripciones vencidas (404/410) se borran. Tarjeta "¿Te avisamos cuando te toque?" para jugadores; en iPhone primero hay que agregarla a inicio (iOS 16.4+).
+- Verificado: typecheck, lint, 42 pruebas (incluye envío cifrado real a un servicio push de prueba por HTTPS), build, e2e; service worker y manifiesto comprobados en Chromium. No probado en un teléfono real.
