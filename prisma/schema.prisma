@@ -1,0 +1,77 @@
+// Pateá la Puerta! — esquema de persistencia.
+// Registros relacionales para salas, participantes y sesiones;
+// estado de partida versionado en JSONB (Room.state + Room.version).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Room {
+  id             String   @id
+  code           String   @unique
+  version        Int      @default(0)
+  state          Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  lastActivityAt DateTime @default(now())
+  expiresAt      DateTime
+
+  participants Participant[]
+  sessions     Session[]
+  events       GameEvent[]
+  commands     ProcessedCommand[]
+}
+
+model Participant {
+  id        String   @id
+  roomId    String
+  createdAt DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sessions  Session[]
+
+  @@index([roomId])
+}
+
+model Session {
+  // sha256 del token opaco que viaja en la cookie HttpOnly. Nunca se guarda el token en claro.
+  tokenHash     String      @id
+  roomId        String
+  participantId String
+  createdAt     DateTime    @default(now())
+  lastSeenAt    DateTime    @default(now())
+  revokedAt     DateTime?
+  room          Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([participantId])
+}
+
+model GameEvent {
+  id        Int      @id @default(autoincrement())
+  roomId    String
+  version   Int
+  type      String
+  actorId   String?
+  message   String
+  createdAt DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, id])
+}
+
+model ProcessedCommand {
+  roomId        String
+  commandId     String
+  participantId String
+  type          String
+  resultVersion Int
+  createdAt     DateTime @default(now())
+  room          Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, commandId])
+}

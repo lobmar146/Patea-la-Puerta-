@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" role="img" aria-label="Buscar problemas (ilustración provisoria)">
+  <rect x="4" y="4" width="192" height="272" rx="14" fill="#9b1c1c" stroke="#2b1d12" stroke-width="6"/>
+  <rect x="16" y="16" width="168" height="248" rx="8" fill="#fdf9ef" stroke="#2b1d12" stroke-width="2"/>
+  <g transform="translate(80 130) rotate(-10)">
+  <rect x="-26" y="-38" width="52" height="76" rx="6" fill="#2f6b3a" stroke="#2b1d12" stroke-width="3"/>
+  <rect x="-18" y="-30" width="36" height="60" rx="3" fill="none" stroke="#2b1d12" stroke-width="1.5" opacity="0.5"/></g><text x="135" y="160" text-anchor="middle" font-family="Georgia, serif" font-size="96" font-weight="bold" fill="#9b1c1c" stroke="#2b1d12" stroke-width="3">!</text>
+  <text x="100" y="258" text-anchor="middle" font-family="Georgia, serif" font-size="11" fill="#2b1d12" opacity="0.7">provisoria</text>
+</svg>
