@@ -101,7 +101,7 @@ test('tour novato', async ({ browser }) => {
   await page.getByLabel('Tu nombre').fill('Nova');
   await page.getByRole('button', { name: 'Empezar práctica' }).click();
   await expect(page.getByTestId('coach')).toBeVisible();
-  await shot(page, 'novato-02-turno', true);
+  await shot(page, 'novato-02-turno');
   await page.getByTestId('what-can-i-do').click();
   await shot(page, 'novato-03-que-hago');
   await page.getByRole('button', { name: 'Vender objetos' }).click();

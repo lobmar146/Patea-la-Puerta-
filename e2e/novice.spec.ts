@@ -18,7 +18,7 @@ test('partida de práctica con modo novato', async ({ browser }) => {
   await page.getByRole('button', { name: 'Empezar práctica' }).click();
 
   // Arranca sola, con consejos y dos jugadores de mentira.
-  await expect(page.getByTestId('coach')).toContainText('Patear la puerta');
+  await expect(page.getByTestId('coach')).toContainText('Antes de patear la puerta');
   await tab('Mesa');
   await expect(page.getByTestId('table').locator('li')).toHaveCount(3);
   await expect(page.getByTestId('table')).toContainText('Grog (práctica)');
