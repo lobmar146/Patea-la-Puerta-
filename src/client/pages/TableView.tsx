@@ -5,6 +5,7 @@ import { PlayerTime } from '../components/Stopwatch';
 import { useRoom } from '../useRoom';
 import { GameIcon } from '../components/GameIcon';
 import { Avatar } from '../components/Avatar';
+import { EventList } from '../components/ui';
 
 export function TableView() {
   const { snap, online } = useRoom();
@@ -69,6 +70,16 @@ export function TableView() {
           Espectadores: {spectators.map((s) => `${s.name}${online.has(s.id) ? ' (en línea)' : ''}`).join(', ')}
         </p>
       )}
+      <section className="card p-4">
+        <h2 className="mb-2 text-sm font-bold uppercase tracking-[.14em] text-ui-muted">Últimos eventos</h2>
+        <EventList events={snap.events} limit={2} />
+        {snap.events.length > 2 && (
+          <details className="group mt-1">
+            <summary className="min-h-10 cursor-pointer list-none py-2 text-sm font-semibold text-accent-brand [&::-webkit-details-marker]:hidden"><span className="group-open:hidden">Ver más</span><span className="hidden group-open:inline">Ver menos</span></summary>
+            <EventList events={snap.events.slice(2)} limit={8} />
+          </details>
+        )}
+      </section>
     </div>
   );
 }

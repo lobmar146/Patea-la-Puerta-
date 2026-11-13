@@ -156,6 +156,8 @@ export interface GameState {
   finishedAt: string | null;
   /** Opcional: las salas creadas antes de los premios no lo tienen. */
   stats?: Record<string, PlayerStats>;
+  /** Revancha: sala nueva con el mismo grupo y a qué participante nuevo corresponde cada uno. */
+  rematch?: { code: string; map: Record<string, string> };
 }
 
 export interface EventDTO {
