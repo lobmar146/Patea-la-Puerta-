@@ -80,12 +80,7 @@ export function TurnView() {
         </div>
       </section>
       {/* La acción del turno queda fija sobre la barra inferior: siempre a mano del pulgar. */}
-      {action && (
-        <>
-          <div className="action-bar" data-testid="turn-action"><div className="mx-auto max-w-4xl [&>button]:min-h-14 [&>button]:shadow-xl">{action}</div></div>
-          <div aria-hidden className="h-16" />
-        </>
-      )}
+      {action && <div className="action-bar" data-testid="turn-action"><div className="mx-auto max-w-4xl [&>button]:min-h-14 [&>button]:shadow-xl">{action}</div></div>}
 
       {phase === 'combat' && state.combat && <CombatView />}
 
@@ -103,6 +98,8 @@ export function TurnView() {
           </details>
         )}
       </section>
+      {/* Espacio al final para que la acción fija no tape lo último de la pantalla. */}
+      {action && <div aria-hidden className="h-16" />}
 
       <Modal open={modal === 'door'} title="¿Qué carta apareció?" onClose={() => setModal(null)}>
         <div className="space-y-3">

@@ -35,7 +35,7 @@ export function CoachCard() {
             )}
           </div>
           <ul className="mt-1 space-y-1.5 text-[15px] leading-snug" data-testid="coach-tips">
-            {tips.now.map((t) => <li key={t}>{t}</li>)}
+            {tips.now.slice(0, 2).map((t) => <li key={t}>{t}</li>)}
           </ul>
           <button type="button" className="btn-blue btn-small mt-3" onClick={() => setOpen('what')} data-testid="what-can-i-do">¿Qué puedo hacer ahora?</button>
         </div>
