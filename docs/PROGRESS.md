@@ -100,3 +100,5 @@ npm run check && npm run test:e2e
 - **PWA:** `manifest.webmanifest` (standalone, tema oscuro) y `sw.js` (instalable, abre la pantalla de inicio sin conexión, muestra los push y abre la sala al tocarlos). `sw.js` y el manifiesto se sirven con `no-cache`. En el inicio aparece "Instalar la app" (Android/escritorio) o las instrucciones para iPhone.
 - **Push:** modelos `PushSubscription` y `AppSetting` (migración `push_notifications`). Las claves VAPID salen del entorno o se generan una vez y quedan en la base. Tras cada comando se avisa a quien le empieza el turno y a quien le piden ayuda; las suscripciones vencidas (404/410) se borran. Tarjeta "¿Te avisamos cuando te toque?" para jugadores; en iPhone primero hay que agregarla a inicio (iOS 16.4+).
 - Verificado: typecheck, lint, 42 pruebas (incluye envío cifrado real a un servicio push de prueba por HTTPS), build, e2e; service worker y manifiesto comprobados en Chromium. No probado en un teléfono real.
+
+- Inicio en dos pasos: primero se elige "Crear partida" o "Unirse a una partida" y recién ahí aparece el formulario (`?modo=crear|unirse`, el botón atrás del celular vuelve a la elección).
