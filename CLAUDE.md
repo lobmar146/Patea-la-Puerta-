@@ -35,7 +35,7 @@ Las pruebas usan `TEST_DATABASE_URL` (por defecto `postgresql://munchkin:munchki
 ## Convenciones
 - TypeScript estricto; imports del servidor/shared con sufijo `.js` (NodeNext).
 - Nueva acción = esquema en `commands.ts` + caso en `applyAction` + prueba en `tests/unit/engine.test.ts`.
-- No automatizar efectos de cartas: la mesa y el DM corrigen a mano.
+- No automatizar efectos de cartas: la mesa y el DM corrigen a mano. Excepción pedida por M: las condiciones de monstruo que la mesa carga (bonus contra un sexo, raza o clase; "no persigue a…") se aplican solas según quién pelea o ayuda.
 - Textos de reglas: paráfrasis breves, nunca copiar el reglamento.
 - Imágenes: solo vía el manifiesto; registrar procedencia en `docs/ASSETS.md`; nunca hotlinks.
 - Al terminar una etapa: correr verificaciones y actualizar `docs/PROGRESS.md`.

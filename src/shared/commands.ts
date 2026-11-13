@@ -17,6 +17,20 @@ export const monsterInput = z.object({
   strength: int(0, 999),
   levels: int(0, 10).default(1),
   treasures: int(0, 20).default(1),
+  conditions: z
+    .array(
+      z
+        .object({
+          kind: z.enum(['sex', 'race', 'class']),
+          value: z.string().trim().min(1).max(30),
+          bonus: int(-20, 20).default(0),
+          noPursue: z.boolean().default(false),
+        })
+        .refine((c) => c.kind !== 'sex' || c.value === 'male' || c.value === 'female', 'Sexo inválido.')
+        .refine((c) => c.bonus !== 0 || c.noPursue, 'La condición tiene que sumar algo o no perseguir.'),
+    )
+    .max(4)
+    .optional(),
 });
 export type MonsterInput = z.infer<typeof monsterInput>;
 

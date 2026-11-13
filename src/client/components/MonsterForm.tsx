@@ -1,8 +1,8 @@
-import { List } from 'lucide-react';
+import { List, Plus, X } from 'lucide-react';
 import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { MonsterInput } from '../../shared/commands';
-import { activeParticipantId, basePower, combatTotals, playersWinTies } from '../../shared/rules';
-import type { GameState } from '../../shared/types';
+import { CLASS_SUGGESTIONS, RACE_SUGGESTIONS, activeParticipantId, basePower, combatTotals, conditionTarget, matchesCondition, playersWinTies } from '../../shared/rules';
+import type { GameState, MonsterCondition } from '../../shared/types';
 import { monsterSets, searchMonsters, type MonsterPreset } from '../assets/monsters';
 import { GameIcon } from './GameIcon';
 
@@ -18,6 +18,7 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
   const [strength, setStrength] = useState(String(initial?.strength ?? ''));
   const [levels, setLevels] = useState(String(initial?.levels ?? 1));
   const [treasures, setTreasures] = useState(String(initial?.treasures ?? 1));
+  const [conditions, setConditions] = useState<MonsterCondition[]>(initial?.conditions ?? []);
   // El listado arranca abierto (salvo al editar) para que escribir no cambie la altura del panel.
   const [catalogQuery, setCatalogQuery] = useState<string | null>(initial?.name ? null : '');
   const [selectedSet, setSelectedSet] = useState('');
@@ -34,8 +35,11 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
   const fighter = fighterId ? state.characters[fighterId] : undefined;
   const totals = combat ? combatTotals(state, combat) : undefined;
   const players = totals?.players ?? (fighter ? basePower(fighter) : 0);
-  const existingPower = (totals?.monsters ?? 0) - (initial?.strength ?? 0);
-  const monsters = existingPower + monsterLevel;
+  // Bonus de condiciones según quién pelea o ayuda (sexo, raza o clase).
+  const people = [fighterId, combat?.helperId].flatMap((p) => (p && state.characters[p] ? [state.characters[p]] : []));
+  const condBonus = (list: MonsterCondition[] | undefined) => (list ?? []).reduce((a, c) => a + (c.bonus && people.some((ch) => matchesCondition(ch, c)) ? c.bonus : 0), 0);
+  const existingPower = (totals?.monsters ?? 0) - (initial?.strength ?? 0) - condBonus(initial?.conditions);
+  const monsters = existingPower + monsterLevel + condBonus(conditions);
   const difference = players - monsters;
   const winTies = playersWinTies(state, fighterId, combat?.helperId);
   const playersAhead = difference > 0 || (difference === 0 && winTies);
@@ -54,7 +58,7 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
   function submit(e: FormEvent) {
     e.preventDefault();
     if (!valid || disabled) return;
-    onSubmit({ name: name.trim(), strength: monsterLevel, levels: Number(levels) || 0, treasures: Number(treasures) || 0 });
+    onSubmit({ name: name.trim(), strength: monsterLevel, levels: Number(levels) || 0, treasures: Number(treasures) || 0, conditions });
   }
 
   const searching = catalogOpen && catalogQuery.trim() !== '';
@@ -175,9 +179,64 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
           </p>
         </div>
       )}
+      <ConditionsEditor value={conditions} onChange={setConditions} />
       <p className="text-xs leading-snug text-ui-muted">Podés ajustar los valores según tu carta. Aplicá los modificadores especiales en el combate.</p>
       {extra}
       <button className="btn-primary w-full" disabled={disabled || !valid}>{submitLabel}</button>
     </form>
+  );
+}
+
+type Target = 'female' | 'male' | 'race' | 'class';
+
+/** Condiciones de la carta: "+5 contra mujeres", "no persigue a elfos". La app las aplica según quién pelea. */
+function ConditionsEditor({ value, onChange }: { value: MonsterCondition[]; onChange: (v: MonsterCondition[]) => void }) {
+  const [target, setTarget] = useState<Target>('female');
+  const [text, setText] = useState('');
+  const [bonus, setBonus] = useState('5');
+  const [pursue, setPursue] = useState(true);
+  const listId = useId();
+  const needsText = target === 'race' || target === 'class';
+  const n = Math.max(-20, Math.min(20, Math.round(Number(bonus) || 0)));
+  const canAdd = value.length < 4 && (!needsText || text.trim()) && (n !== 0 || !pursue);
+  function add() {
+    if (!canAdd) return;
+    const kind = needsText ? target : 'sex';
+    onChange([...value, { kind, value: needsText ? text.trim() : target, bonus: n, noPursue: !pursue }]);
+    setText('');
+  }
+  return (
+    <details className="group rounded-xl bg-surface-muted p-3" open={value.length > 0} data-testid="monster-conditions-editor">
+      <summary className="cursor-pointer list-none text-sm font-bold [&::-webkit-details-marker]:hidden">
+        Condiciones de la carta {value.length > 0 ? `(${value.length})` : <span className="font-normal text-ui-muted">· opcional: "+5 contra mujeres", "no persigue a elfos"</span>}
+      </summary>
+      {value.length > 0 && (
+        <ul className="mt-2 space-y-1">
+          {value.map((c, i) => (
+            <li key={i} className="flex items-center justify-between gap-2 rounded-lg bg-surface-raised px-3 py-1.5 text-sm font-semibold">
+              <span>{[c.bonus ? `${c.bonus > 0 ? '+' : ''}${c.bonus} contra ${conditionTarget(c)}` : '', c.noPursue ? `no persigue a ${conditionTarget(c)}` : ''].filter(Boolean).join(' · ')}</span>
+              <button type="button" className="grid size-10 place-items-center rounded-lg text-ui-muted hover:text-ui-fg" aria-label="Quitar condición" onClick={() => onChange(value.filter((_, j) => j !== i))}><X aria-hidden className="size-4" /></button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <select className="input" aria-label="Contra quién" value={target} onChange={(e) => setTarget(e.target.value as Target)} data-testid="cond-target">
+          <option value="female">Contra mujeres</option>
+          <option value="male">Contra hombres</option>
+          <option value="race">Contra una raza…</option>
+          <option value="class">Contra una clase…</option>
+        </select>
+        <input className="input text-center" aria-label="Bonus del monstruo" type="number" inputMode="numeric" min={-20} max={20} value={bonus} onChange={(e) => setBonus(e.target.value)} data-testid="cond-bonus" />
+        {needsText && (
+          <>
+            <input className="input col-span-2" aria-label={target === 'race' ? 'Raza' : 'Clase'} list={listId} maxLength={30} value={text} onChange={(e) => setText(e.target.value)} placeholder={target === 'race' ? 'Ej.: Elfo' : 'Ej.: Clérigo'} data-testid="cond-text" />
+            <datalist id={listId}>{(target === 'race' ? RACE_SUGGESTIONS : CLASS_SUGGESTIONS).map((s) => <option key={s} value={s} />)}</datalist>
+          </>
+        )}
+        <label className="col-span-2 flex min-h-12 items-center gap-2 text-sm font-semibold"><input type="checkbox" className="size-5" checked={!pursue} onChange={(e) => setPursue(!e.target.checked)} data-testid="cond-no-pursue" /> No los persigue al huir</label>
+      </div>
+      <button type="button" className="btn-secondary mt-1 w-full" disabled={!canAdd} onClick={add} data-testid="cond-add"><Plus aria-hidden className="size-4" /> Agregar condición</button>
+    </details>
   );
 }

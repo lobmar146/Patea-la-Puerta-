@@ -1,4 +1,4 @@
-import type { Character, Combat, GameState, Sex } from './types.js';
+import type { Character, Combat, GameState, Monster, MonsterCondition, Sex } from './types.js';
 
 export const APP_NAME = 'Pateá la Puerta!';
 
@@ -75,6 +75,55 @@ export function basePower(c: Pick<Character, 'level' | 'gear' | 'otherMods'>): n
   return c.level + c.gear + c.otherMods;
 }
 
+export interface AppliedCondition {
+  monsterId: string;
+  monsterName: string;
+  bonus: number;
+  /** Texto corto: "+5 contra mujeres (Lu)". */
+  label: string;
+  who: string[];
+}
+
+const norm = (s: string) => s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+/** "contra mujeres", "contra elfos" (texto de la condición, sin el bonus). */
+export function conditionTarget(c: Pick<MonsterCondition, 'kind' | 'value'>): string {
+  if (c.kind === 'sex') return c.value === 'female' ? 'mujeres' : 'hombres';
+  return c.value;
+}
+
+/** ¿Este personaje cumple la condición? Sin carta de raza se cuenta como humano. */
+export function matchesCondition(ch: Pick<Character, 'sex' | 'races' | 'classes'>, c: Pick<MonsterCondition, 'kind' | 'value'>): boolean {
+  if (c.kind === 'sex') return ch.sex === c.value;
+  const list = c.kind === 'race' ? (ch.races.length ? ch.races : ['Humano']) : ch.classes;
+  const want = norm(c.value).replace(/s$/, '');
+  // "Elfos" coincide con "Elfo", "enanos" con "Enano".
+  return list.some((x) => {
+    const have = norm(x).replace(/s$/, '');
+    return have === want || (want.endsWith('e') && have === want.slice(0, -1));
+  });
+}
+
+/** Condiciones con bonus que aplican por quien pelea o ayuda. Cada una se suma una vez. */
+export function appliedConditions(state: GameState, combat: Combat): AppliedCondition[] {
+  const people = [combat.fighterId, combat.helperId].filter((x): x is string => !!x && !!state.characters[x]);
+  const out: AppliedCondition[] = [];
+  for (const m of combat.monsters) {
+    for (const c of m.conditions ?? []) {
+      if (!c.bonus) continue;
+      const who = people.filter((p) => matchesCondition(state.characters[p], c)).map((p) => state.characters[p].name);
+      if (who.length) out.push({ monsterId: m.id, monsterName: m.name, bonus: c.bonus, who, label: `${c.bonus > 0 ? '+' : ''}${c.bonus} contra ${conditionTarget(c)} (${who.join(', ')})` });
+    }
+  }
+  return out;
+}
+
+/** ¿El monstruo deja de perseguir a esta persona al huir? */
+export function noPursue(state: GameState, monster: Monster, participantId: string): boolean {
+  const ch = state.characters[participantId];
+  return !!ch && (monster.conditions ?? []).some((c) => c.noPursue && matchesCondition(ch, c));
+}
+
 export interface CombatTotals {
   fighter: number;
   helper: number;
@@ -82,6 +131,9 @@ export interface CombatTotals {
   players: number;
   monsterBase: number;
   monsterMods: number;
+  /** Condiciones de los monstruos que aplican por quién pelea (sexo, raza o clase). */
+  conditionMods: number;
+  conditions: AppliedCondition[];
   monsters: number;
   /** players - monsters. Positivo: los jugadores superan. No decide el resultado. */
   diff: number;
@@ -98,9 +150,11 @@ export function combatTotals(state: GameState, combat: Combat): CombatTotals {
   const playerMods = sum('players');
   const monsterBase = combat.monsters.reduce((a, m) => a + m.strength, 0);
   const monsterMods = sum('monsters');
+  const conditions = appliedConditions(state, combat);
+  const conditionMods = conditions.reduce((a, c) => a + c.bonus, 0);
   const players = fighter + helper + playerMods;
-  const monsters = monsterBase + monsterMods;
-  return { fighter, helper, playerMods, players, monsterBase, monsterMods, monsters, diff: players - monsters };
+  const monsters = monsterBase + monsterMods + conditionMods;
+  return { fighter, helper, playerMods, players, monsterBase, monsterMods, conditionMods, conditions, monsters, diff: players - monsters };
 }
 
 /** En el juego base, un Guerrero en cualquiera de los dos puestos gana los empates. */

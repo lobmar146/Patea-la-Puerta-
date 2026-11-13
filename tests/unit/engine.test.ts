@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Action } from '../../src/shared/commands';
 import { GameError, addParticipant, applyAction, createInitialState, undoFor } from '../../src/shared/engine';
-import { activeParticipantId, avatarOf, combatTotals, identityLine } from '../../src/shared/rules';
+import { activeParticipantId, avatarOf, combatTotals, identityLine, matchesCondition, noPursue } from '../../src/shared/rules';
 import { actionSchema } from '../../src/shared/commands';
 import { computeAwards, podium } from '../../src/shared/awards';
 import { coaching, equipmentWarnings, gearFromItems, sale } from '../../src/shared/novice';
@@ -210,6 +210,35 @@ describe('combate', () => {
     const t = combatTotals(s, s.combat!);
     expect(t).toMatchObject({ fighter: 5, helper: 4, playerMods: 2, players: 11, monsters: 10, diff: 1 });
     expect(s.turn.phase).toBe('combat'); // nunca se declara victoria automática
+  });
+
+  it('condiciones del monstruo: suman según sexo, raza o clase de quien pelea y ayuda', () => {
+    let s = inCombat();
+    s = run(s, 'p1', { type: 'character.update', targetId: 'p1', patch: { sex: 'male', races: ['Elfo'] } });
+    s = run(s, 'p2', { type: 'character.update', targetId: 'p2', patch: { sex: 'female', classes: ['Clérigo'] } });
+    const m = s.combat!.monsters[0];
+    s = run(s, 'p1', { type: 'combat.updateMonster', monsterId: m.id, monster: { ...monster, conditions: [
+      { kind: 'sex', value: 'female', bonus: 5, noPursue: false },
+      { kind: 'race', value: 'Elfos', bonus: 2, noPursue: true },
+      { kind: 'class', value: 'clerigos', bonus: -3, noPursue: false },
+    ] } });
+    let t = combatTotals(s, s.combat!);
+    expect(t.conditionMods).toBe(2); // solo pelea p1 (elfo, hombre)
+    expect(t.monsters).toBe(7);
+    expect(t.conditions.map((c) => c.label)).toEqual(['+2 contra Elfos (Pablo)']);
+    expect(noPursue(s, s.combat!.monsters[0], 'p1')).toBe(true);
+    expect(noPursue(s, s.combat!.monsters[0], 'p2')).toBe(false);
+    s = run(s, 'p1', { type: 'help.request', toId: 'p2' });
+    s = run(s, 'p2', { type: 'help.respond', requestId: s.combat!.helpRequests[0].id, accept: true });
+    t = combatTotals(s, s.combat!);
+    expect(t.conditionMods).toBe(5 + 2 - 3);
+    // Sin carta de raza se cuenta como humano; quitar las condiciones las borra.
+    expect(matchesCondition({ sex: undefined, races: [], classes: [] }, { kind: 'race', value: 'Humanos' })).toBe(true);
+    expect(matchesCondition({ sex: undefined, races: [], classes: ['Ladrón'] }, { kind: 'class', value: 'ladrones' })).toBe(true);
+    s = run(s, 'p1', { type: 'combat.updateMonster', monsterId: m.id, monster });
+    expect(s.combat!.monsters[0].conditions).toBeUndefined();
+    expect(actionSchema.safeParse({ type: 'combat.addMonster', monster: { strength: 3, conditions: [{ kind: 'sex', value: 'otro', bonus: 2 }] } }).success).toBe(false);
+    expect(actionSchema.safeParse({ type: 'combat.addMonster', monster: { strength: 3, conditions: [{ kind: 'race', value: 'Elfo', bonus: 0 }] } }).success).toBe(false);
   });
 
   it('objetos de un solo uso: no suman al equipo, se gastan en el combate y su bonus se va al terminar', () => {
