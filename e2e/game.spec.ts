@@ -295,8 +295,11 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   for (let level = 4; level <= 10; level++) {
     await dm.getByRole('button', { name: 'Sumar 1 a Nivel' }).click();
     await expect(dm.getByTestId('level-value')).toHaveText(String(level));
+    // En 9 todos ven que está a un paso de ganar.
+    if (level === 9) await expect(p2.getByTestId('almost-banner')).toContainText('Pablo en nivel 9');
   }
   await expect(dm.getByTestId('level-alert')).toBeVisible();
+  await expect(p2.getByTestId('almost-banner')).toHaveCount(0);
   await expect(tv.getByTestId('tv-view')).toContainText('El DM confirma');
   await expect(p1.getByTestId('finished')).toHaveCount(0);
   // Reacción rápida: llega flotando a los demás y a la tele.

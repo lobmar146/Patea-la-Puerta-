@@ -58,6 +58,14 @@ describe('a quién se avisa', () => {
     expect(pushMessagesFor(after, run(after, 'p1', { type: 'character.update', targetId: 'p1', patch: { level: 2 } }))).toEqual([]);
   });
 
+  it('cuando alguien llega a nivel 9, a los demás jugadores (una sola vez)', () => {
+    const s = run(lobby(), 'dm', { type: 'game.start' });
+    const nine = run(s, 'p1', { type: 'character.update', targetId: 'p1', patch: { level: 9 } });
+    expect(pushMessagesFor(s, nine)).toEqual([expect.objectContaining({ participantId: 'dm', title: '¡A un paso de ganar!' })]);
+    // Seguir en 9 no vuelve a avisar.
+    expect(pushMessagesFor(nine, run(nine, 'p1', { type: 'character.update', targetId: 'p1', patch: { gear: 2 } }))).toEqual([]);
+  });
+
   it('al pedir ayuda, a quien se la piden', () => {
     let s = run(lobby(), 'dm', { type: 'game.start' });
     s = run(s, 'dm', { type: 'turn.kickDoor' });

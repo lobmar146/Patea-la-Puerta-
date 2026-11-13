@@ -2,7 +2,7 @@ import { ArrowLeft, Maximize, Minimize, Pause, Play, Wifi, WifiOff } from 'lucid
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PHASE_GUIDE } from '../../shared/phases';
-import { APP_NAME, activeParticipantId, basePower, displayName, identityLine, upcoming } from '../../shared/rules';
+import { APP_NAME, activeParticipantId, almostWinners, basePower, displayName, identityLine, upcoming } from '../../shared/rules';
 import { Illustration } from '../components/Illustration';
 import { ActiveStopwatch } from '../components/Stopwatch';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -156,6 +156,7 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
                 <CombatTotalsPanel state={state} combat={state.combat} big />
               </section>
             )}
+            {!state.levelAlert && !state.combat && almostWinners(state).length > 0 && <p className="tv-level-alert rounded-2xl border border-gold/50 bg-[#68410f]/70 p-3 text-center text-base font-black text-white sm:text-xl" data-testid="tv-almost"><GameIcon name="victory" className="mr-1 inline size-5" />A un paso: {almostWinners(state).map((id) => displayName(state, id)).join(', ')} en nivel 9. Solo gana matando un monstruo.</p>}
             {state.levelAlert && <p className="tv-level-alert rounded-2xl border border-gold/50 bg-[#68410f] p-3 text-center text-base font-black text-white sm:text-xl"><GameIcon name="victory" className="mr-1 inline size-5" />{displayName(state, state.levelAlert.participantId)} llegó a nivel {state.levelAlert.level}. El DM confirma.</p>}
             </div>
 

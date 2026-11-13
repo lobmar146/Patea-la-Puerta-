@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Action } from '../../src/shared/commands';
 import { GameError, addParticipant, applyAction, createInitialState, undoFor } from '../../src/shared/engine';
-import { activeParticipantId, avatarOf, combatTotals, identityLine, matchesCondition, noPursue } from '../../src/shared/rules';
+import { activeParticipantId, almostWinners, avatarOf, combatTotals, identityLine, matchesCondition, noPursue } from '../../src/shared/rules';
 import { actionSchema } from '../../src/shared/commands';
 import { computeAwards, podium } from '../../src/shared/awards';
 import { coaching, equipmentWarnings, gearFromItems, sale } from '../../src/shared/novice';
@@ -38,6 +38,21 @@ function expectError(fn: () => unknown, code: GameError['code']) {
 
 const started = () => run(setup(), 'dm', { type: 'game.start' });
 const monster = { name: 'Planta', strength: 5, levels: 1, treasures: 1 };
+
+describe('aviso de nivel 9', () => {
+  it('avisa al llegar a 9 (una vez) y lista a quienes están a un paso', () => {
+    let s = started();
+    const r = applyAction(s, 'p1', { type: 'character.update', targetId: 'p1', patch: { level: 9 } }, { now, id });
+    expect(r.events.map((e) => e.type)).toContain('level.nine');
+    expect(r.events.find((e) => e.type === 'level.nine')?.message).toContain('solo se gana matando un monstruo');
+    s = r.state;
+    expect(almostWinners(s)).toEqual(['p1']);
+    expect(applyAction(s, 'p1', { type: 'character.update', targetId: 'p1', patch: { gear: 1 } }, { now, id }).events.map((e) => e.type)).not.toContain('level.nine');
+    s = run(s, 'p1', { type: 'character.update', targetId: 'p1', patch: { level: 10 } });
+    expect(almostWinners(s)).toEqual([]);
+    expect(s.levelAlert?.participantId).toBe('p1');
+  });
+});
 
 describe('deshacer', () => {
   it('deshace el último cambio manual, una sola vez y solo si no hubo otro después', () => {
