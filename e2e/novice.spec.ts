@@ -63,8 +63,27 @@ test('partida de práctica con modo novato', async ({ browser }) => {
   await expect(page.getByTestId('gear-value')).toHaveText('0');
   await expect(page.getByTestId('level-value')).toHaveText('2');
 
-  // El modo novato se puede apagar fuera de la práctica; acá queda fijo.
-  await tab('Turno');
-  await expect(page.getByRole('button', { name: 'Apagar modo novato' })).toHaveCount(0);
+  // En la práctica el switch queda fijo en activo.
+  await expect(page.getByTestId('novice-switch')).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByTestId('novice-switch')).toBeDisabled();
+  await ctx.close();
+});
+
+test('modo novato: apagado por defecto, se prende al crear y se cambia en Mi personaje', async ({ browser }) => {
+  const ctx = await browser.newContext({ baseURL: BASE, ...PHONE });
+  const page = await ctx.newPage();
+  const tab = (name: string) => page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name, exact: true }).click();
+  await page.goto('/?modo=crear');
+  const sw = page.getByTestId('novice-switch');
+  await expect(sw).toHaveAttribute('aria-checked', 'false');
+  await sw.click();
+  await expect(sw).toHaveAttribute('aria-checked', 'true');
+  await page.getByLabel('Tu nombre').fill('Nova');
+  await page.getByRole('button', { name: 'Crear partida' }).click();
+  await expect(page.getByTestId('coach')).toBeVisible();
+  await tab('Mi personaje');
+  await page.getByTestId('novice-switch').click();
+  await tab('Sala');
+  await expect(page.getByTestId('coach')).toHaveCount(0);
   await ctx.close();
 });

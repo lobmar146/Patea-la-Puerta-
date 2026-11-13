@@ -4,7 +4,7 @@ import type { CharacterPatch } from '../../shared/commands';
 import { CLASS_SUGGESTIONS, RACE_SUGGESTIONS, avatarOf, basePower } from '../../shared/rules';
 import { Avatar, AvatarPicker } from '../components/Avatar';
 import { EquipmentEditor } from '../components/EquipmentEditor';
-import { DeathGuide, SellCalculator } from '../components/NoviceHelp';
+import { DeathGuide, NoviceSwitch, SellCalculator } from '../components/NoviceHelp';
 import { Section, Stepper } from '../components/ui';
 import { useRoom } from '../useRoom';
 
@@ -118,6 +118,7 @@ export function CharacterEditor({ targetId }: { targetId: string }) {
 
       {targetId === snap.me.participantId && (
         <div className="grid grid-cols-2 gap-2">
+          <div className="col-span-2"><NoviceSwitch forced={!!snap.state.config.practice} /></div>
           <button type="button" className="btn-secondary" onClick={() => setGuide('sell')} data-testid="open-sell"><Coins aria-hidden className="size-4" /> Vender objetos</button>
           <button type="button" className="btn-secondary" onClick={() => setGuide('death')} data-testid="open-death"><Skull aria-hidden className="size-4" /> Me morí</button>
           <SellCalculator open={guide === 'sell'} onClose={() => setGuide(null)} />

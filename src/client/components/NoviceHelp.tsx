@@ -9,19 +9,52 @@ import { Modal } from './Modal';
 type Open = 'what' | 'death' | 'sell' | null;
 
 /** Tarjeta del modo novato: consejos para este momento y acceso a las guías. */
+/** Interruptor accesible (role=switch). */
+export function Switch({ checked, onChange, label, hint, disabled, testId }: { checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string; disabled?: boolean; testId?: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      data-testid={testId}
+      onClick={() => onChange(!checked)}
+      className="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-surface-muted px-3 py-2 text-left disabled:opacity-70"
+    >
+      <GraduationCap aria-hidden className="size-5 shrink-0 text-accent-blue" />
+      <span className="min-w-0 flex-1">
+        <span className="block font-bold">{label}</span>
+        {hint && <span className="block text-sm text-ui-muted">{hint}</span>}
+      </span>
+      <span aria-hidden className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${checked ? 'bg-accent-blue' : 'bg-ui-muted/40'}`}>
+        <span className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-[1.375rem]' : 'translate-x-0.5'}`} />
+      </span>
+    </button>
+  );
+}
+
+/** Switch del modo novato (preferencia de este dispositivo). */
+export function NoviceSwitch({ forced = false }: { forced?: boolean }) {
+  const [on, setOn] = useNoviceMode();
+  return (
+    <Switch
+      checked={on || forced}
+      onChange={setOn}
+      disabled={forced}
+      testId="novice-switch"
+      label="Modo novato"
+      hint={forced ? 'Siempre activo en la partida de práctica.' : 'Consejos paso a paso en cada turno. Se guarda en este celular.'}
+    />
+  );
+}
+
 export function CoachCard() {
   const { snap, me } = useRoom();
-  const [on, setOn] = useNoviceMode();
+  const [on] = useNoviceMode();
   const [open, setOpen] = useState<Open>(null);
   if (!snap || !me) return null;
   const practice = !!snap.state.config.practice;
-  if (!on && !practice) {
-    return (
-      <button type="button" className="inline-flex min-h-11 items-center gap-2 px-1 text-sm font-semibold text-ui-muted hover:text-ui-fg" onClick={() => setOn(true)} data-testid="novice-on">
-        <GraduationCap aria-hidden className="size-4" /> Activar modo novato
-      </button>
-    );
-  }
+  if (!on && !practice) return null;
   const tips = coaching(snap.state, me.id);
   return (
     <section className="card border-accent-blue/25 bg-accent-blue/[.06] p-4" aria-labelledby="coach-title" data-testid="coach">
@@ -30,9 +63,6 @@ export function CoachCard() {
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <h2 id="coach-title" className="text-xs font-black uppercase tracking-[.16em] text-accent-blue">{practice ? 'Práctica · consejo' : 'Modo novato'}</h2>
-            {!practice && (
-              <button type="button" className="grid size-9 place-items-center rounded-full text-ui-muted hover:bg-surface-raised" aria-label="Apagar modo novato" title="Apagar modo novato" onClick={() => setOn(false)}><X aria-hidden className="size-4" /></button>
-            )}
           </div>
           <ul className="mt-1 space-y-1.5 text-[15px] leading-snug" data-testid="coach-tips">
             {tips.now.slice(0, 2).map((t) => <li key={t}>{t}</li>)}
