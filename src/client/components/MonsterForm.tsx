@@ -1,9 +1,10 @@
-import { List, Swords } from 'lucide-react';
+import { List } from 'lucide-react';
 import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { MonsterInput } from '../../shared/commands';
 import { activeParticipantId, basePower, combatTotals, playersWinTies } from '../../shared/rules';
 import type { GameState } from '../../shared/types';
 import { monsterSets, searchMonsters, type MonsterPreset } from '../assets/monsters';
+import { GameIcon } from './GameIcon';
 
 export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, initial }: {
   state: GameState;
@@ -113,7 +114,7 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
                       </span>
                       {fighterId && (
                         <span className={`flex shrink-0 items-center gap-1 text-xs font-bold ${needed > 0 ? 'text-accent-wine' : 'text-accent-moss'}`}>
-                          <Swords aria-hidden className="size-3.5 shrink-0" />
+                          <GameIcon name="combat" className="size-3.5 shrink-0" />
                           {needed > 0 ? `−${needed}` : 'Ventaja'}
                           <span className="sr-only">{needed > 0 ? `faltan ${needed} puntos` : 'jugadores con ventaja'}</span>
                         </span>

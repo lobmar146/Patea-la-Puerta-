@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Backpack, ChevronRight, DoorOpen, Layers, Skull, Swords, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { PHASE_GUIDE } from '../../shared/phases';
 import { activeParticipantId, displayName, upcoming } from '../../shared/rules';
@@ -9,6 +9,7 @@ import { ActiveStopwatch } from '../components/Stopwatch';
 import { EventList } from '../components/ui';
 import { useRoom } from '../useRoom';
 import { CombatView } from './CombatView';
+import { GameIcon } from '../components/GameIcon';
 
 type TurnModal = 'door' | 'trouble' | 'curse' | 'loot' | 'charity' | 'endTurn' | null;
 
@@ -29,7 +30,7 @@ export function TurnView() {
 
   const actionButton = () => {
     if (!canAct) return null;
-    if (phase === 'setup') return <button className="btn-gold min-h-14 w-full text-lg sm:text-xl" disabled={pending} onClick={() => send({ type: 'turn.kickDoor' })}><DoorOpen aria-hidden className="size-6 shrink-0" strokeWidth={2.5} /> Patear la puerta</button>;
+    if (phase === 'setup') return <button className="btn-gold min-h-14 w-full text-lg sm:text-xl" disabled={pending} onClick={() => send({ type: 'turn.kickDoor' })}><GameIcon name="kick" className="size-6 shrink-0" /> Patear la puerta</button>;
     if (phase === 'kickDoor') return <button className="btn-primary w-full text-lg sm:text-xl" onClick={() => open('door')}>¿Qué salió detrás de la puerta? <ChevronRight aria-hidden className="size-4 shrink-0" /></button>;
     if (phase === 'curse') return <button className="btn-go w-full text-lg" onClick={() => open('curse')}>Registrar que resolví la maldición</button>;
     if (phase === 'noMonster') return <button className="btn-primary w-full text-lg sm:text-xl" onClick={() => open('trouble')}>Elegir: buscar problemas o saquear</button>;
@@ -92,9 +93,9 @@ export function TurnView() {
       <Modal open={modal === 'door'} title="¿Qué carta apareció?" onClose={() => setModal(null)}>
         <div className="space-y-3">
           <p className="text-sm">Elegí el resultado de la carta que robaste en la mesa.</p>
-          <button className="btn-primary w-full" disabled={pending} onClick={() => setModal('trouble')}><Skull aria-hidden className="size-5 shrink-0" /> Monstruo: cargarlo y entrar en combate</button>
-          <button className="btn-secondary w-full" disabled={pending} onClick={() => { void send({ type: 'turn.doorResult', result: 'curse' }); setModal(null); }}><Zap aria-hidden className="size-5 shrink-0" /> Maldición</button>
-          <button className="btn-secondary w-full" disabled={pending} onClick={() => { void send({ type: 'turn.doorResult', result: 'other' }); setModal(null); }}><Layers aria-hidden className="size-5 shrink-0" /> Otra carta</button>
+          <button className="btn-primary w-full" disabled={pending} onClick={() => setModal('trouble')}><GameIcon name="monster" className="size-5 shrink-0" /> Monstruo: cargarlo y entrar en combate</button>
+          <button className="btn-secondary w-full" disabled={pending} onClick={() => { void send({ type: 'turn.doorResult', result: 'curse' }); setModal(null); }}><GameIcon name="curse" className="size-5 shrink-0" /> Maldición</button>
+          <button className="btn-secondary w-full" disabled={pending} onClick={() => { void send({ type: 'turn.doorResult', result: 'other' }); setModal(null); }}><GameIcon name="otherCard" className="size-5 shrink-0" /> Otra carta</button>
         </div>
       </Modal>
 
@@ -120,7 +121,7 @@ export function TurnView() {
                 <button type="button" className="choice-card" disabled={pending} onClick={() => setTroubleStep(true)}>
                   <Illustration name="trouble" className="w-20 shrink-0 sm:w-24" />
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2 text-xl font-black"><Swords aria-hidden className="size-5 shrink-0" />Buscar problemas</span>
+                    <span className="flex items-center gap-2 text-xl font-black"><GameIcon name="combat" className="size-5 shrink-0" />Buscar problemas</span>
                     <span className="mt-1 block text-sm text-ui-muted">Jugás un monstruo de tu mano y peleás contra él. Si ganás, subís de nivel y te llevás tesoros.</span>
                   </span>
                 </button>
@@ -128,7 +129,7 @@ export function TurnView() {
               <button type="button" className="choice-card" disabled={pending} onClick={() => { void send({ type: 'turn.lootRoom' }); closeTrouble(); }}>
                 <Illustration name="loot" className="w-20 shrink-0 sm:w-24" />
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2 text-xl font-black"><Backpack aria-hidden className="size-5 shrink-0" />Saquear la sala</span>
+                  <span className="flex items-center gap-2 text-xl font-black"><GameIcon name="loot" className="size-5 shrink-0" />Saquear la sala</span>
                   <span className="mt-1 block text-sm text-ui-muted">Robás una carta de Puerta boca abajo y la guardás en tu mano. Sin pelea.</span>
                 </span>
               </button>

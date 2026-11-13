@@ -1,8 +1,8 @@
-import { Timer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { activeParticipantId, displayName } from '../../shared/rules';
 import type { GameState } from '../../shared/types';
 import { serverNow } from '../serverClock';
+import { GameIcon } from './GameIcon';
 
 function useClockNow(running: boolean) {
   const [now, setNow] = useState(() => serverNow());
@@ -36,7 +36,7 @@ export function ActiveStopwatch({ state, big = false }: { state: GameState; big?
   return (
     <div className={`flex items-center justify-between gap-3 rounded-2xl bg-surface-muted px-4 py-2.5 text-ui-fg ring-1 ring-ui-line/[.07] ${big ? 'text-lg' : 'text-sm'}`} data-testid="active-stopwatch">
       <span className="flex min-w-0 items-center gap-2 font-semibold">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent-brand/15 text-accent-brand" aria-hidden><Timer aria-hidden className="size-5 shrink-0" /></span>
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent-brand/15 text-accent-brand" aria-hidden><GameIcon name="time" className="size-5 shrink-0" /></span>
         <span className="truncate text-ui-muted">Tiempo de {displayName(state, activeId)}{state.status === 'paused' ? ' · en pausa' : ''}</span>
       </span>
       <output className={`shrink-0 font-black tabular-nums tracking-wide ${big ? 'text-3xl sm:text-4xl' : 'text-2xl'}`} aria-label={`Tiempo de turno: ${formatDuration(turnElapsed(state, now))}`}>
@@ -54,7 +54,7 @@ export function PlayerTime({ state, participantId }: { state: GameState; partici
   const elapsed = activeId === participantId && state.status !== 'lobby' ? turnElapsed(state, now) : 0;
   return (
     <span className="inline-flex items-center gap-1 text-xs font-medium text-ui-muted" data-testid={`player-time-${participantId}`}>
-      <Timer aria-hidden className="size-4 shrink-0" /> Tiempo en partida: <b className="tabular-nums">{formatDuration(total + elapsed)}</b>
+      <GameIcon name="time" className="size-4 shrink-0" /> Tiempo en partida: <b className="tabular-nums">{formatDuration(total + elapsed)}</b>
     </span>
   );
 }

@@ -33,3 +33,7 @@ Munchkin, sus cartas y arte © Steve Jackson Games. El arte de las cartas fotogr
 ## Mantener o sustituir
 
 Para cambiar una asignación, editar `manifest.ts`. Para volver a intentar una descarga simple, ejecutar `npm run assets:fetch`; el script no sortea bloqueos. Las referencias de comercio como Amazon/eBay son fotografías de terceros, por lo que se reemplazan por una fuente autorizada si se consigue permiso. Los datos de cartas se documentan aparte: esta lista es solo de las ilustraciones usadas por fase, no un catálogo completo de cartas.
+
+## Íconos de juego
+
+`src/client/components/GameIcon.tsx` incluye 20 íconos de [game-icons.net](https://game-icons.net) (autores: Lorc, Delapouite y colaboradores), licencia [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Se copiaron desde el paquete `@iconify-json/game-icons` 1.2.4 al código (sin hotlinks). El crédito figura en el pie de la pantalla de inicio. Los íconos de interfaz siguen siendo de Lucide (ISC).

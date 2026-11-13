@@ -1,4 +1,4 @@
-import { Crown, Dices, DoorOpen, Pause, Shield, Trophy, Tv, type LucideIcon } from 'lucide-react';
+import { Pause, Tv } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { APP_NAME, displayName } from '../../shared/rules';
@@ -12,6 +12,7 @@ import { HelpInbox } from './HelpInbox';
 import { Lobby } from './Lobby';
 import { TableView } from './TableView';
 import { TurnView } from './TurnView';
+import { GameIcon, type GameIconName } from '../components/GameIcon';
 
 type Tab = 'me' | 'turn' | 'table' | 'dm';
 
@@ -48,11 +49,11 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
   if (state.status === 'finished') return <Finished />;
 
   const isPlayer = me.role === 'player';
-  const tabs: { id: Tab; label: string; icon: LucideIcon }[] = [
-    ...(isPlayer ? [{ id: 'me' as Tab, label: 'Mi personaje', icon: Shield }] : []),
-    { id: 'turn', label: state.status === 'lobby' ? 'Sala' : 'Turno', icon: DoorOpen },
-    { id: 'table', label: 'Mesa', icon: Dices },
-    ...(me.isDm ? [{ id: 'dm' as Tab, label: 'DM', icon: Crown }] : []),
+  const tabs: { id: Tab; label: string; icon: GameIconName }[] = [
+    ...(isPlayer ? [{ id: 'me' as Tab, label: 'Mi personaje', icon: 'hero' as GameIconName }] : []),
+    { id: 'turn', label: state.status === 'lobby' ? 'Sala' : 'Turno', icon: 'door' as GameIconName },
+    { id: 'table', label: 'Mesa', icon: 'table' as GameIconName },
+    ...(me.isDm ? [{ id: 'dm' as Tab, label: 'DM', icon: 'dm' as GameIconName }] : []),
   ];
   const current = tabs.some((t) => t.id === tab) ? tab : 'turn';
   const alert = state.levelAlert;
@@ -63,7 +64,7 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
       <header className="inverse-surface sticky top-0 z-30 border-b border-white/[.06] bg-[#120d0a]/90 px-3 py-2.5 text-parchment-50 backdrop-blur-xl sm:px-5">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-b from-[#f6b64a] to-[#d98a16] text-[#2a1606] shadow-[inset_0_1px_0_rgba(255,255,255,.35)]" aria-hidden><DoorOpen className="size-5" strokeWidth={2.5} /></span>
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-b from-[#f6b64a] to-[#d98a16] text-[#2a1606] shadow-[inset_0_1px_0_rgba(255,255,255,.35)]" aria-hidden><GameIcon name="door" className="size-5" /></span>
             <span className="min-w-0 leading-tight">
               <span className="block truncate font-display text-base font-extrabold tracking-tight sm:text-lg">{APP_NAME}</span>
               <span className="block text-[11px] font-semibold uppercase tracking-[.14em] text-parchment-100/60">Sala <b className="font-black tracking-[.2em] text-[#f6b64a]" data-testid="room-code">{snap.code}</b></span>
@@ -85,7 +86,7 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
         )}
         {alert && (
           <div role="alert" className="card border-gold p-3" data-testid="level-alert">
-            <p className="text-lg font-bold"><Trophy aria-hidden className="mr-1 inline size-5" />{displayName(state, alert.participantId)} figura en nivel {alert.level}.</p>
+            <p className="text-lg font-bold"><GameIcon name="victory" className="mr-1 inline size-5" />{displayName(state, alert.participantId)} figura en nivel {alert.level}.</p>
             <p className="text-sm">La app no declara ganadores sola: según el reglamento, el nivel 10 normalmente se alcanza matando un monstruo. El DM confirma lo que pasó en la mesa.</p>
             {me.isDm && (
               <div className="mt-2 flex flex-wrap gap-2">
@@ -117,7 +118,7 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
                 onClick={() => setTab(t.id)}
               >
                 <span className={`grid h-8 w-14 place-items-center rounded-full transition-colors ${current === t.id ? 'bg-accent-brand/15' : 'group-hover:bg-surface-raised'}`}>
-                  <t.icon aria-hidden className="size-5" strokeWidth={current === t.id ? 2.5 : 2} />
+                  <GameIcon name={t.icon} className="size-6" />
                 </span>
                 {t.label}
               </button>

@@ -1,10 +1,11 @@
-import { DoorOpen, Shield, Smartphone, Swords, Tv } from 'lucide-react';
+import { Shield, Smartphone, Tv } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { APP_NAME, DEFAULT_SETS } from '../../shared/rules';
 import { api } from '../api';
 import { Illustration } from '../components/Illustration';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { GameIcon } from '../components/GameIcon';
 
 export function Home() {
   const nav = useNavigate();
@@ -42,7 +43,7 @@ export function Home() {
       <header className="inverse-surface relative isolate overflow-hidden rounded-[2rem] px-5 py-7 text-parchment-50 sm:px-9 sm:py-10" style={{ background: 'radial-gradient(ellipse 80% 70% at 100% 0%, rgba(240,165,49,.28), transparent 60%), radial-gradient(ellipse 60% 60% at 0% 100%, rgba(192,42,36,.25), transparent 65%), linear-gradient(160deg, #2a1c14, #140e0b)' }}>
         <div className="grid grid-cols-[1fr_auto] items-center gap-4 sm:gap-8">
           <div className="min-w-0">
-            <span className="grid size-12 place-items-center rounded-2xl bg-gradient-to-b from-[#f6b64a] to-[#d98a16] text-[#2a1606] shadow-[inset_0_1px_0_rgba(255,255,255,.35),0_10px_24px_-8px_rgba(240,165,49,.7)]" aria-hidden><DoorOpen className="size-7" strokeWidth={2.5} /></span>
+            <span className="grid size-12 place-items-center rounded-2xl bg-gradient-to-b from-[#f6b64a] to-[#d98a16] text-[#2a1606] shadow-[inset_0_1px_0_rgba(255,255,255,.35),0_10px_24px_-8px_rgba(240,165,49,.7)]" aria-hidden><GameIcon name="door" className="size-7" /></span>
             <h1 className="mt-4 text-[2.6rem] font-extrabold leading-[.95] sm:text-7xl">{APP_NAME}</h1>
             <p className="mt-3 max-w-md text-base leading-snug text-parchment-100/80 sm:text-lg">La app lleva turnos, niveles y combates. Las cartas, los dados y las traiciones quedan en la mesa.</p>
           </div>
@@ -51,7 +52,7 @@ export function Home() {
           </div>
         </div>
         <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-parchment-100/75">
-          <li className="inline-flex items-center gap-2"><Swords aria-hidden className="size-4 shrink-0 text-[#f6b64a]" /> Combate en equipo</li>
+          <li className="inline-flex items-center gap-2"><GameIcon name="combat" className="size-4 shrink-0 text-[#f6b64a]" /> Combate en equipo</li>
           <li className="inline-flex items-center gap-2"><Smartphone aria-hidden className="size-4 shrink-0 text-[#f6b64a]" /> Todos sincronizados</li>
           <li className="inline-flex items-center gap-2"><Tv aria-hidden className="size-4 shrink-0 text-[#f6b64a]" /> Vista para la tele</li>
         </ul>
@@ -60,7 +61,7 @@ export function Home() {
       <div className="grid gap-4 md:grid-cols-2 sm:gap-6">
         <form onSubmit={create} className="card space-y-4 p-5 sm:p-6" aria-labelledby="crear">
           <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent-brand/15 text-accent-brand"><Swords aria-hidden className="size-5 shrink-0" /></span>
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent-brand/15 text-accent-brand"><GameIcon name="combat" className="size-5 shrink-0" /></span>
             <div>
               <h2 id="crear" className="text-2xl font-bold">Crear partida</h2>
               <p className="mt-1 text-sm text-ui-muted">Prepará una sala nueva para tu grupo.</p>
@@ -107,7 +108,7 @@ export function Home() {
         </form>
       </div>
       <p className="text-center text-xs text-ui-muted">
-        Aplicación de fans, no oficial. Munchkin es una marca de Steve Jackson Games.
+        Aplicación de fans, no oficial. Munchkin es una marca de Steve Jackson Games. Íconos de <a className="underline" href="https://game-icons.net" target="_blank" rel="noreferrer">game-icons.net</a> (Lorc, Delapouite y otros, CC BY 3.0).
       </p>
     </main>
   );

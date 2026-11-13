@@ -1,8 +1,9 @@
-import { Crown, NotebookPen, Play } from 'lucide-react';
+import { NotebookPen, Play } from 'lucide-react';
 import { activeParticipantId, basePower } from '../../shared/rules';
 import { PresenceDot, Section } from '../components/ui';
 import { PlayerTime } from '../components/Stopwatch';
 import { useRoom } from '../useRoom';
+import { GameIcon } from '../components/GameIcon';
 
 export function TableView() {
   const { snap, online } = useRoom();
@@ -27,7 +28,7 @@ export function TableView() {
               <div className="p-4 sm:p-5">
                 <div className="flex items-center gap-3">
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-lg font-black text-white shadow-inner" style={{ background: c.color }}>{c.name.slice(0, 1).toUpperCase()}</span>
-                  <div className="min-w-0 flex-1"><h3 className="truncate text-lg font-black tracking-tight sm:text-xl">{c.name}</h3><div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><PresenceDot online={online.has(c.id)} />{p.isDm && <span className="inline-flex items-center gap-1 text-xs font-bold text-accent-gold"><Crown aria-hidden className="size-3 shrink-0" /> DM</span>}</div></div>
+                  <div className="min-w-0 flex-1"><h3 className="truncate text-lg font-black tracking-tight sm:text-xl">{c.name}</h3><div className="flex flex-wrap items-center gap-x-2 gap-y-0.5"><PresenceDot online={online.has(c.id)} />{p.isDm && <span className="inline-flex items-center gap-1 text-xs font-bold text-accent-gold"><GameIcon name="dm" className="size-3 shrink-0" /> DM</span>}</div></div>
                   <div className="min-w-14 text-center"><span className="block text-[9px] font-black uppercase tracking-widest text-ui-muted">Nivel</span><span className="font-display text-3xl font-black tabular-nums" data-testid={`level-${c.name}`}>{c.level}</span></div>
                 </div>
                 {active === c.id && <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-accent-gold/15 px-2.5 py-1 text-xs font-black text-accent-gold"><Play aria-hidden className="size-3 shrink-0" /> Su turno</div>}

@@ -1,4 +1,4 @@
-import { Crown, Pause, Play } from 'lucide-react';
+import { Pause, Play } from 'lucide-react';
 import { useState } from 'react';
 import { PHASE_LABEL } from '../../shared/engine';
 import { activeParticipantId, displayName } from '../../shared/rules';
@@ -6,6 +6,7 @@ import { PHASES, type Phase } from '../../shared/types';
 import { PresenceDot, Section } from '../components/ui';
 import { useRoom } from '../useRoom';
 import { CharacterEditor } from './CharacterEditor';
+import { GameIcon } from '../components/GameIcon';
 
 export function DmPanel() {
   const { snap, me, online, send, pending } = useRoom();
@@ -25,7 +26,7 @@ export function DmPanel() {
       <header className="inverse-surface relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-ink via-[#38271c] to-royal/80 p-5 text-parchment-50 shadow-[0_18px_45px_rgba(43,29,18,.18)] sm:p-7">
         <div aria-hidden className="absolute -right-12 -top-20 -z-10 h-64 w-64 rounded-full border-[26px] border-white/[.04]" />
         <p className="text-[10px] font-black uppercase tracking-[.24em] text-parchment-200 sm:text-xs">Herramientas de mesa</p>
-        <div className="mt-2 flex items-end justify-between gap-3"><div><h1 className="font-display text-3xl font-black sm:text-4xl">Panel del DM</h1><p className="mt-1 text-sm text-parchment-100 sm:text-base">Controlá la partida y ayudá a que siga el ritmo.</p></div><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/10 text-2xl"><Crown aria-hidden className="size-6 shrink-0" /></span></div>
+        <div className="mt-2 flex items-end justify-between gap-3"><div><h1 className="font-display text-3xl font-black sm:text-4xl">Panel del DM</h1><p className="mt-1 text-sm text-parchment-100 sm:text-base">Controlá la partida y ayudá a que siga el ritmo.</p></div><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/10 text-2xl"><GameIcon name="dm" className="size-6 shrink-0" /></span></div>
       </header>
       <Section title="Partida">
         <div className="flex flex-wrap gap-2">

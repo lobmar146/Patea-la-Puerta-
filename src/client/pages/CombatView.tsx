@@ -1,4 +1,4 @@
-import { Footprints, HandHelping, Hourglass, Plus, Sparkles, Trophy } from 'lucide-react';
+import { Hourglass, Plus, Sparkles } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { Combat, GameState } from '../../shared/types';
 import { combatTotals, displayName, playersWinTies } from '../../shared/rules';
@@ -6,6 +6,7 @@ import { Illustration } from '../components/Illustration';
 import { Modal } from '../components/Modal';
 import { MonsterForm } from '../components/MonsterForm';
 import { useRoom } from '../useRoom';
+import { GameIcon } from '../components/GameIcon';
 
 export function diffText(diff: number, playersTakeTie = false) {
   if (diff > 0) return `Los jugadores superan por ${diff}`;
@@ -145,7 +146,7 @@ export function CombatView() {
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {candidates.map((id) => (
               <button key={id} className="btn-blue w-full" disabled={pending || pendingReqs.some((r) => r.toId === id)} onClick={() => send({ type: 'help.request', toId: id })}>
-                <HandHelping aria-hidden className="size-5 shrink-0" /> Pedir ayuda a {displayName(state, id)}
+                <GameIcon name="help" className="size-5 shrink-0" /> Pedir ayuda a {displayName(state, id)}
               </button>
             ))}
           </div>
@@ -219,7 +220,7 @@ export function CombatView() {
             </li>
           ))}
         </ul>
-        {isPlayer && <button className="btn-secondary mt-2 w-full sm:w-auto" onClick={() => setModal('modifier')}><Plus aria-hidden className="size-4 shrink-0" /> Añadir modificador</button>}
+        {isPlayer && <button className="btn-secondary mt-2 w-full sm:w-auto" onClick={() => setModal('modifier')}><GameIcon name="card" className="size-5" /> Añadir modificador</button>}
       </div>
 
       {canResolve && (
@@ -227,8 +228,8 @@ export function CombatView() {
           <h3 className="font-bold">Resolver combate</h3>
           <p className="mt-1 text-sm">Elegí cómo terminó en la mesa y registralo.</p>
           <div className="mt-2 grid gap-2 sm:grid-cols-3">
-            <button className="btn-go w-full" onClick={() => setModal('victory')}><Trophy aria-hidden className="size-4 shrink-0" /> Victoria</button>
-            <button className="btn-secondary w-full" onClick={() => setModal('flee')}><Footprints aria-hidden className="size-4 shrink-0" /> Huida</button>
+            <button className="btn-go w-full" onClick={() => setModal('victory')}><GameIcon name="victory" className="size-4 shrink-0" /> Victoria</button>
+            <button className="btn-secondary w-full" onClick={() => setModal('flee')}><GameIcon name="flee" className="size-4 shrink-0" /> Huida</button>
             <button className="btn-secondary w-full" onClick={() => setModal('other')}><Sparkles aria-hidden className="size-4 shrink-0" /> Otra resolución</button>
           </div>
         </div>
@@ -242,12 +243,12 @@ export function CombatView() {
           </div>
           {candidates.filter((id) => !combat.helpRequests.some((r) => r.toId === id && r.status === 'rejected')).map((id) => (
             <button key={id} className="btn-blue w-full text-lg" disabled={pending} onClick={() => askHelp(id)}>
-              <HandHelping aria-hidden className="size-5 shrink-0" /> Pedir ayuda a {displayName(state, id)}
+              <GameIcon name="help" className="size-5 shrink-0" /> Pedir ayuda a {displayName(state, id)}
             </button>
           ))}
           <div className="grid grid-cols-2 gap-2">
-            <button className="btn-secondary w-full" onClick={() => { setSeenAlert(alertKey); setModal('modifier'); }}><Plus aria-hidden className="size-4 shrink-0" /> Jugar una carta</button>
-            <button className="btn-secondary w-full" onClick={() => { setSeenAlert(alertKey); setModal('flee'); }}><Footprints aria-hidden className="size-4 shrink-0" /> Huir</button>
+            <button className="btn-secondary w-full" onClick={() => { setSeenAlert(alertKey); setModal('modifier'); }}><GameIcon name="card" className="size-5" /> Jugar una carta</button>
+            <button className="btn-secondary w-full" onClick={() => { setSeenAlert(alertKey); setModal('flee'); }}><GameIcon name="flee" className="size-4 shrink-0" /> Huir</button>
           </div>
           <button className="w-full py-2 text-sm font-semibold text-ui-muted underline" onClick={() => setSeenAlert(alertKey)}>Seguir sin ayuda por ahora</button>
         </div>
@@ -309,7 +310,7 @@ function NextStep({ hasMonsters, losing, missing, helperName, waitingFor, helpOp
     body = (
       <>
         <p className="text-sm">Si nadie en la mesa juega una carta en contra, registrá la victoria.</p>
-        <button className="btn-go w-full text-lg" onClick={() => onOpen('victory')}><Trophy aria-hidden className="size-5 shrink-0" /> Gané: registrar victoria</button>
+        <button className="btn-go w-full text-lg" onClick={() => onOpen('victory')}><GameIcon name="victory" className="size-5 shrink-0" /> Gané: registrar victoria</button>
       </>
     );
   } else if (waitingFor.length > 0) {
@@ -323,11 +324,11 @@ function NextStep({ hasMonsters, losing, missing, helperName, waitingFor, helpOp
       <>
         <p className="text-sm">{helperName ? `Ya te ayuda ${helperName}. Prueben con cartas o intentá huir.` : helpOptions.length ? 'Pedí ayuda, jugá una carta o intentá huir.' : 'Jugá una carta o intentá huir.'}</p>
         {helpOptions.map((p) => (
-          <button key={p.id} className="btn-blue w-full" disabled={pending} onClick={() => onAskHelp(p.id)}><HandHelping aria-hidden className="size-5 shrink-0" /> Pedir ayuda a {p.name}</button>
+          <button key={p.id} className="btn-blue w-full" disabled={pending} onClick={() => onAskHelp(p.id)}><GameIcon name="help" className="size-5 shrink-0" /> Pedir ayuda a {p.name}</button>
         ))}
         <div className="grid grid-cols-2 gap-2">
-          <button className="btn-secondary w-full" onClick={() => onOpen('modifier')}><Plus aria-hidden className="size-4 shrink-0" /> Jugar una carta</button>
-          <button className="btn-secondary w-full" onClick={() => onOpen('flee')}><Footprints aria-hidden className="size-4 shrink-0" /> Huir</button>
+          <button className="btn-secondary w-full" onClick={() => onOpen('modifier')}><GameIcon name="card" className="size-5" /> Jugar una carta</button>
+          <button className="btn-secondary w-full" onClick={() => onOpen('flee')}><GameIcon name="flee" className="size-4 shrink-0" /> Huir</button>
         </div>
       </>
     );
@@ -363,7 +364,7 @@ function VictoryForm({ combat }: { combat: Combat }) {
           <li>Roban {treasures} {treasures === 1 ? 'tesoro' : 'tesoros'} en la mesa</li>
         </ul>
       </div>
-      <button className="btn-go w-full text-lg" disabled={pending}><Trophy aria-hidden className="size-5 shrink-0" /> Confirmar victoria</button>
+      <button className="btn-go w-full text-lg" disabled={pending}><GameIcon name="victory" className="size-5 shrink-0" /> Confirmar victoria</button>
       <details className="rounded-2xl bg-surface-muted/75 px-4">
         <summary className="min-h-12 cursor-pointer py-3 font-bold">Ajustar niveles o agregar una nota</summary>
         <div className="space-y-2 pb-4">

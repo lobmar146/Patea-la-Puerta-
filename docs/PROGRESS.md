@@ -91,3 +91,5 @@ npm run check && npm run test:e2e
 - Inicio: héroe nuevo con logo, frase corta y beneficios en línea.
 - `npm run tour` (después de `npm run build`) genera capturas de todas las pantallas en modo oscuro y claro.
 - Verificado: typecheck, lint, 38 pruebas, build, e2e.
+- Combate: la tarjeta de Ayuda pasó arriba, justo debajo del marcador y del próximo paso, con botones grandes. En fase de combate la cabecera del turno se compacta (sin carta ni texto).
+- Íconos de juego de game-icons.net (CC BY 3.0) en `GameIcon` para puerta, patada, monstruo, combate, ayuda, huida, victoria, carta, saqueo, maldición, DM, mesa, personaje y tiempo; Lucide queda para la interfaz. Crédito en el inicio y en `docs/ASSETS.md`.
