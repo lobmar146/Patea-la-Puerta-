@@ -90,6 +90,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(tv.getByTestId('active-stopwatch')).toBeVisible();
   await p1.getByRole('button', { name: /Patear la puerta/ }).click();
   await phaseIs(p1, 'Patear la puerta');
+  await p1.getByRole('button', { name: /Qué salió detrás de la puerta/ }).click();
   await p1.getByRole('button', { name: /Otra carta/ }).click();
   await phaseIs(p1, 'Sin monstruo');
   await p1.getByRole('button', { name: /Elegir: buscar problemas/ }).click();
@@ -142,12 +143,14 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   // 8b. Dana: maldición -> saquear.
   await tab(dm, 'Turno');
   await dm.getByRole('button', { name: /Patear la puerta/ }).click();
+  await dm.getByRole('button', { name: /Qué salió detrás de la puerta/ }).click();
   await dm.getByRole('button', { name: /Maldición/ }).click();
   await phaseIs(dm, 'Resolver maldición');
   await expect(tv.getByTestId('tv-phase')).toHaveText('Resolver maldición');
   await dm.getByRole('button', { name: /Registrar que resolví la maldición/ }).click();
   await dm.getByRole('button', { name: /Sí, seguir al camino/ }).click();
-  await dm.getByRole('button', { name: /Saquear la habitación/ }).click();
+  await dm.getByRole('button', { name: /Elegir: buscar problemas o saquear/ }).click();
+  await dm.getByRole('button', { name: /Saquear: robar una Puerta/ }).click();
   await phaseIs(dm, 'Saquear la habitación');
   await dm.getByRole('button', { name: 'Confirmar saqueo' }).click();
   await dm.getByRole('button', { name: /Sí, saqué una Puerta/ }).click();
@@ -158,6 +161,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
 
   // 8c. Lu: monstruo al patear -> huida.
   await p2.getByRole('button', { name: /Patear la puerta/ }).click();
+  await p2.getByRole('button', { name: /Qué salió detrás de la puerta/ }).click();
   await p2.getByRole('button', { name: /Monstruo/ }).click();
   await p2.getByTestId('monster-strength').fill('10');
   await p2.getByRole('button', { name: 'Entrar en combate' }).click();
@@ -196,6 +200,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
 
   // Combate abierto para verificar que sobrevive al reinicio.
   await tab(p1, 'Turno');
+  await p1.getByRole('button', { name: /Qué salió detrás de la puerta/ }).click();
   await p1.getByRole('button', { name: /Monstruo/ }).click();
   await p1.getByTestId('monster-strength').fill('8');
   await p1.getByRole('button', { name: 'Entrar en combate' }).click();
@@ -228,7 +233,10 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
 
   // Fin de partida: nivel 10 pide confirmación del DM.
   await dm.getByTestId('dm-edit-select').selectOption({ label: 'Pablo' });
-  for (let i = 0; i < 7; i++) await dm.getByRole('button', { name: 'Sumar 1 a Nivel' }).click();
+  for (let level = 4; level <= 10; level++) {
+    await dm.getByRole('button', { name: 'Sumar 1 a Nivel' }).click();
+    await expect(dm.getByTestId('level-value')).toHaveText(String(level));
+  }
   await expect(dm.getByTestId('level-alert')).toBeVisible();
   await expect(tv.getByTestId('tv-view')).toContainText('El DM confirma');
   await expect(p1.getByTestId('finished')).toHaveCount(0);
