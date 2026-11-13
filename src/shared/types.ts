@@ -38,12 +38,16 @@ export interface Item {
   equipped: boolean;
 }
 
+export type Sex = 'male' | 'female';
+
 export interface Character {
   id: string; // = participantId
   name: string;
   color: string;
   /** Id de AVATARS (rules.ts). Opcional: las salas viejas no lo tienen. */
   avatar?: string;
+  /** Sexo del personaje (algunas cartas dependen de él). Opcional: las salas viejas no lo tienen. */
+  sex?: Sex;
   level: number;
   classes: string[];
   races: string[];

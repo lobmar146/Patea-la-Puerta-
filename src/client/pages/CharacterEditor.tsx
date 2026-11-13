@@ -1,8 +1,8 @@
 import { Coins, Skull, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { CharacterPatch } from '../../shared/commands';
-import { CLASS_SUGGESTIONS, RACE_SUGGESTIONS, avatarOf, basePower } from '../../shared/rules';
-import { Avatar, AvatarPicker } from '../components/Avatar';
+import { CLASS_SUGGESTIONS, RACE_SUGGESTIONS, avatarOf, basePower, identityLine } from '../../shared/rules';
+import { Avatar, AvatarPicker, SexPicker } from '../components/Avatar';
 import { EquipmentEditor } from '../components/EquipmentEditor';
 import { DeathGuide, NoviceSwitch, SellCalculator } from '../components/NoviceHelp';
 import { Section, Stepper } from '../components/ui';
@@ -95,7 +95,7 @@ export function CharacterEditor({ targetId }: { targetId: string }) {
         <div className="absolute inset-y-0 left-0 w-1.5" style={{ background: c.color }} />
         <div className="flex items-center justify-between gap-4 pl-2">
           <Avatar c={c} size="md" className="hidden min-[400px]:grid" />
-          <div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-[.18em] text-ui-muted">Tu aventurero</p><h1 className="mt-1 truncate font-display text-3xl font-black tracking-tight sm:text-4xl" data-testid="char-name">{c.name}</h1><p className="mt-1 truncate text-sm text-ui-muted">{[...c.races, ...c.classes].join(' · ') || 'Humano sin clase'}</p></div>
+          <div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-[.18em] text-ui-muted">Tu aventurero</p><h1 className="mt-1 truncate font-display text-3xl font-black tracking-tight sm:text-4xl" data-testid="char-name">{c.name}</h1><p className="mt-1 truncate text-sm text-ui-muted" data-testid="char-identity">{identityLine(c)}</p></div>
           <div className="shrink-0 rounded-2xl bg-gradient-to-b from-[#f6b64a] to-[#d98a16] px-4 py-3 text-center text-[#2a1606] shadow-[inset_0_1px_0_rgba(255,255,255,.35),0_12px_24px_-12px_rgba(240,165,49,.8)]">
             <div className="text-[9px] font-black uppercase tracking-[.18em]">Poder total</div>
             <div className="font-display text-4xl font-black tabular-nums sm:text-5xl" data-testid="char-power">{basePower(c)}</div>
@@ -130,9 +130,10 @@ export function CharacterEditor({ targetId }: { targetId: string }) {
         <EquipmentEditor c={c} disabled={pending} onChange={(items) => void send({ type: 'character.setItems', targetId, items })} />
       </Section>
 
-      <Section title="Razas y clases">
+      <Section title="Sexo, razas y clases">
         <p className="mb-3 text-sm text-ui-muted">Más de una solo si una carta lo permite (Mestizo, Súper Munchkin).</p>
         <div className="space-y-4">
+          <SexPicker value={c.sex} disabled={pending} idPrefix={`edit-${targetId}`} onChange={(sex) => patch({ sex })} />
           <TagEditor id="races" label="Razas" values={c.races} suggestions={RACE_SUGGESTIONS} disabled={pending} onChange={(v) => patch({ races: v })} />
           <TagEditor id="classes" label="Clases" values={c.classes} suggestions={CLASS_SUGGESTIONS} disabled={pending} onChange={(v) => patch({ classes: v })} />
         </div>

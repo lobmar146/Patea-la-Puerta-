@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Action } from '../../src/shared/commands';
 import { GameError, addParticipant, applyAction, createInitialState } from '../../src/shared/engine';
-import { activeParticipantId, avatarOf, combatTotals } from '../../src/shared/rules';
+import { activeParticipantId, avatarOf, combatTotals, identityLine } from '../../src/shared/rules';
 import { actionSchema } from '../../src/shared/commands';
 import { computeAwards, podium } from '../../src/shared/awards';
 import { coaching, equipmentWarnings, gearFromItems, sale } from '../../src/shared/novice';
@@ -40,6 +40,21 @@ const started = () => run(setup(), 'dm', { type: 'game.start' });
 const monster = { name: 'Planta', strength: 5, levels: 1, treasures: 1 };
 
 describe('creación y personajes', () => {
+  it('sexo: se elige al entrar, se cambia en la partida (maldición) y se valida', () => {
+    let s = addParticipant(setup(), { id: 'p3', name: 'Sofi', role: 'player', isDm: false, now, sex: 'female' });
+    expect(s.characters.p3.sex).toBe('female');
+    expect(s.characters.p1.sex).toBeUndefined();
+    expect(identityLine(s.characters.p3)).toBe('♀ Mujer · Humano');
+    const r = applyAction(s, 'p3', { type: 'character.update', targetId: 'p3', patch: { sex: 'male' } }, { now, id });
+    s = r.state;
+    expect(s.characters.p3.sex).toBe('male');
+    expect(r.events[0].message).toContain('sexo: hombre');
+    s = run(s, 'p3', { type: 'character.update', targetId: 'p3', patch: { races: ['Elfo'], classes: ['Mago'] } });
+    expect(identityLine(s.characters.p3)).toBe('♂ Hombre · Elfo · Mago');
+    expect(actionSchema.safeParse({ type: 'character.update', targetId: 'p3', patch: { sex: 'otro' } }).success).toBe(false);
+  });
+
+
   it('el DM es jugador con personaje y los espectadores no tienen personaje', () => {
     const s = setup();
     expect(s.participants.dm.isDm).toBe(true);

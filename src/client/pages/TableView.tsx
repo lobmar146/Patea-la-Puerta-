@@ -1,5 +1,5 @@
 import { NotebookPen } from 'lucide-react';
-import { activeParticipantId, basePower } from '../../shared/rules';
+import { activeParticipantId, basePower, identityLine } from '../../shared/rules';
 
 import { PlayerTime } from '../components/Stopwatch';
 import { useRoom } from '../useRoom';
@@ -43,7 +43,7 @@ export function TableView() {
                     </span>
                     <span className="block truncate text-xs text-ui-muted">
                       {isActive ? <b className="text-accent-brand">▶ Su turno · </b> : <span className="tabular-nums">#{i + 1} · </span>}
-                      {c.races.join(', ') || 'Humano'} · {c.classes.join(', ') || 'sin clase'}
+                      {identityLine(c)}
                     </span>
                   </span>
                   <span className="shrink-0 rounded-xl bg-accent-wine/10 px-2 py-1 text-center">

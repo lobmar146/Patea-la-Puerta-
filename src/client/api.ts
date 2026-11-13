@@ -28,12 +28,12 @@ export interface RoomInfo {
 }
 
 export const api = {
-  practice: (body: { name: string; avatar?: string; color?: string }) =>
+  practice: (body: { name: string; avatar?: string; color?: string; sex?: 'male' | 'female' }) =>
     request<{ code: string }>('/api/practice', { method: 'POST', body: JSON.stringify(body) }),
-  createRoom: (body: { name: string; sets: string[]; extraSets: string[]; avatar?: string; color?: string }) =>
+  createRoom: (body: { name: string; sets: string[]; extraSets: string[]; avatar?: string; color?: string; sex?: 'male' | 'female' }) =>
     request<{ code: string }>('/api/rooms', { method: 'POST', body: JSON.stringify(body) }),
   roomInfo: (code: string) => request<RoomInfo>(`/api/rooms/${encodeURIComponent(code)}`),
-  join: (code: string, body: { name: string; role: 'player' | 'spectator'; avatar?: string; color?: string }) =>
+  join: (code: string, body: { name: string; role: 'player' | 'spectator'; avatar?: string; color?: string; sex?: 'male' | 'female' }) =>
     request<{ code: string; reused: boolean }>(`/api/rooms/${encodeURIComponent(code)}/join`, {
       method: 'POST',
       body: JSON.stringify(body),

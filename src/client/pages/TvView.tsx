@@ -2,7 +2,7 @@ import { ArrowLeft, Maximize, Minimize, Pause, Play, Wifi, WifiOff } from 'lucid
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PHASE_GUIDE } from '../../shared/phases';
-import { APP_NAME, activeParticipantId, basePower, displayName, upcoming } from '../../shared/rules';
+import { APP_NAME, activeParticipantId, basePower, displayName, identityLine, upcoming } from '../../shared/rules';
 import { Illustration } from '../components/Illustration';
 import { ActiveStopwatch } from '../components/Stopwatch';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -164,7 +164,7 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
               <ul className="tv-roster-list grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-2">
                 {players.map((c) => (
                   <li key={c.id} className={`tv-player ${active === c.id ? 'tv-player-active' : ''}`}>
-                    <div className="flex items-center gap-2"><Avatar c={c} size="sm" /><div className="min-w-0 flex-1"><p className="truncate text-base font-black sm:text-lg">{active === c.id && <Play aria-hidden className="mr-1 inline size-4 text-[#ffd36a]" />}{c.name}</p><p className="truncate text-xs text-parchment-50/80">{[...c.races, ...c.classes].join(' · ') || 'Humano sin clase'}</p></div><div className="text-center"><span className="block text-[9px] font-black uppercase tracking-widest text-parchment-50/80">Nivel</span><strong className="font-display text-2xl font-black tabular-nums sm:text-3xl">{c.level}</strong></div></div>
+                    <div className="flex items-center gap-2"><Avatar c={c} size="sm" /><div className="min-w-0 flex-1"><p className="truncate text-base font-black sm:text-lg">{active === c.id && <Play aria-hidden className="mr-1 inline size-4 text-[#ffd36a]" />}{c.name}</p><p className="truncate text-xs text-parchment-50/80">{identityLine(c)}</p></div><div className="text-center"><span className="block text-[9px] font-black uppercase tracking-widest text-parchment-50/80">Nivel</span><strong className="font-display text-2xl font-black tabular-nums sm:text-3xl">{c.level}</strong></div></div>
                     <div className="mt-2 flex items-center justify-between border-t border-white/15 pt-2"><span className="inline-flex items-center gap-1 text-xs font-semibold text-parchment-50/80">{online.has(c.id) ? <Wifi aria-hidden className="size-3 shrink-0" /> : <WifiOff aria-hidden className="size-3 shrink-0" />}{online.has(c.id) ? 'En línea' : 'Desconectado'}</span><span className="rounded-lg bg-[#692424] px-2.5 py-1 inline-flex items-center gap-1 text-xs font-black text-white"><GameIcon name="combat" className="size-3 shrink-0" /> Poder {basePower(c)}</span></div>
                   </li>
                 ))}

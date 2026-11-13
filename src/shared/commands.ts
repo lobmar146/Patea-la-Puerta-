@@ -20,11 +20,14 @@ export const monsterInput = z.object({
 });
 export type MonsterInput = z.infer<typeof monsterInput>;
 
+export const sex = z.enum(['male', 'female']);
+
 export const characterPatch = z
   .object({
     name: name.optional(),
     color: color.optional(),
     avatar: avatar.optional(),
+    sex: sex.optional(),
     level: int(1, 99).optional(),
     classes: tagList.optional(),
     races: tagList.optional(),
@@ -138,12 +141,14 @@ export const createRoomSchema = z.object({
   extraSets: z.array(z.string().trim().min(1).max(60)).max(12).optional(),
   avatar: avatar.optional(),
   color: color.optional(),
+  sex: sex.optional(),
 });
 
 export const practiceRoomSchema = z.object({
   name,
   avatar: avatar.optional(),
   color: color.optional(),
+  sex: sex.optional(),
 });
 
 export const joinRoomSchema = z.object({
@@ -151,4 +156,5 @@ export const joinRoomSchema = z.object({
   role: z.enum(['player', 'spectator']),
   avatar: avatar.optional(),
   color: color.optional(),
+  sex: sex.optional(),
 });

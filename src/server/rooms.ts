@@ -7,7 +7,7 @@ import type { Command } from '../shared/commands.js';
 import { GameError, addParticipant, applyAction, createInitialState, type EngineEvent } from '../shared/engine.js';
 import { activeParticipantId, displayName, type AvatarId } from '../shared/rules.js';
 import type { PushMessage } from './push.js';
-import type { CommandResult, EventDTO, GameState, Role } from '../shared/types.js';
+import type { CommandResult, EventDTO, GameState, Role, Sex } from '../shared/types.js';
 import { config } from './config.js';
 import { prisma } from './db.js';
 import { hashToken, newRoomCode, newToken } from './sessions.js';
@@ -71,11 +71,11 @@ export interface Joined {
 
 /** Jugadores de mentira de las salas de práctica. Los maneja quien creó la sala (es DM). */
 export const PRACTICE_BOTS = [
-  { name: 'Grog (práctica)', avatar: 'goblin' as AvatarId, color: '#2f6b3a' },
-  { name: 'Lía (práctica)', avatar: 'elfo' as AvatarId, color: '#7c3aed' },
+  { name: 'Grog (práctica)', avatar: 'goblin' as AvatarId, color: '#2f6b3a', sex: 'male' as Sex },
+  { name: 'Lía (práctica)', avatar: 'elfo' as AvatarId, color: '#7c3aed', sex: 'female' as Sex },
 ];
 
-export async function createRoom(input: { name: string; sets?: string[]; extraSets?: string[]; avatar?: AvatarId; color?: string; practice?: boolean }): Promise<Joined> {
+export async function createRoom(input: { name: string; sets?: string[]; extraSets?: string[]; avatar?: AvatarId; color?: string; sex?: Sex; practice?: boolean }): Promise<Joined> {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = newRoomCode();
     const roomId = randomUUID();
@@ -83,7 +83,7 @@ export async function createRoom(input: { name: string; sets?: string[]; extraSe
     const token = newToken();
     const now = new Date();
     let state = createInitialState(code, input.practice ? 1 : config.ttlDays, input.sets, input.extraSets);
-    state = addParticipant(state, { id: participantId, name: input.name, role: 'player', isDm: true, now: now.toISOString(), avatar: input.avatar, color: input.color });
+    state = addParticipant(state, { id: participantId, name: input.name, role: 'player', isDm: true, now: now.toISOString(), avatar: input.avatar, color: input.color, sex: input.sex });
     const botIds: string[] = [];
     const extraEvents: EngineEvent[] = [];
     if (input.practice) {
@@ -91,7 +91,7 @@ export async function createRoom(input: { name: string; sets?: string[]; extraSe
       for (const b of PRACTICE_BOTS) {
         const id = randomUUID();
         botIds.push(id);
-        state = addParticipant(state, { id, name: b.name, role: 'player', isDm: false, now: now.toISOString(), avatar: b.avatar, color: b.color, bot: true });
+        state = addParticipant(state, { id, name: b.name, role: 'player', isDm: false, now: now.toISOString(), avatar: b.avatar, color: b.color, sex: b.sex, bot: true });
       }
       const started = applyAction(state, participantId, { type: 'game.start' }, { now: now.toISOString() });
       state = started.state;
@@ -158,7 +158,7 @@ export async function createRematch(oldCode: string, token: string | undefined):
       const id = randomUUID();
       map[p.id] = id;
       const c = prev.characters[p.id];
-      state = addParticipant(state, { id, name: p.name, role: p.role, isDm: p.isDm, now: now.toISOString(), avatar: c?.avatar as AvatarId | undefined, color: c?.color, bot: p.bot });
+      state = addParticipant(state, { id, name: p.name, role: p.role, isDm: p.isDm, now: now.toISOString(), avatar: c?.avatar as AvatarId | undefined, color: c?.color, sex: c?.sex, bot: p.bot });
       if (c) state.characters[id].name = c.name;
     }
     const events: EngineEvent[] = [{ type: 'room.create', message: `¡Revancha! ${me.name} armó la sala con el mismo grupo.` }];
@@ -243,7 +243,7 @@ export async function getRoomPublic(code: string) {
 export async function joinRoom(
   code: string,
   existingToken: string | undefined,
-  input: { name: string; role: Role; avatar?: AvatarId; color?: string },
+  input: { name: string; role: Role; avatar?: AvatarId; color?: string; sex?: Sex },
 ): Promise<Joined & { reused: boolean }> {
   const existing = await findSession(code, existingToken);
   if (existing && existingToken) {
@@ -258,7 +258,7 @@ export async function joinRoom(
     if (room.state.status === 'finished') throw new HttpError(409, 'Esa partida ya terminó.');
     const participantId = randomUUID();
     const token = newToken();
-    const state = addParticipant(room.state, { id: participantId, name: input.name, role: input.role, isDm: false, now: new Date().toISOString(), avatar: input.avatar, color: input.color });
+    const state = addParticipant(room.state, { id: participantId, name: input.name, role: input.role, isDm: false, now: new Date().toISOString(), avatar: input.avatar, color: input.color, sex: input.sex });
     await tx.participant.create({ data: { id: participantId, roomId: room.id } });
     await tx.session.create({ data: { tokenHash: hashToken(token), roomId: room.id, participantId } });
     await saveRoom(tx, room, state, [{ type: 'participant.join', message: `${input.name} se sumó como ${input.role === 'player' ? 'jugador' : 'espectador'}.` }], participantId);

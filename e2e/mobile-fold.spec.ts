@@ -22,6 +22,7 @@ test('opciones rápidas sin scroll en cada fase', async ({ browser }) => {
   const dm = await dmCtx.newPage();
   await dm.goto('/?modo=crear');
   await dm.getByLabel('Tu nombre').fill('Martín');
+  await dm.locator('label', { hasText: 'Hombre' }).click();
   await dm.getByRole('button', { name: 'Crear partida' }).click();
   const code = (await dm.getByTestId('lobby-code').textContent())!.trim();
   const pCtx = await browser.newContext({ baseURL: BASE, viewport: PHONE, hasTouch: true });
@@ -30,6 +31,7 @@ test('opciones rápidas sin scroll en cada fase', async ({ browser }) => {
   await p1.goto(`/s/${code}`);
   await p1.getByLabel('Tu nombre').fill('Pablo');
   await p1.locator('label', { hasText: 'Jugador' }).click();
+  await p1.locator('label', { hasText: 'Mujer' }).click();
   await p1.getByRole('button', { name: 'Entrar' }).click();
   await expect(p1.getByTestId('room-code')).toBeVisible();
   await dm.getByTestId('start-game').click();
