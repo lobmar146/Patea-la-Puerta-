@@ -72,7 +72,7 @@ npm run check && npm run test:e2e
 - Verificado en esta actualización: `npm run typecheck`, `npm run lint`, `npx vite build` y `git diff --check` pasan. No se ejecutaron pruebas funcionales/e2e.
 
 ## Render Free, imágenes y combate guiado (2026-11-13)
-- **Keep-alive:** en producción el servidor llama a `/api/ping` (sin base de datos) por su URL pública cada 10 min mientras haya sockets conectados o actividad en las últimas `KEEPALIVE_IDLE_HOURS` (2 por defecto). Así Render Free no lo duerme en plena partida y Neon puede suspenderse cuando no hay juego. Fuera de partida el servidor sí se duerme y el primer ingreso tarda ~1 min.
+- **Keep-alive:** en producción el servidor llama a `/api/ping` (sin base de datos) por su URL pública cada 10 min, siempre (o hasta `KEEPALIVE_IDLE_HOURS` sin actividad si se define). Render Free no lo duerme y el primer ingreso es instantáneo; un servicio 24/7 usa ~744 de las 750 h gratis del mes. La limpieza de salas vencidas corre cada 6 h para que Neon pueda suspenderse entre partidas.
 - **Límite de pedidos:** `POST /api/rooms` (10 cada 10 min por IP) y `POST /api/rooms/:code/join` (60 cada 10 min), en memoria.
 - **Cronómetro:** el snapshot trae `serverTime` y el cliente corrige el desfase de su reloj.
 - **Imágenes:** `npm run build` descarga las ilustraciones (`scripts/fetch-assets.mjs`, tolera fallas). Uso privado entre amigos por decisión del usuario.

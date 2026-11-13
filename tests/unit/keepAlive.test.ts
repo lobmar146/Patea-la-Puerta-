@@ -19,6 +19,15 @@ describe('keep-alive para Render Free', () => {
     return { ka, fetchFn, advance: (ms: number) => (t += ms), setSockets: (n: number) => (sockets = n) };
   }
 
+  it('sin límite de inactividad, sigue llamando aunque pasen días', async () => {
+    let t = 0;
+    const fetchFn = vi.fn(async () => new Response('{}'));
+    const ka = createKeepAlive({ url: 'https://ejemplo.onrender.com', intervalMs: 600_000, idleMs: Infinity, connected: () => 0, fetchFn: fetchFn as unknown as typeof fetch, now: () => t });
+    t += 5 * 24 * 3_600_000;
+    expect(await ka.tick()).toBe(true);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
   it('llama a /api/ping mientras hay actividad reciente', async () => {
     const { ka, fetchFn, advance } = setup();
     advance(60 * 60_000);

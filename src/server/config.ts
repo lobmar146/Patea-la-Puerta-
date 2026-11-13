@@ -1,4 +1,9 @@
 // Configuración leída del entorno. Ver .env.example.
+function idleHours(raw: string | undefined): number {
+  const n = Number(raw ?? 0);
+  return !Number.isFinite(n) || n <= 0 ? Infinity : Math.max(0.25, n);
+}
+
 export const config = {
   port: Number(process.env.PORT ?? 3000),
   host: process.env.HOST ?? '0.0.0.0',
@@ -8,6 +13,9 @@ export const config = {
   recentEvents: 30,
   /** URL pública para el keep-alive. Render define RENDER_EXTERNAL_URL solo. Vacío = desactivado. */
   keepAliveUrl: process.env.KEEPALIVE_URL ?? (process.env.NODE_ENV === 'production' ? process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || '' : ''),
-  /** Horas sin actividad tras las que se deja dormir al servidor (por defecto 2). */
-  keepAliveIdleHours: Math.max(0.25, Number(process.env.KEEPALIVE_IDLE_HOURS ?? 2) || 2),
+  /**
+   * Horas sin actividad tras las que se deja dormir al servidor. Por defecto (o con 0) nunca:
+   * así el primer ingreso no espera el minuto de arranque de Render Free.
+   */
+  keepAliveIdleHours: idleHours(process.env.KEEPALIVE_IDLE_HOURS),
 };
