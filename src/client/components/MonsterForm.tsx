@@ -17,7 +17,8 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
   const [strength, setStrength] = useState(String(initial?.strength ?? ''));
   const [levels, setLevels] = useState(String(initial?.levels ?? 1));
   const [treasures, setTreasures] = useState(String(initial?.treasures ?? 1));
-  const [catalogQuery, setCatalogQuery] = useState<string | null>(null);
+  // El listado arranca abierto (salvo al editar) para que escribir no cambie la altura del panel.
+  const [catalogQuery, setCatalogQuery] = useState<string | null>(initial?.name ? null : '');
   const [selectedSet, setSelectedSet] = useState('');
   const catalogId = useId();
   const nameField = useRef<HTMLInputElement>(null);
@@ -71,11 +72,6 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
           aria-expanded={catalogOpen && matches.length > 0}
           aria-controls={catalogId}
           aria-autocomplete="list"
-          onFocus={(event) => {
-            // En móvil el teclado tapa la mitad inferior: el buscador sube para dejar ver los resultados.
-            const input = event.currentTarget;
-            window.setTimeout(() => input.scrollIntoView({ block: 'start', behavior: 'smooth' }), 250);
-          }}
           onChange={(event) => {
             setName(event.target.value);
             if (!catalogOpen) setSelectedSet('');
@@ -95,37 +91,40 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
         {catalogOpen && (
           <p className="sr-only" role="status">{matches.length} {matches.length === 1 ? 'coincidencia' : 'coincidencias'}</p>
         )}
-        {matches.length > 0 ? (
-          <ul aria-label="Monstruos del catálogo" role="listbox" className={`${searching ? 'max-h-48' : 'max-h-64'} space-y-1 overflow-y-auto overscroll-contain rounded-xl border border-ui-line/15 bg-surface-muted p-1.5`}>
-            {matches.map((preset) => {
-              const needed = existingPower + preset.strength - players + (winTies ? 0 : 1);
-              return (
-                <li key={`${preset.set}:${preset.name}`} role="option" aria-selected={false}>
-                  <button
-                    type="button"
-                    className="flex min-h-12 w-full items-center gap-3 rounded-lg bg-surface-raised px-3 py-2 text-left hover:bg-surface-inset active:bg-surface-inset"
-                    onClick={() => selectMonster(preset)}
-                  >
-                    <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-blood/10 text-lg font-black tabular-nums" aria-label={`Nivel de combate ${preset.strength}`}>{preset.strength}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-bold">{preset.name}</span>
-                      <span className="block truncate text-xs text-ui-muted">
-                        +{preset.levels} {preset.levels === 1 ? 'nivel' : 'niveles'} · {preset.treasures} {preset.treasures === 1 ? 'tesoro' : 'tesoros'} · {preset.set.replace(/:.*$/, '')}
+        {/* Alto fijo: al escribir solo cambia lo de adentro, el panel y lo de abajo quedan quietos. */}
+        <div className="h-52 overflow-y-auto overscroll-contain rounded-xl border border-ui-line/15 bg-surface-muted p-1.5" data-testid="monster-results">
+          {matches.length > 0 ? (
+            <ul aria-label="Monstruos del catálogo" role="listbox" className="space-y-1">
+              {matches.map((preset) => {
+                const needed = existingPower + preset.strength - players + (winTies ? 0 : 1);
+                return (
+                  <li key={`${preset.set}:${preset.name}`} role="option" aria-selected={false}>
+                    <button
+                      type="button"
+                      className="flex min-h-12 w-full items-center gap-3 rounded-lg bg-surface-raised px-3 py-2 text-left hover:bg-surface-inset active:bg-surface-inset"
+                      onClick={() => selectMonster(preset)}
+                    >
+                      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-blood/10 text-lg font-black tabular-nums" aria-label={`Nivel de combate ${preset.strength}`}>{preset.strength}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-bold">{preset.name}</span>
+                        <span className="block truncate text-xs text-ui-muted">
+                          +{preset.levels} {preset.levels === 1 ? 'nivel' : 'niveles'} · {preset.treasures} {preset.treasures === 1 ? 'tesoro' : 'tesoros'} · {preset.set.replace(/:.*$/, '')}
+                        </span>
                       </span>
-                    </span>
-                    {fighterId && (
-                      <span className={`flex shrink-0 items-center gap-1 text-xs font-bold ${needed > 0 ? 'text-accent-wine' : 'text-accent-moss'}`}>
-                        <Swords aria-hidden className="size-3.5 shrink-0" />
-                        {needed > 0 ? `−${needed}` : 'Ventaja'}
-                        <span className="sr-only">{needed > 0 ? `faltan ${needed} puntos` : 'jugadores con ventaja'}</span>
-                      </span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        ) : <p className="text-sm text-ui-muted">No hay coincidencias. Podés cargar los datos de la carta a mano.</p>}
+                      {fighterId && (
+                        <span className={`flex shrink-0 items-center gap-1 text-xs font-bold ${needed > 0 ? 'text-accent-wine' : 'text-accent-moss'}`}>
+                          <Swords aria-hidden className="size-3.5 shrink-0" />
+                          {needed > 0 ? `−${needed}` : 'Ventaja'}
+                          <span className="sr-only">{needed > 0 ? `faltan ${needed} puntos` : 'jugadores con ventaja'}</span>
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : <p className="p-2 text-sm text-ui-muted">No hay coincidencias. Podés cargar los datos de la carta a mano.</p>}
+        </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <button

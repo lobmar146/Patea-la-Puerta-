@@ -250,7 +250,7 @@ export function CombatView() {
           <button className="w-full py-2 text-sm font-semibold text-ui-muted underline" onClick={() => setSeenAlert(alertKey)}>Seguir sin ayuda por ahora</button>
         </div>
       </Modal>
-      <Modal open={modal === 'monster'} title="Añadir monstruo" onClose={() => setModal(null)}>
+      <Modal tall open={modal === 'monster'} title="Añadir monstruo" onClose={() => setModal(null)}>
         <MonsterForm state={state} submitLabel="Sumar al combate" disabled={pending || !canEdit} onSubmit={(monster) => { void send({ type: 'combat.addMonster', monster }); setModal(null); }} />
       </Modal>
       <Modal open={editingMonsterId !== null} title="Editar monstruo" onClose={() => setModal(null)}>

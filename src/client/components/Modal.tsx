@@ -1,12 +1,14 @@
 import { X } from 'lucide-react';
 import { useEffect, useRef, type ReactNode } from 'react';
 
-export function Modal({ open, title, onClose, children, testId }: {
+export function Modal({ open, title, onClose, children, testId, tall = false }: {
   open: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
   testId?: string;
+  /** Alto fijo en móvil: el panel no salta cuando cambia el contenido (buscadores, listados). */
+  tall?: boolean;
 }) {
   const dialog = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
@@ -36,7 +38,7 @@ export function Modal({ open, title, onClose, children, testId }: {
       onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}
       data-testid={testId ?? 'modal-backdrop'}
     >
-      <div ref={dialog} className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabIndex={-1}>
+      <div ref={dialog} className={`modal-panel${tall ? ' modal-tall' : ''}`} role="dialog" aria-modal="true" aria-labelledby="modal-title" tabIndex={-1}>
         <div className="modal-handle" aria-hidden="true" />
         <header className="modal-header">
           <h2 id="modal-title" className="text-xl font-black sm:text-2xl">{title}</h2>

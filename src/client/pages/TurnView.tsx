@@ -92,7 +92,7 @@ export function TurnView() {
         </div>
       </Modal>
 
-      <Modal open={modal === 'trouble'} title={phase === 'kickDoor' ? 'Cargar monstruo' : troubleStep ? 'Buscar problemas' : '¿Qué vas a hacer?'} onClose={closeTrouble}>
+      <Modal tall={phase === 'kickDoor' || troubleStep} open={modal === 'trouble'} title={phase === 'kickDoor' ? 'Cargar monstruo' : troubleStep ? 'Buscar problemas' : '¿Qué vas a hacer?'} onClose={closeTrouble}>
         {phase === 'kickDoor' ? (
           <MonsterForm state={state} submitLabel="Entrar en combate" disabled={pending} onSubmit={(monster) => { void send({ type: 'turn.doorResult', result: 'monster', monster }); setModal(null); }} />
         ) : troubleStep ? (

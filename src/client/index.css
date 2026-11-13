@@ -137,6 +137,7 @@ h1, h2, h3 {
   .modal-header { @apply flex items-center justify-between gap-4 border-b border-ui-line/10 bg-surface-raised px-5 py-4; }
   .modal-handle { @apply mx-auto mt-2 h-1.5 w-10 rounded-full bg-ui-line/30 sm:hidden; }
   .modal-close { @apply grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-ui-control bg-surface-raised text-2xl font-bold leading-none hover:bg-surface-muted; }
+  .modal-tall { @apply h-[92dvh] sm:h-auto; }
   .modal-content { @apply max-h-[calc(92dvh-5rem)] overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]; }
   .phase-transition { animation: phase-enter 220ms ease-out both; }
 }

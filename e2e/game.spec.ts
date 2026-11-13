@@ -101,8 +101,14 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await p1.getByRole('button', { name: /Buscar problemas/ }).click();
   await expect(p1.getByRole('button', { name: 'Pelear contra este monstruo' })).toBeDisabled();
   // El buscador muestra las coincidencias justo debajo del campo.
-  await p1.getByPlaceholder(/Buscá por nombre/).fill('co');
+  // El listado ya está abierto y escribir no mueve el campo ni el panel.
   await expect(p1.getByRole('listbox', { name: 'Monstruos del catálogo' })).toBeVisible();
+  const before = await p1.getByPlaceholder(/Buscá por nombre/).boundingBox();
+  await p1.getByPlaceholder(/Buscá por nombre/).fill('co');
+  await p1.getByPlaceholder(/Buscá por nombre/).fill('zzzz');
+  await expect(p1.getByTestId('monster-results')).toContainText('No hay coincidencias');
+  expect((await p1.getByPlaceholder(/Buscá por nombre/).boundingBox())?.y).toBe(before?.y);
+  await p1.getByPlaceholder(/Buscá por nombre/).fill('co');
   await p1.screenshot({ path: 'test-results/screens/movil-buscar-monstruo.png' });
   await p1.getByPlaceholder(/Buscá por nombre/).fill('');
   await p1.getByRole('button', { name: 'Ocultar listado' }).click();
