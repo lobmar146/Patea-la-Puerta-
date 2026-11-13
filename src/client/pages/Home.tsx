@@ -45,6 +45,7 @@ export function Home() {
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-4 pb-16 sm:p-6">
       <div className="flex justify-end"><ThemeToggle /></div>
+      {mode === null && (
       <header className="inverse-surface relative isolate overflow-hidden rounded-[2rem] px-5 py-7 text-parchment-50 sm:px-9 sm:py-10" style={{ background: 'radial-gradient(ellipse 80% 70% at 100% 0%, rgba(240,165,49,.28), transparent 60%), radial-gradient(ellipse 60% 60% at 0% 100%, rgba(192,42,36,.25), transparent 65%), linear-gradient(160deg, #2a1c14, #140e0b)' }}>
         <div>
           <div className="min-w-0">
@@ -61,6 +62,7 @@ export function Home() {
         </ul>
         <div className="mt-5"><InstallApp /></div>
       </header>
+      )}
 
       {mode === null && (
         <section aria-label="¿Qué querés hacer?" className="phase-transition grid gap-3 sm:grid-cols-2 sm:gap-4">
