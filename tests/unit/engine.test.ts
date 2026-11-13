@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Action } from '../../src/shared/commands';
 import { GameError, addParticipant, applyAction, createInitialState } from '../../src/shared/engine';
-import { activeParticipantId, combatTotals } from '../../src/shared/rules';
+import { activeParticipantId, avatarOf, combatTotals } from '../../src/shared/rules';
+import { actionSchema } from '../../src/shared/commands';
+import { computeAwards, podium } from '../../src/shared/awards';
 import type { GameState } from '../../src/shared/types';
 
 let n = 0;
@@ -232,5 +234,58 @@ describe('administración', () => {
     const s = setup();
     expectError(() => applyAction(s, 'dm', { type: 'order.set', order: ['p1', 'dm'] }), 'invalid');
     expect(run(s, 'dm', { type: 'order.set', order: ['p2', 'p1', 'dm'] }).turn.order).toEqual(['p2', 'p1', 'dm']);
+  });
+});
+
+describe('avatares, estadísticas y premios', () => {
+  it('asigna avatares distintos, respeta el elegido y valida al editar', () => {
+    let s = createInitialState('ABCDE', 7);
+    s = addParticipant(s, { id: 'a', name: 'A', role: 'player', isDm: true, now, avatar: 'pollo', color: '#123456' });
+    s = addParticipant(s, { id: 'b', name: 'B', role: 'player', isDm: false, now });
+    expect(s.characters.a).toMatchObject({ avatar: 'pollo', color: '#123456' });
+    expect(s.characters.b.avatar).toBeTruthy();
+    expect(s.characters.b.avatar).not.toBe('pollo');
+    s = run(s, 'b', { type: 'character.update', targetId: 'b', patch: { avatar: 'dragon' } });
+    expect(s.characters.b.avatar).toBe('dragon');
+    expect(actionSchema.safeParse({ type: 'character.update', targetId: 'b', patch: { avatar: 'nope' } }).success).toBe(false);
+  });
+
+  it('las salas viejas sin avatar reciben uno estable', () => {
+    const c = { id: 'viejo-123', avatar: undefined };
+    expect(avatarOf(c)).toBe(avatarOf(c));
+  });
+
+  it('cuenta puertas, maldiciones, ayudas, victorias y huidas', () => {
+    let s = run(started(), 'dm', { type: 'dm.setTurn', activeId: 'p1', phase: 'setup' });
+    s = run(s, 'p1', { type: 'turn.kickDoor' }, { type: 'turn.doorResult', result: 'monster', monster: { ...monster, strength: 12, treasures: 3 } });
+    s = run(s, 'p1', { type: 'help.request', toId: 'dm' }, { type: 'help.request', toId: 'p2' });
+    s = run(s, 'dm', { type: 'help.respond', requestId: s.combat!.helpRequests[0].id, accept: false });
+    s = run(s, 'p2', { type: 'help.respond', requestId: s.combat!.helpRequests[1].id, accept: true });
+    s = run(s, 'p1', { type: 'combat.resolveVictory', rewards: [{ participantId: 'p1', levels: 1, note: '' }], note: '' });
+    expect(s.stats!.p1).toMatchObject({ doors: 1, wins: 1, monsters: 1, treasures: 3, biggest: 12, helpAsked: 2 });
+    expect(s.stats!.p2.helpGiven).toBe(1);
+    expect(s.stats!.dm.helpRefused).toBe(1);
+
+    s = run(s, 'p1', { type: 'turn.charityDone' }, { type: 'turn.end' });
+    s = run(s, 'p2', { type: 'turn.kickDoor' }, { type: 'turn.doorResult', result: 'monster', monster });
+    const mId = s.combat!.monsters[0].id;
+    s = run(s, 'p2', { type: 'combat.resolveFlee', outcomes: [{ participantId: 'p2', monsterId: mId, result: 'escaped' }], note: '' });
+    expect(s.stats!.p2).toMatchObject({ doors: 1, escaped: 1 });
+
+    s = run(s, 'dm', { type: 'game.end', winnerId: 'p1' });
+    expect(podium(s)[0]).toBe('p1');
+    const awards = computeAwards(s, 20);
+    const byId = Object.fromEntries(awards.map((a) => [a.id, a]));
+    expect(byId.slayer).toMatchObject({ winnerId: 'p1', detail: '1 monstruo vencido' });
+    expect(byId.samaritan.winnerId).toBe('p2');
+    expect(byId.heartless.winnerId).toBe('dm');
+    expect(byId.chicken.winnerId).toBe('p2');
+    expect(byId.cursed).toBeUndefined();
+  });
+
+  it('las salas viejas sin estadísticas no rompen los premios', () => {
+    const s = started();
+    delete s.stats;
+    expect(computeAwards(s)).toEqual([]);
   });
 });

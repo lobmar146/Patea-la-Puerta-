@@ -49,6 +49,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(dm.getByLabel('Munchkin 2: Hacha sobrenatural (Unnatural Axe)')).toBeChecked();
   await expect(dm.getByLabel('Munchkin 3: Errores clericales (Clerical Errors)')).toBeChecked();
   await dm.getByLabel('Tu nombre').fill('Dana');
+  await dm.getByTestId('create-avatars').getByRole('button', { name: 'Pollo' }).click();
   await dm.getByRole('button', { name: 'Crear partida' }).click();
   const code = (await dm.getByTestId('lobby-code').textContent())!.trim();
   expect(code).toMatch(/^[A-Z0-9]{5}$/);
@@ -59,6 +60,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await join(tv, code, 'Pantalla', 'Espectador', true);
   await expect(tv.getByTestId('tv-view')).toContainText(code);
   await expect(dm.getByTestId('order-list').locator('li')).toHaveCount(3);
+  await expect(dm.getByTestId('order-list').locator('[data-avatar="pollo"]')).toHaveCount(1);
 
   // 3. Una edición aparece en todos los clientes.
   await tab(p1, 'Mi personaje');
@@ -283,9 +285,18 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(dm.getByTestId('level-alert')).toBeVisible();
   await expect(tv.getByTestId('tv-view')).toContainText('El DM confirma');
   await expect(p1.getByTestId('finished')).toHaveCount(0);
+  // Reacción rápida: llega flotando a los demás y a la tele.
+  await tab(p2, 'Turno');
+  await p2.getByTestId('reaction-bar').getByRole('button', { name: 'Reaccionar con 🔥' }).click();
+  await expect(tv.getByTestId('reaction-layer')).toContainText('🔥');
+  await expect(tv.getByTestId('reaction-layer')).toContainText('Lu');
+
   await dm.getByRole('button', { name: 'Confirmar victoria' }).click();
   await expect(p1.getByTestId('finished')).toContainText('Pablo gana');
   await expect(tv.getByTestId('tv-finished')).toContainText('Pablo gana');
+  await expect(p1.getByTestId('podium-1')).toContainText('Pablo');
+  await expect(p1.getByTestId('awards').locator('li').first()).toBeVisible();
+  await expect(tv.getByTestId('tv-finished').getByTestId('podium-1')).toContainText('Pablo');
 
   for (const c of contexts) await c.close();
 });

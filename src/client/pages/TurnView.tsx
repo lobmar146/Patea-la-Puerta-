@@ -10,6 +10,8 @@ import { EventList } from '../components/ui';
 import { useRoom } from '../useRoom';
 import { CombatView } from './CombatView';
 import { GameIcon } from '../components/GameIcon';
+import { Avatar } from '../components/Avatar';
+import { ReactionBar } from '../components/Reactions';
 
 type TurnModal = 'door' | 'trouble' | 'curse' | 'loot' | 'charity' | 'endTurn' | null;
 
@@ -47,7 +49,8 @@ export function TurnView() {
         <div className="phase-hero p-4 sm:p-6">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-bold uppercase tracking-[.18em] text-ui-muted">Turno {state.turn.turnNumber}</p>
-            <span className={`chip border-transparent font-bold ${mine ? 'bg-accent-brand text-[#2a1606]' : 'bg-surface-raised/80'}`}>
+            <span className={`chip border-transparent py-0.5 pl-0.5 font-bold ${mine ? 'bg-accent-brand text-[#2a1606]' : 'bg-surface-raised/80'}`}>
+              {activeId && state.characters[activeId] && <Avatar c={state.characters[activeId]} size="xs" />}
               {mine ? '¡Tu turno!' : `Juega ${displayName(state, activeId)}`}
             </span>
           </div>
@@ -84,6 +87,8 @@ export function TurnView() {
       )}
 
       {phase === 'combat' && state.combat && <CombatView />}
+
+      {state.status === 'active' && <ReactionBar />}
 
       <section className="card p-4">
         <h2 className="mb-2 text-sm font-bold uppercase tracking-[.14em] text-ui-muted">Últimos eventos</h2>

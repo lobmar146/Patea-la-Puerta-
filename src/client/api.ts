@@ -28,10 +28,10 @@ export interface RoomInfo {
 }
 
 export const api = {
-  createRoom: (body: { name: string; sets: string[]; extraSets: string[] }) =>
+  createRoom: (body: { name: string; sets: string[]; extraSets: string[]; avatar?: string; color?: string }) =>
     request<{ code: string }>('/api/rooms', { method: 'POST', body: JSON.stringify(body) }),
   roomInfo: (code: string) => request<RoomInfo>(`/api/rooms/${encodeURIComponent(code)}`),
-  join: (code: string, body: { name: string; role: 'player' | 'spectator' }) =>
+  join: (code: string, body: { name: string; role: 'player' | 'spectator'; avatar?: string; color?: string }) =>
     request<{ code: string; reused: boolean }>(`/api/rooms/${encodeURIComponent(code)}/join`, {
       method: 'POST',
       body: JSON.stringify(body),

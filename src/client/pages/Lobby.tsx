@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { DEFAULT_SETS, displayName } from '../../shared/rules';
 import { PresenceDot, QrCode, Section, joinUrl } from '../components/ui';
 import { useRoom } from '../useRoom';
+import { Avatar } from '../components/Avatar';
 import { GameIcon } from '../components/GameIcon';
 
 export function Lobby({ publicUrl }: { publicUrl: string | null }) {
@@ -50,7 +51,7 @@ export function Lobby({ publicUrl }: { publicUrl: string | null }) {
             <li key={id} className="flex items-center justify-between gap-2 rounded-lg border-2 border-ui-line/40 bg-surface-raised p-2">
               <span className="flex items-center gap-2">
                 <span className="w-6 text-center font-black">{i + 1}.</span>
-                <span className="inline-block h-4 w-4 rounded-full border border-ui-line/40" style={{ background: state.characters[id]?.color }} aria-hidden />
+                {state.characters[id] && <Avatar c={state.characters[id]} size="xs" />}
                 <span className="font-bold">{displayName(state, id)}</span>
                 {state.participants[id].isDm && <span className="chip"><GameIcon name="dm" className="size-4 shrink-0" /> DM</span>}
                 <PresenceDot online={online.has(id)} />

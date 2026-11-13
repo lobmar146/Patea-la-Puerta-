@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, ApiError, type RoomInfo } from '../api';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { AvatarPicker, type Look } from '../components/Avatar';
 import { RoomProvider } from '../useRoom';
 import { RoomApp } from './RoomApp';
 import { TvView } from './TvView';
@@ -45,12 +46,13 @@ function JoinForm({ code, tv, info, onJoined }: { code: string; tv: boolean; inf
   const [role, setRole] = useState<'player' | 'spectator'>(tv ? 'spectator' : 'player');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [look, setLook] = useState<Look>({});
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
-      await api.join(code, { name: name.trim(), role });
+      await api.join(code, { name: name.trim(), role, ...(role === 'player' ? look : {}) });
       onJoined();
     } catch (err) {
       setError((err as Error).message);
@@ -84,6 +86,7 @@ function JoinForm({ code, tv, info, onJoined }: { code: string; tv: boolean; inf
             {role === 'player' ? 'Vas a tener tu personaje y tus turnos.' : 'Solo mirás: ideal para la TV. No podés modificar nada.'}
           </p>
         </fieldset>
+        {role === 'player' && <AvatarPicker avatar={look.avatar} color={look.color} onChange={setLook} idPrefix="join" />}
         {error && <p role="alert" className="font-bold text-accent-wine">{error}</p>}
         <button className="btn-primary w-full" disabled={busy || !name.trim()}>{busy ? 'Entrando…' : 'Entrar'}</button>
         <p className="text-xs">Este navegador te va a recordar mientras conserve su sesión. Si cambiás de navegador o borrás los datos del sitio, vas a entrar como alguien nuevo.</p>

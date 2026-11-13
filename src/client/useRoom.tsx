@@ -16,6 +16,15 @@ export interface RoomApi {
   send: (action: Action) => Promise<CommandResult>;
   toast: string | null;
   setToast: (t: string | null) => void;
+  /** Reacción rápida efímera: no pasa por comandos ni cambia la partida. */
+  react: (emoji: string) => void;
+  onReaction: (cb: (r: ReactionEvent) => void) => () => void;
+}
+
+export interface ReactionEvent {
+  id: string;
+  emoji: string;
+  fromId: string;
 }
 
 const Ctx = createContext<RoomApi | null>(null);
@@ -43,6 +52,7 @@ export function RoomProvider({ code, children }: { code: string; children: React
   const socketRef = useRef<Socket | null>(null);
   const versionRef = useRef(0);
   const queueRef = useRef<Promise<unknown>>(Promise.resolve());
+  const reactionListeners = useRef(new Set<(r: ReactionEvent) => void>());
 
   useEffect(() => {
     const socket = io({ auth: { code }, reconnectionDelayMax: 4000 });
@@ -69,6 +79,7 @@ export function RoomProvider({ code, children }: { code: string; children: React
       }
     });
     socket.on('presence', (ids: string[]) => setOnline(new Set(ids)));
+    socket.on('reaction', (r: ReactionEvent) => reactionListeners.current.forEach((cb) => cb(r)));
     return () => {
       socket.disconnect();
       socketRef.current = null;
@@ -107,11 +118,21 @@ export function RoomProvider({ code, children }: { code: string; children: React
     return p;
   }, []);
 
+  const react = useCallback((emoji: string) => {
+    socketRef.current?.emit('reaction', { emoji });
+  }, []);
+  const onReaction = useCallback((cb: (r: ReactionEvent) => void) => {
+    reactionListeners.current.add(cb);
+    return () => {
+      reactionListeners.current.delete(cb);
+    };
+  }, []);
+
   const me = snap ? (snap.state.participants[snap.me.participantId] ?? null) : null;
 
   const value = useMemo<RoomApi>(
-    () => ({ snap, me, status, online, pending, send, toast, setToast }),
-    [snap, me, status, online, pending, send, toast],
+    () => ({ snap, me, status, online, pending, send, toast, setToast, react, onReaction }),
+    [snap, me, status, online, pending, send, toast, react, onReaction],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
