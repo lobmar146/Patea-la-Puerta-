@@ -75,7 +75,22 @@ export const PRACTICE_BOTS = [
   { name: 'Lía (práctica)', avatar: 'elfo' as AvatarId, color: '#7c3aed', sex: 'female' as Sex },
 ];
 
+/** Límite global para crear salas: protege la base gratis de quien cree salas sin parar. */
+export async function assertRoomQuota(db: Pick<Tx, 'room'> = prisma, now = new Date()): Promise<void> {
+  const [open, today] = await Promise.all([
+    db.room.count({ where: { expiresAt: { gt: now } } }),
+    db.room.count({ where: { createdAt: { gt: new Date(now.getTime() - 24 * 60 * 60 * 1000) } } }),
+  ]);
+  if (open >= config.maxOpenRooms) {
+    throw new HttpError(503, 'Hay demasiadas salas abiertas en este momento. Volvé a una sala que ya tengas o probá más tarde.');
+  }
+  if (today >= config.maxRoomsPerDay) {
+    throw new HttpError(503, 'Se crearon demasiadas salas hoy. Volvé a una sala que ya tengas o probá mañana.');
+  }
+}
+
 export async function createRoom(input: { name: string; sets?: string[]; extraSets?: string[]; avatar?: AvatarId; color?: string; sex?: Sex; practice?: boolean }): Promise<Joined> {
+  await assertRoomQuota();
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = newRoomCode();
     const roomId = randomUUID();
@@ -145,6 +160,7 @@ export async function createRematch(oldCode: string, token: string | undefined):
       const join = await joinRematchTx(tx, old.state, session.participantId);
       return { ...join, oldRoomId: old.id, reused: true };
     }
+    await assertRoomQuota(tx);
     const prev = old.state;
     const practice = !!prev.config.practice;
     const now = new Date();

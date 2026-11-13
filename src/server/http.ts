@@ -46,7 +46,10 @@ export function createApp(hooks: HttpHooks) {
     res.json({ ok: true, db: 'up', time: new Date().toISOString() });
   }));
 
-  const createLimit = rateLimit({ windowMs: 10 * 60 * 1000, max: 10 });
+  // Por IP: 10 salas cada 10 min y 30 por día. Además hay un tope global (assertRoomQuota).
+  const burstLimit = rateLimit({ windowMs: 10 * 60 * 1000, max: 10 });
+  const dailyLimit = rateLimit({ windowMs: 24 * 60 * 60 * 1000, max: 30 });
+  const createLimit = [burstLimit, dailyLimit];
   const joinLimit = rateLimit({ windowMs: 10 * 60 * 1000, max: 60 });
 
   app.post('/api/rooms', createLimit, wrap(async (req, res) => {
