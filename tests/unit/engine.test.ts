@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Action } from '../../src/shared/commands';
-import { GameError, addParticipant, applyAction, createInitialState } from '../../src/shared/engine';
+import { GameError, addParticipant, applyAction, createInitialState, undoFor } from '../../src/shared/engine';
 import { activeParticipantId, avatarOf, combatTotals, identityLine } from '../../src/shared/rules';
 import { actionSchema } from '../../src/shared/commands';
 import { computeAwards, podium } from '../../src/shared/awards';
@@ -38,6 +38,31 @@ function expectError(fn: () => unknown, code: GameError['code']) {
 
 const started = () => run(setup(), 'dm', { type: 'game.start' });
 const monster = { name: 'Planta', strength: 5, levels: 1, treasures: 1 };
+
+describe('deshacer', () => {
+  it('deshace el último cambio manual, una sola vez y solo si no hubo otro después', () => {
+    let s = started();
+    s = run(s, 'p1', { type: 'character.update', targetId: 'p1', patch: { gear: 3 } });
+    s = run(s, 'p1', { type: 'character.update', targetId: 'p1', patch: { level: 4 } });
+    expect(undoFor(s, 'p1')?.label).toBe('nivel 1→4');
+    // Las notas se guardan solas y no pisan lo que se puede deshacer.
+    s = run(s, 'p1', { type: 'character.update', targetId: 'p1', patch: { notes: 'Botas' } });
+    expect(undoFor(s, 'p1')).toBeNull(); // el personaje cambió después
+    s = run(s, 'p1', { type: 'character.update', targetId: 'p1', patch: { level: 9 } });
+    expectError(() => applyAction(s, 'p2', { type: 'character.undo', targetId: 'p1' }, { now, id }), 'forbidden');
+    const r = applyAction(s, 'p1', { type: 'character.undo', targetId: 'p1' }, { now, id });
+    expect(r.state.characters.p1.level).toBe(4);
+    expect(r.state.characters.p1.gear).toBe(3);
+    expect(r.events[0].message).toContain('deshizo «nivel 4→9»');
+    expectError(() => applyAction(r.state, 'p1', { type: 'character.undo', targetId: 'p1' }, { now, id }), 'invalid');
+    // El DM puede deshacer el cambio de otro, y volver a nivel < 10 limpia el aviso de victoria.
+    let t = run(r.state, 'dm', { type: 'character.update', targetId: 'p2', patch: { level: 10 } });
+    expect(t.levelAlert?.participantId).toBe('p2');
+    t = run(t, 'dm', { type: 'character.undo', targetId: 'p2' });
+    expect(t.characters.p2.level).toBe(1);
+    expect(t.levelAlert).toBeNull();
+  });
+});
 
 describe('creación y personajes', () => {
   it('sexo: se elige al entrar, se cambia en la partida (maldición) y se valida', () => {

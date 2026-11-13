@@ -227,6 +227,13 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(p1.getByTestId('char-identity')).toContainText('Mujer');
   await p1.getByTestId(/^edit-.*-sex$/).locator('label', { hasText: 'Hombre' }).click();
   await expect(p1.getByTestId('char-identity')).toContainText('♂ Hombre');
+  // Deshacer: un toque de más en el nivel se revierte con un botón.
+  const lvl = await p1.getByTestId('level-value').innerText();
+  await p1.getByRole('button', { name: 'Sumar 1 a Nivel' }).click();
+  await expect(p1.getByTestId('level-value')).not.toHaveText(lvl);
+  await p1.getByTestId('undo').click();
+  await expect(p1.getByTestId('level-value')).toHaveText(lvl);
+  await expect(p1.getByTestId('undo')).toHaveCount(0);
   await tab(dm, 'Mesa');
   await expect(dm.getByTestId('table').locator('> li')).toHaveCount(3);
   await expect(dm.getByTestId('table')).toContainText('♂ Hombre');

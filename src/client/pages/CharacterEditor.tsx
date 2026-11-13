@@ -1,6 +1,7 @@
-import { Coins, Skull, X } from 'lucide-react';
+import { Coins, Skull, Undo2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { CharacterPatch } from '../../shared/commands';
+import { undoFor } from '../../shared/engine';
 import { CLASS_SUGGESTIONS, RACE_SUGGESTIONS, avatarOf, basePower, identityLine } from '../../shared/rules';
 import { Avatar, AvatarPicker, SexPicker } from '../components/Avatar';
 import { EquipmentEditor } from '../components/EquipmentEditor';
@@ -103,6 +104,19 @@ export function CharacterEditor({ targetId }: { targetId: string }) {
           </div>
         </div>
       </section>
+      {(() => {
+        const undo = undoFor(snap.state, targetId);
+        if (!undo || snap.state.status === 'finished') return null;
+        return (
+          // Fijo abajo a la izquierda: se ve aunque hayas bajado en la ficha (las reacciones van a la derecha).
+          <div className="reaction-fab fixed left-3 right-20 z-30 flex sm:left-5">
+            <button type="button" className="inline-flex min-h-12 max-w-full items-center gap-2 rounded-full border border-ui-line/10 bg-surface-raised px-4 text-sm font-bold text-ui-fg shadow-[0_10px_24px_-8px_rgba(0,0,0,.6)] active:scale-95" disabled={pending} onClick={() => send({ type: 'character.undo', targetId })} data-testid="undo">
+              <Undo2 aria-hidden className="size-5 shrink-0 text-accent-brand" />
+              <span className="truncate">Deshacer: {undo.label}</span>
+            </button>
+          </div>
+        );
+      })()}
 
       <Section title="Estadísticas">
         <div className="space-y-2">

@@ -49,6 +49,7 @@ export const itemInput = z.object({
 
 export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('character.update'), targetId: id, patch: characterPatch }),
+  z.object({ type: z.literal('character.undo'), targetId: id }),
   z.object({ type: z.literal('character.setItems'), targetId: id, items: z.array(itemInput).max(24) }),
   z.object({
     type: z.literal('room.updateConfig'),
