@@ -6,13 +6,12 @@ import { Illustration } from '../components/Illustration';
 import { Modal } from '../components/Modal';
 import { MonsterForm } from '../components/MonsterForm';
 import { ActiveStopwatch } from '../components/Stopwatch';
-import { EventList } from '../components/ui';
 import { useRoom } from '../useRoom';
 import { CombatView } from './CombatView';
 import { GameIcon } from '../components/GameIcon';
 import { Avatar } from '../components/Avatar';
-import { ReactionBar } from '../components/Reactions';
 import { CoachCard } from '../components/NoviceHelp';
+import { useNoviceMode } from '../noviceMode';
 
 type TurnModal = 'door' | 'trouble' | 'curse' | 'loot' | 'charity' | 'endTurn' | null;
 
@@ -20,6 +19,7 @@ export function TurnView() {
   const { snap, me, send, pending } = useRoom();
   const [modal, setModal] = useState<TurnModal>(null);
   const [troubleStep, setTroubleStep] = useState(false);
+  const [novice] = useNoviceMode();
   if (!snap || !me) return null;
   const { state } = snap;
   const phase = state.turn.phase;
@@ -67,10 +67,10 @@ export function TurnView() {
         </div>
         <div className="space-y-3 p-4 sm:p-6">
           <ActiveStopwatch state={state} />
-          <details className="group rounded-2xl px-1">
+          {!(novice || state.config.practice) && <details className="group rounded-2xl px-1">
             <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ui-muted hover:text-ui-fg [&::-webkit-details-marker]:hidden"><span aria-hidden className="grid size-6 place-items-center rounded-full bg-surface-raised text-xs transition-transform group-open:rotate-90">›</span>Ver ayuda de esta fase</summary>
             <ul className="list-inside list-disc space-y-2 px-1 pb-3 text-sm text-ui-muted">{guide.details.map((d) => <li key={d}>{d}</li>)}</ul>
-          </details>
+          </details>}
           {!canAct && phase !== 'combat' && (
             <p className="rounded-2xl bg-surface-muted p-4 font-semibold" role="status">
               {state.status === 'paused' ? 'Partida en pausa.' : `Esperando a ${displayName(state, activeId)}. Mientras tanto podés editar tus estadísticas.`}
@@ -86,18 +86,6 @@ export function TurnView() {
 
       <CoachCard />
 
-      {state.status === 'active' && <ReactionBar />}
-
-      <section className="card p-4">
-        <h2 className="mb-2 text-sm font-bold uppercase tracking-[.14em] text-ui-muted">Últimos eventos</h2>
-        <EventList events={snap.events} limit={2} />
-        {snap.events.length > 2 && (
-          <details className="group mt-1">
-            <summary className="min-h-10 cursor-pointer list-none py-2 text-sm font-semibold text-accent-brand [&::-webkit-details-marker]:hidden"><span className="group-open:hidden">Ver más</span><span className="hidden group-open:inline">Ver menos</span></summary>
-            <EventList events={snap.events.slice(2)} limit={8} />
-          </details>
-        )}
-      </section>
       {/* Espacio al final para que la acción fija no tape lo último de la pantalla. */}
       {action && <div aria-hidden className="h-16" />}
 

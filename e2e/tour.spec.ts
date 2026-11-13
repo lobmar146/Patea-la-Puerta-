@@ -70,6 +70,7 @@ for (const theme of ['dark', 'light'] as const) {
     await shot(tv, `${theme}-11-tv`);
     // Reacciones, victoria y podio.
     await tab(p1, 'Turno');
+    await p1.getByTestId('reaction-fab').click();
     for (const e of ['🔥', '😂', '🐔']) {
       await p1.getByTestId('reaction-bar').getByRole('button', { name: `Reaccionar con ${e}` }).click();
       await p1.waitForTimeout(700);

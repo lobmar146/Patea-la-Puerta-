@@ -287,6 +287,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(p1.getByTestId('finished')).toHaveCount(0);
   // Reacción rápida: llega flotando a los demás y a la tele.
   await tab(p2, 'Turno');
+  await p2.getByTestId('reaction-fab').click();
   await p2.getByTestId('reaction-bar').getByRole('button', { name: 'Reaccionar con 🔥' }).click();
   await expect(tv.getByTestId('reaction-layer')).toContainText('🔥');
   await expect(tv.getByTestId('reaction-layer')).toContainText('Lu');
@@ -297,6 +298,17 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(p1.getByTestId('podium-1')).toContainText('Pablo');
   await expect(p1.getByTestId('awards').locator('li').first()).toBeVisible();
   await expect(tv.getByTestId('tv-finished').getByTestId('podium-1')).toContainText('Pablo');
+
+  // Revancha con un toque: el DM la arma y los demás entran sin volver a escribir el nombre.
+  await expect(p1.getByTestId('rematch')).toHaveCount(0);
+  await dm.getByTestId('rematch-button').click();
+  await dm.waitForURL((u) => /^\/s\/[A-Z0-9]+$/.test(u.pathname) && !u.pathname.endsWith(`/${code}`));
+  await expect(dm.getByTestId('room-code')).not.toHaveText(code);
+  await expect(p1.getByTestId('rematch-button')).toHaveText(/Ir a la revancha/);
+  await expect(tv.getByTestId('tv-rematch')).toBeVisible();
+  await p1.getByTestId('rematch-button').click();
+  await expect(p1.getByTestId('room-code')).toHaveText(await dm.getByTestId('room-code').innerText());
+  await expect(p1.getByTestId('me-label')).toContainText('Pablo');
 
   for (const c of contexts) await c.close();
 });

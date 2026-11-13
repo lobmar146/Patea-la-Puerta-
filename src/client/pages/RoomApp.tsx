@@ -8,7 +8,7 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { Celebration } from '../components/Celebration';
 import { PushCard } from '../components/PushCard';
 import { SoundEffects, SoundToggle } from '../components/SoundEffects';
-import { ReactionLayer } from '../components/Reactions';
+import { ReactionFab, ReactionLayer } from '../components/Reactions';
 import { CharacterEditor } from './CharacterEditor';
 import { DmPanel } from './DmPanel';
 import { Finished } from './Finished';
@@ -89,6 +89,7 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
       <Toast />
       <Celebration state={state} />
       <ReactionLayer state={state} />
+      {state.status === 'active' && <ReactionFab />}
       <header className="inverse-surface sticky top-0 z-30 border-b border-white/[.06] bg-[#120d0a]/90 px-3 pb-2.5 pt-[calc(.625rem+env(safe-area-inset-top))] text-parchment-50 backdrop-blur-xl sm:px-5">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2.5">

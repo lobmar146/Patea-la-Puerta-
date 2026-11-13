@@ -127,6 +127,90 @@ export async function createRoom(input: { name: string; sets?: string[]; extraSe
   throw new HttpError(500, 'No pudimos generar un código de sala. Probá otra vez.');
 }
 
+/**
+ * Revancha: el DM de una partida terminada abre una sala nueva con el mismo grupo
+ * (mismos nombres, avatares, colores, roles y orden; personajes desde nivel 1).
+ * La sala vieja guarda el código y el mapeo para que cada uno entre con un toque.
+ */
+export async function createRematch(oldCode: string, token: string | undefined): Promise<Joined & { oldRoomId: string; reused: boolean }> {
+  const session = await findSession(oldCode, token);
+  if (!session) throw new HttpError(401, 'Tu sesión en esta sala ya no es válida.');
+  return prisma.$transaction(async (tx) => {
+    const old = await lockRoom(tx, oldCode);
+    if (!old) throw new HttpError(404, 'No existe una sala con ese código.');
+    const me = old.state.participants[session.participantId];
+    if (!me?.isDm) throw new HttpError(403, 'Solo el Dungeon Master puede armar la revancha.');
+    if (old.state.status !== 'finished') throw new HttpError(409, 'La revancha se arma cuando termina la partida.');
+    if (old.state.rematch) {
+      const join = await joinRematchTx(tx, old.state, session.participantId);
+      return { ...join, oldRoomId: old.id, reused: true };
+    }
+    const prev = old.state;
+    const practice = !!prev.config.practice;
+    const now = new Date();
+    const code = await freeCode(tx);
+    const roomId = randomUUID();
+    let state = createInitialState(code, practice ? 1 : config.ttlDays, prev.config.sets, prev.config.extraSets);
+    const active = Object.values(prev.participants).filter((p) => !p.removed);
+    const ordered = [...prev.turn.order.map((id) => prev.participants[id]).filter((p) => p && !p.removed), ...active.filter((p) => p.role === 'spectator')];
+    const map: Record<string, string> = {};
+    for (const p of ordered) {
+      const id = randomUUID();
+      map[p.id] = id;
+      const c = prev.characters[p.id];
+      state = addParticipant(state, { id, name: p.name, role: p.role, isDm: p.isDm, now: now.toISOString(), avatar: c?.avatar as AvatarId | undefined, color: c?.color, bot: p.bot });
+      if (c) state.characters[id].name = c.name;
+    }
+    const events: EngineEvent[] = [{ type: 'room.create', message: `¡Revancha! ${me.name} armó la sala con el mismo grupo.` }];
+    if (practice) {
+      state.config.practice = true;
+      const started = applyAction(state, map[me.id], { type: 'game.start' }, { now: now.toISOString() });
+      state = started.state;
+      events.push(...started.events);
+    }
+    const newToken_ = newToken();
+    await tx.room.create({ data: { id: roomId, code, version: 1, state: state as unknown as Prisma.InputJsonValue, expiresAt: expiry(state, now) } });
+    for (const id of Object.values(map)) await tx.participant.create({ data: { id, roomId } });
+    await tx.session.create({ data: { tokenHash: hashToken(newToken_), roomId, participantId: map[me.id] } });
+    for (const e of events) await tx.gameEvent.create({ data: { roomId, version: 1, type: e.type, actorId: map[me.id], message: e.message } });
+    const oldNext = structuredClone(prev);
+    oldNext.rematch = { code, map };
+    await saveRoom(tx, old, oldNext, [{ type: 'room.rematch', message: `${me.name} armó la revancha en la sala ${code}. ¡Tocá «Ir a la revancha»!` }], me.id);
+    return { code, token: newToken_, participantId: map[me.id], roomId, ttlDays: state.config.ttlDays, oldRoomId: old.id, reused: false };
+  });
+}
+
+async function freeCode(tx: Tx): Promise<string> {
+  for (let i = 0; i < 8; i++) {
+    const code = newRoomCode();
+    if (!(await tx.room.findUnique({ where: { code }, select: { id: true } }))) return code;
+  }
+  throw new HttpError(500, 'No pudimos generar un código de sala. Probá otra vez.');
+}
+
+async function joinRematchTx(tx: Tx, oldState: GameState, oldParticipantId: string): Promise<Joined> {
+  const r = oldState.rematch;
+  const newId = r?.map[oldParticipantId];
+  if (!r || !newId) throw new HttpError(404, 'No hay revancha para vos en esta sala.');
+  const room = await tx.room.findUnique({ where: { code: r.code } });
+  if (!room) throw new HttpError(404, 'La sala de la revancha ya no existe.');
+  const token = newToken();
+  await tx.session.create({ data: { tokenHash: hashToken(token), roomId: room.id, participantId: newId } });
+  const st = room.state as unknown as GameState;
+  return { code: r.code, token, participantId: newId, roomId: room.id, ttlDays: st.config.ttlDays };
+}
+
+/** Entrar a la revancha con la sesión de la sala vieja (sin volver a escribir el nombre). */
+export async function joinRematch(oldCode: string, token: string | undefined): Promise<Joined> {
+  const session = await findSession(oldCode, token);
+  if (!session) throw new HttpError(401, 'Tu sesión en esta sala ya no es válida.');
+  return prisma.$transaction(async (tx) => {
+    const old = await tx.room.findUnique({ where: { code: oldCode } });
+    if (!old) throw new HttpError(404, 'No existe una sala con ese código.');
+    return joinRematchTx(tx, old.state as unknown as GameState, session.participantId);
+  });
+}
+
 export interface SessionInfo {
   roomId: string;
   participantId: string;

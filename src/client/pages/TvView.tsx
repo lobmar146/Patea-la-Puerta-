@@ -16,10 +16,42 @@ import { FinalResults } from '../components/FinalResults';
 import { SoundEffects, SoundToggle } from '../components/SoundEffects';
 import { ReactionLayer } from '../components/Reactions';
 
+/** Lienzo mínimo de la vista TV en horizontal. Las teles suelen reportar 960×540: ahí se escala. */
+const STAGE_W = 1280;
+const STAGE_H = 720;
+
+/**
+ * En pantallas horizontales arma un "lienzo" de al menos 1280×720 y lo escala para que entre
+ * entero. En teles con navegador de baja resolución todo queda visible sin hacer scroll.
+ */
+function useTvFit() {
+  const read = () => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const fit = w >= 640 && w > h;
+    const scale = fit ? Math.min(1, w / STAGE_W, h / STAGE_H) : 1;
+    return { fit, scale, w: w / scale, h: h / scale };
+  };
+  const [v, setV] = useState(read);
+  useEffect(() => {
+    const on = () => setV(read());
+    window.addEventListener('resize', on);
+    return () => window.removeEventListener('resize', on);
+  }, []);
+  return v;
+}
+
 /** Vista de solo lectura, diseñada para verse bien tanto en una TV como en móvil. */
 export function TvView({ publicUrl }: { publicUrl: string | null }) {
   const { snap, online, status } = useRoom();
   const [full, setFull] = useState(false);
+  const stage = useTvFit();
+  useEffect(() => {
+    if (!stage.fit) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [stage.fit]);
   useEffect(() => {
     const h = () => setFull(Boolean(document.fullscreenElement));
     document.addEventListener('fullscreenchange', h);
@@ -34,7 +66,12 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
   const players = state.turn.order.map((id) => state.characters[id]).filter(Boolean);
 
   return (
-    <main className={`tv-shell inverse-surface min-h-dvh overflow-x-hidden p-3 text-parchment-50 sm:p-5 lg:p-6 ${state.status !== 'lobby' && state.status !== 'finished' ? 'tv-shell-live' : ''}`} data-testid="tv-view">
+    <main
+      className={`tv-shell inverse-surface min-h-dvh overflow-x-hidden p-3 text-parchment-50 sm:p-5 lg:p-6 ${state.status !== 'lobby' && state.status !== 'finished' ? 'tv-shell-live' : ''} ${stage.fit ? `tv-fit overflow-y-auto${stage.h < 800 ? ' tv-fit-short' : ''}${state.combat ? ' tv-has-combat' : ''}` : ''}`}
+      style={stage.fit ? { position: 'fixed', top: 0, left: 0, width: stage.w, height: stage.h, minHeight: 0, transform: stage.scale < 1 ? `scale(${stage.scale})` : undefined, transformOrigin: 'top left' } : undefined}
+      data-testid="tv-view"
+      data-scale={stage.scale.toFixed(2)}
+    >
       <Celebration state={state} big />
       <SoundEffects snap={snap} myId={null} />
       <ReactionLayer state={state} big />
@@ -65,6 +102,9 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
             <p className="text-sm font-black uppercase tracking-[.25em] text-accent-wine">Partida terminada</p>
             <p className="font-display text-4xl font-black sm:text-6xl">{state.winnerId ? `¡${displayName(state, state.winnerId)} gana!` : 'Fin de la partida'}</p>
             <FinalResults state={state} big />
+            {state.rematch && (
+              <a href={`/s/${state.rematch.code}/tv`} className="btn-primary text-xl" data-testid="tv-rematch">¡Revancha en la sala {state.rematch.code}! Ver en la tele</a>
+            )}
           </section>
         ) : state.status === 'lobby' ? (
           <section className="tv-panel grid min-h-[65dvh] items-center gap-8 p-6 text-center md:grid-cols-[1fr_auto] md:p-12 md:text-left">

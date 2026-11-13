@@ -38,6 +38,8 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+  rematch: (code: string) => request<{ code: string }>(`/api/rooms/${encodeURIComponent(code)}/rematch`, { method: 'POST' }),
+  joinRematch: (code: string) => request<{ code: string }>(`/api/rooms/${encodeURIComponent(code)}/rematch/join`, { method: 'POST' }),
   pushKey: () => request<{ publicKey: string }>('/api/push/key'),
   pushSubscribe: (code: string, sub: PushSubscriptionJSON) =>
     request<{ ok: true }>(`/api/rooms/${encodeURIComponent(code)}/push`, { method: 'POST', body: JSON.stringify(sub) }),

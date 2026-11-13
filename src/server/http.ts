@@ -9,7 +9,7 @@ import { prisma } from './db.js';
 import { rateLimit } from './rateLimit.js';
 import { removeSubscription, saveSubscription, vapidKeys } from './push.js';
 import { z } from 'zod';
-import { HttpError, createRoom, findSession, getRoomPublic, joinRoom } from './rooms.js';
+import { HttpError, createRematch, createRoom, findSession, getRoomPublic, joinRematch, joinRoom } from './rooms.js';
 import { cookieName, cookieOptions, normalizeCode } from './sessions.js';
 
 const pushSubscriptionSchema = z.object({
@@ -81,6 +81,24 @@ export function createApp(hooks: HttpHooks) {
     hooks.onActivity?.();
     if (!joined.reused) hooks.onJoined(joined.roomId);
     res.json({ code, participantId: joined.participantId, reused: joined.reused });
+  }));
+
+  // Revancha: el DM la arma desde el podio; el resto entra con la sesión de la sala vieja.
+  app.post('/api/rooms/:code/rematch', createLimit, wrap(async (req, res) => {
+    const code = normalizeCode(req.params.code);
+    const joined = await createRematch(code, readCookie(req.headers.cookie, cookieName(code)));
+    res.cookie(cookieName(joined.code), joined.token, cookieOptions(joined.ttlDays));
+    hooks.onActivity?.();
+    if (!joined.reused) hooks.onJoined(joined.oldRoomId);
+    res.json({ code: joined.code });
+  }));
+
+  app.post('/api/rooms/:code/rematch/join', joinLimit, wrap(async (req, res) => {
+    const code = normalizeCode(req.params.code);
+    const joined = await joinRematch(code, readCookie(req.headers.cookie, cookieName(code)));
+    res.cookie(cookieName(joined.code), joined.token, cookieOptions(joined.ttlDays));
+    hooks.onActivity?.();
+    res.json({ code: joined.code });
   }));
 
   // Notificaciones push: clave pública y alta/baja de la suscripción de este dispositivo.
