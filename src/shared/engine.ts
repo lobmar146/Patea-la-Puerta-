@@ -542,6 +542,21 @@ export function applyAction(
       );
       break;
     }
+    case 'combat.useItem': {
+      requireStatus(state, 'active');
+      const combat = requireCombat(state);
+      const c = state.characters[actor.id];
+      const item = c?.items?.find((i) => i.id === action.itemId);
+      if (!c || !item) throw new GameError('invalid', 'Ese objeto ya no está en tu inventario.');
+      if (!item.oneShot) throw new GameError('invalid', 'Solo se gastan en combate los objetos de un solo uso.');
+      // Se gasta: sale del inventario y su bonus vive en el combate hasta que termine.
+      c.items = c.items!.filter((i) => i.id !== item.id);
+      c.gear = gearFromItems(c.items);
+      combat.modifiers.push({ id: id(), side: action.side, label: item.name, value: item.bonus, addedBy: actor.id });
+      const sign = item.bonus >= 0 ? `+${item.bonus}` : `${item.bonus}`;
+      log('combat.modifier', `${c.name} usa ${item.name}: ${sign} a ${action.side === 'players' ? 'los jugadores' : 'los monstruos'}.`);
+      break;
+    }
     case 'combat.removeModifier': {
       requireStatus(state, 'active');
       const c = requireCombat(state);

@@ -36,6 +36,8 @@ export interface Item {
   slot: EquipSlot;
   big: boolean;
   equipped: boolean;
+  /** De un solo uso (pociones y similares): no suma al equipo; se gasta al usarlo en un combate. */
+  oneShot?: boolean;
 }
 
 export type Sex = 'male' | 'female';

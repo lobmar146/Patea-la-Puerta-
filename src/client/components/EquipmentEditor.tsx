@@ -13,6 +13,7 @@ export function EquipmentEditor({ c, disabled, onChange }: { c: Character; disab
   const [bonus, setBonus] = useState(1);
   const [slot, setSlot] = useState<EquipSlot>('hand');
   const [big, setBig] = useState(false);
+  const [oneShot, setOneShot] = useState(false);
   const warnings = equipmentWarnings(items, c);
   const handsUsed = items.filter((i) => i.equipped && (i.slot === 'hand' || i.slot === 'twoHands')).reduce((a, i) => a + (i.slot === 'twoHands' ? 2 : 1), 0);
   const used = (s: EquipSlot) => items.some((i) => i.equipped && i.slot === s);
@@ -20,10 +21,11 @@ export function EquipmentEditor({ c, disabled, onChange }: { c: Character; disab
   function add(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    onChange([...items, { id: uuid(), name: name.trim(), bonus, slot, big, equipped: true }]);
+    onChange([...items, oneShot ? { id: uuid(), name: name.trim(), bonus, slot: 'other', big: false, equipped: true, oneShot: true } : { id: uuid(), name: name.trim(), bonus, slot, big, equipped: true }]);
     setName('');
     setBonus(1);
     setBig(false);
+    setOneShot(false);
   }
   const update = (id: string, patch: Partial<Item>) => onChange(items.map((i) => (i.id === id ? { ...i, ...patch } : i)));
 
@@ -52,11 +54,11 @@ export function EquipmentEditor({ c, disabled, onChange }: { c: Character; disab
           {items.map((i) => (
             <li key={i.id} className={`flex items-center gap-2 p-2 ${i.equipped ? '' : 'opacity-60'}`}>
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-bold">{i.name}{i.big && <span className="ml-1 text-xs font-black text-accent-gold">GRANDE</span>}</span>
-                <span className="block text-xs text-ui-muted">{SLOT_LABEL[i.slot]} · {i.equipped ? 'puesto' : 'lo llevás sin usar'}</span>
+                <span className="block truncate font-bold">{i.name}{i.big && !i.oneShot && <span className="ml-1 text-xs font-black text-accent-gold">GRANDE</span>}{i.oneShot && <span className="ml-1 text-xs font-black text-accent-brand">UN USO</span>}</span>
+                <span className="block text-xs text-ui-muted">{i.oneShot ? 'No suma al equipo: usalo en un combate y se gasta' : `${SLOT_LABEL[i.slot]} · ${i.equipped ? 'puesto' : 'lo llevás sin usar'}`}</span>
               </span>
               <b className="w-10 text-center font-display text-lg tabular-nums">{i.bonus >= 0 ? '+' : ''}{i.bonus}</b>
-              <button type="button" className="btn-secondary btn-small" disabled={disabled} onClick={() => update(i.id, { equipped: !i.equipped })}>{i.equipped ? 'Sacar' : 'Poner'}</button>
+              {!i.oneShot && <button type="button" className="btn-secondary btn-small" disabled={disabled} onClick={() => update(i.id, { equipped: !i.equipped })}>{i.equipped ? 'Sacar' : 'Poner'}</button>}
               <button type="button" className="btn-secondary btn-small px-2" disabled={disabled} aria-label={`Quitar ${i.name}`} onClick={() => onChange(items.filter((x) => x.id !== i.id))}><Trash2 aria-hidden className="size-4" /></button>
             </li>
           ))}
@@ -70,12 +72,13 @@ export function EquipmentEditor({ c, disabled, onChange }: { c: Character; disab
           <input className="input" aria-label="Nombre del objeto" placeholder="Ej.: Casco de valentía" maxLength={40} value={name} disabled={disabled} onChange={(e) => setName(e.target.value)} />
           <input className="input text-center" aria-label="Bonus" type="number" min={-20} max={20} value={bonus} disabled={disabled} onChange={(e) => setBonus(Math.max(-20, Math.min(20, Math.round(Number(e.target.value) || 0))))} />
         </div>
-        <div className="grid grid-cols-[1fr_auto] items-center gap-2">
+        <label className="flex min-h-12 items-center gap-2 px-1 text-sm font-semibold"><input type="checkbox" className="size-5" checked={oneShot} disabled={disabled} onChange={(e) => setOneShot(e.target.checked)} data-testid="one-shot-check" /> De un solo uso (poción, carta que se gasta)</label>
+        {!oneShot && <div className="grid grid-cols-[1fr_auto] items-center gap-2">
           <select className="input" aria-label="Dónde va" value={slot} disabled={disabled} onChange={(e) => setSlot(e.target.value as EquipSlot)}>
             {SLOTS.map((s) => <option key={s} value={s}>{SLOT_LABEL[s]}</option>)}
           </select>
           <label className="flex min-h-12 items-center gap-2 px-1 text-sm font-semibold"><input type="checkbox" className="size-5" checked={big} disabled={disabled} onChange={(e) => setBig(e.target.checked)} /> Grande</label>
-        </div>
+        </div>}
         <button className="btn-secondary w-full" disabled={disabled || !name.trim()}><Plus aria-hidden className="size-4" /> Agregar objeto</button>
       </form>
       {items.length > 0 && <p className="text-xs text-ui-muted">Bonificación del equipo puesto: <b>{gearFromItems(items) >= 0 ? '+' : ''}{gearFromItems(items)}</b>. Los límites son avisos: si una carta dice otra cosa, manda la carta.</p>}

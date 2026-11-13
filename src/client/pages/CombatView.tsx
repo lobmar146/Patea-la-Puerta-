@@ -1,6 +1,6 @@
 import { Hourglass, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import type { Combat, GameState } from '../../shared/types';
+import type { Combat, GameState, Item } from '../../shared/types';
 import { combatTotals, displayName, playersWinTies } from '../../shared/rules';
 import { Illustration } from '../components/Illustration';
 import { Modal } from '../components/Modal';
@@ -102,6 +102,7 @@ export function CombatView() {
   const editingMonsterId = modal && typeof modal === 'object' ? modal.monsterId : null;
   const editingMonster = combat.monsters.find(({ id }) => id === editingMonsterId);
   const totals = combatTotals(state, combat);
+  const oneShots = (state.characters[me.id]?.items ?? []).filter((i) => i.oneShot);
   const playersTakeTie = playersWinTies(state, combat.fighterId, combat.helperId);
   const losing = combat.monsters.length > 0 && totals.diff < (playersTakeTie ? 0 : 1);
   const missing = (playersTakeTie ? 0 : 1) - totals.diff;
@@ -126,6 +127,12 @@ export function CombatView() {
       {state.status === 'active' && combat.monsters.length > 0 && (canResolve || isPlayer) && (
         <div data-testid="combat-quick">
           {canResolve && <p className="mb-1.5 text-xs font-bold uppercase tracking-[.12em] text-ui-muted">Resolver combate</p>}
+          {oneShots.length > 0 && (
+            <button type="button" className="mb-2 flex min-h-12 w-full items-center justify-between gap-2 rounded-2xl bg-accent-brand/10 px-3 text-left text-sm font-bold ring-1 ring-accent-brand/30" onClick={() => setModal('modifier')} data-testid="use-one-shot">
+              <span className="truncate">Tenés {oneShots.length === 1 ? `${oneShots[0].name}` : `${oneShots.length} objetos de un solo uso`}: usalo en este combate</span>
+              <GameIcon name="card" className="size-5 shrink-0 text-accent-brand" />
+            </button>
+          )}
           <div className={`grid gap-2 ${canResolve ? 'grid-cols-3' : 'grid-cols-1'}`}>
             {canResolve ? (
               <>
@@ -213,7 +220,7 @@ export function CombatView() {
       </div>
 
       <div>
-        <h3 className="font-bold">Cartas en juego <span className="text-xs font-normal text-ui-muted">(se van al terminar el combate)</span></h3>
+        <h3 className="font-bold">Bonus temporales <span className="text-xs font-normal text-ui-muted">(cartas, pociones: se borran solos al terminar el combate)</span></h3>
         <ul className="my-1 space-y-1">
           {combat.modifiers.map((m) => (
             <li key={m.id} className="flex items-center justify-between rounded border border-ui-line bg-surface-raised px-2 py-1">
@@ -266,7 +273,9 @@ export function CombatView() {
           key={modal === 'modifier' ? 'open' : 'closed'}
           defaultSide={isFighter || combat.helperId === me.id ? 'players' : 'monsters'}
           pending={pending}
+          oneShots={oneShots}
           onApply={(side, value, label) => { void send({ type: 'combat.addModifier', side, value, label }); setModal(null); }}
+          onUse={(itemId, side) => { void send({ type: 'combat.useItem', itemId, side }); setModal(null); }}
         />
       </Modal>
       <Modal open={modal === 'victory'} title="Registrar victoria" onClose={() => setModal(null)}><VictoryForm combat={combat} /></Modal>
@@ -378,10 +387,12 @@ function VictoryForm({ combat }: { combat: Combat }) {
 const QUICK_VALUES = [1, 2, 3, 5, 10, -1, -2, -5] as const;
 
 /** Modificador en un toque: elegir bando y tocar un valor. El valor libre queda para casos raros. */
-function ModifierForm({ defaultSide, pending, onApply }: {
+function ModifierForm({ defaultSide, pending, oneShots, onApply, onUse }: {
   defaultSide: 'players' | 'monsters';
   pending: boolean;
+  oneShots: Item[];
   onApply: (side: 'players' | 'monsters', value: number, label: string) => void;
+  onUse: (itemId: string, side: 'players' | 'monsters') => void;
 }) {
   const [side, setSide] = useState(defaultSide);
   const [value, setValue] = useState('');
@@ -406,6 +417,19 @@ function ModifierForm({ defaultSide, pending, onApply }: {
           {sideButton('monsters', 'Monstruos', 'bg-blood text-white')}
         </div>
       </div>
+      {oneShots.length > 0 && (
+        <div data-testid="one-shots">
+          <span className="label">Tus objetos de un solo uso (se gastan)</span>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {oneShots.map((i) => (
+              <button key={i.id} type="button" className="btn w-full justify-between bg-accent-brand/10 text-ui-fg ring-1 ring-accent-brand/30" disabled={pending} onClick={() => onUse(i.id, side)}>
+                <span className="truncate">Usar {i.name}</span>
+                <b className="font-display tabular-nums text-accent-brand">{i.bonus >= 0 ? '+' : ''}{i.bonus}</b>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <label className="block">
         <span className="label">Carta o motivo (opcional)</span>
         <input className="input" maxLength={60} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Ej.: poción, enfurecido" />

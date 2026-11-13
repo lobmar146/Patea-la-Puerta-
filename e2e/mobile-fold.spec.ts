@@ -36,6 +36,16 @@ test('opciones rápidas sin scroll en cada fase', async ({ browser }) => {
   await expect(p1.getByTestId('room-code')).toBeVisible();
   await dm.getByTestId('start-game').click();
 
+  // Pablo carga una poción de un solo uso: no suma al equipo.
+  await p1.getByRole('button', { name: 'Mi personaje' }).click();
+  await p1.getByLabel('Nombre del objeto').fill('Poción de fuego');
+  await p1.getByLabel('Bonus', { exact: true }).fill('3');
+  await p1.getByTestId('one-shot-check').check();
+  await p1.getByRole('button', { name: 'Agregar objeto' }).click();
+  await expect(p1.getByTestId('equipment')).toContainText('UN USO');
+  await expect(p1.getByTestId('char-power')).toHaveText('1');
+  await p1.getByRole('button', { name: 'Turno' }).click();
+
   // Preparación y puerta: la acción del turno está fija sobre la barra de abajo.
   await expect(dm.getByTestId('phase-title')).toHaveText('Preparación del turno');
   await inView(dm, 'turn-action');
@@ -59,6 +69,13 @@ test('opciones rápidas sin scroll en cada fase', async ({ browser }) => {
   await inView(p1, 'combat-quick');
   await p1.waitForTimeout(300);
   await p1.screenshot({ path: `${OUT}/celu-combate-jugador.png` });
+
+  // La usa en el combate a favor de los jugadores: se gasta y queda como bonus temporal.
+  await p1.getByTestId('use-one-shot').click();
+  await p1.getByRole('button', { name: 'Jugadores', exact: true }).click();
+  await p1.getByTestId('one-shots').getByRole('button', { name: /Usar Poción de fuego/ }).click();
+  await expect(dm.getByTestId('players-total')).toHaveText('4');
+  await expect(p1.getByTestId('use-one-shot')).toHaveCount(0);
 
   // Después del combate vuelve la acción fija.
   await dm.getByTestId('combat-quick').getByRole('button', { name: 'Victoria' }).click();
