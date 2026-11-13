@@ -157,7 +157,7 @@ function requireCombat(state: GameState): Combat {
 }
 
 function newMonster(m: MonsterInput, id: IdGen): Monster {
-  return { id: id(), name: m.name || 'Monstruo', strength: m.strength, levels: m.levels, treasures: m.treasures };
+  return { id: id(), name: m.name || 'Monstruo', strength: m.strength, levels: m.levels, treasures: m.treasures, ...(m.conditions?.length ? { conditions: m.conditions } : {}) };
 }
 
 function startCombat(state: GameState, origin: Combat['origin'], monster: MonsterInput | undefined, id: IdGen, now: string) {
@@ -519,6 +519,7 @@ export function applyAction(
       const m = c.monsters.find((x) => x.id === action.monsterId);
       if (!m) throw new GameError('not_found', 'Ese monstruo ya no está en el combate.');
       Object.assign(m, { ...action.monster, name: action.monster.name || m.name });
+      if (!action.monster.conditions?.length) delete m.conditions;
       log('combat.monster', `${by(state, actor)} ajustó a ${m.name} (fuerza ${m.strength}).`);
       break;
     }

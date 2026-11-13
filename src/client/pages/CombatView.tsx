@@ -1,7 +1,7 @@
 import { Hourglass, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { Combat, GameState, Item } from '../../shared/types';
-import { combatTotals, displayName, playersWinTies } from '../../shared/rules';
+import { combatTotals, conditionTarget, displayName, noPursue, playersWinTies } from '../../shared/rules';
 import { Illustration } from '../components/Illustration';
 import { Modal } from '../components/Modal';
 import { MonsterForm } from '../components/MonsterForm';
@@ -48,10 +48,18 @@ export function CombatTotalsPanel({ state, combat, big = false }: { state: GameS
           <div className={`${numberSize} font-display font-extrabold tabular-nums`} data-testid="monsters-total">{totals.monsters}</div>
           <div className={`text-ui-muted ${big ? 'text-base' : 'text-xs'}`}>
             Base {totals.monsterBase}
+            {totals.conditionMods ? ` ${totals.conditionMods >= 0 ? '+' : ''}${totals.conditionMods} cond.` : ''}
             {totals.monsterMods ? ` ${totals.monsterMods >= 0 ? '+' : ''}${totals.monsterMods} temp.` : ''}
           </div>
         </div>
       </div>
+      {totals.conditions.length > 0 && (
+        <ul className={`mt-2 flex flex-wrap justify-center gap-1.5 ${big ? 'text-base' : 'text-xs'}`} data-testid="applied-conditions">
+          {totals.conditions.map((c) => (
+            <li key={`${c.monsterId}:${c.label}`} className="rounded-full bg-blood/15 px-2.5 py-1 font-bold text-accent-wine">{combat.monsters.length > 1 ? `${c.monsterName}: ` : ''}{c.label}</li>
+          ))}
+        </ul>
+      )}
       <p
         className={`mt-2 flex flex-wrap items-baseline justify-center gap-x-3 rounded-xl px-3 py-2 text-center ${big ? 'text-xl' : 'text-base'} ${hasMonsters ? statusColor : 'bg-surface-raised text-ui-muted'}`}
         aria-live="polite"
@@ -201,6 +209,11 @@ export function CombatView() {
                 <span className="min-w-0 flex-1">
                   <strong className="block truncate">{monster.name}</strong>
                   <span className="block text-xs text-accent-gold">Al vencer: +{monster.levels} {monster.levels === 1 ? 'nivel' : 'niveles'} · {monster.treasures} {monster.treasures === 1 ? 'tesoro' : 'tesoros'}</span>
+                  {!!monster.conditions?.length && (
+                    <span className="mt-0.5 block text-xs text-ui-muted" data-testid="monster-conditions">
+                      {monster.conditions.map((c) => [c.bonus ? `${c.bonus > 0 ? '+' : ''}${c.bonus} contra ${conditionTarget(c)}` : '', c.noPursue ? `no persigue a ${conditionTarget(c)}` : ''].filter(Boolean).join(', ')).join(' · ')}
+                    </span>
+                  )}
                 </span>
                 {canEdit && (
                   <span className="flex shrink-0 gap-1">
@@ -458,7 +471,7 @@ function FleeForm({ combat }: { combat: Combat }) {
   const [res, setRes] = useState<Record<string, 'escaped' | 'caught'>>({});
   const [note, setNote] = useState('');
   if (!snap) return null;
-  const outcomes = people.flatMap((p) => combat.monsters.map((m) => ({ participantId: p, monsterId: m.id, result: res[`${p}:${m.id}`] ?? 'escaped' })));
+  const outcomes = people.flatMap((p) => combat.monsters.map((m) => ({ participantId: p, monsterId: m.id, result: noPursue(snap.state, m, p) ? 'escaped' as const : res[`${p}:${m.id}`] ?? 'escaped' })));
   return (
     <form className="mt-3 space-y-2" onSubmit={(e) => { e.preventDefault(); void send({ type: 'combat.resolveFlee', outcomes, note: note.trim() }); }} data-testid="flee-form">
       <div className="flex items-center gap-3">
@@ -468,6 +481,14 @@ function FleeForm({ combat }: { combat: Combat }) {
       {people.map((p) =>
         combat.monsters.map((m) => {
           const k = `${p}:${m.id}`;
+          if (noPursue(snap.state, m, p)) {
+            return (
+              <p key={k} className="flex items-center justify-between gap-2 rounded border border-moss/40 bg-moss/10 p-2" data-testid="no-pursue">
+                <span>{displayName(snap.state, p)} vs {m.name}</span>
+                <b className="text-accent-moss">No lo persigue: escapa solo</b>
+              </p>
+            );
+          }
           return (
             <fieldset key={k} className="flex flex-wrap items-center justify-between gap-2 rounded border border-ui-line bg-surface-raised p-2">
               <legend className="sr-only">{displayName(snap.state, p)} contra {m.name}</legend>

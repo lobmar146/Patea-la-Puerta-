@@ -60,12 +60,25 @@ export interface Character {
   items?: Item[];
 }
 
+/** Condición impresa en la carta: "+5 contra mujeres", "no persigue a elfos". */
+export interface MonsterCondition {
+  /** Contra quién: sexo (male/female), una raza o una clase. */
+  kind: 'sex' | 'race' | 'class';
+  value: string;
+  /** Suma (o resta) al monstruo si pelea alguien así. */
+  bonus: number;
+  /** No persigue a esa gente al huir. */
+  noPursue: boolean;
+}
+
 export interface Monster {
   id: string;
   name: string;
   strength: number;
   levels: number;
   treasures: number;
+  /** Opcional: los monstruos viejos no lo tienen. */
+  conditions?: MonsterCondition[];
 }
 
 export type CombatSide = 'players' | 'monsters';

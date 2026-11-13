@@ -54,6 +54,12 @@ test('opciones rápidas sin scroll en cada fase', async ({ browser }) => {
   await dm.getByRole('button', { name: /Qué salió detrás de la puerta/ }).click();
   await dm.getByRole('button', { name: /Monstruo/ }).click();
   await dm.getByTestId('monster-strength').fill('6');
+  // Condición de la carta: +5 contra hombres (Martín es hombre, así que aplica).
+  await dm.getByTestId('monster-conditions-editor').locator('summary').click();
+  await dm.getByTestId('cond-target').selectOption('male');
+  await dm.getByTestId('cond-bonus').fill('5');
+  await dm.getByTestId('cond-add').click();
+  await expect(dm.getByTestId('monster-conditions-editor')).toContainText('+5 contra hombres');
   await dm.getByRole('button', { name: 'Entrar en combate' }).click();
 
   // Combate: quien pelea ve "Resolver combate" y el resto "Jugar una carta", sin scrollear.
@@ -61,6 +67,8 @@ test('opciones rápidas sin scroll en cada fase', async ({ browser }) => {
   await expect(skip).toBeVisible();
   await skip.click();
   await expect(dm.getByTestId('combat-quick')).toBeVisible();
+  await expect(dm.getByTestId('monsters-total')).toHaveText('11');
+  await expect(dm.getByTestId('applied-conditions')).toContainText('+5 contra hombres (Martín)');
   await expect(dm.getByTestId('losing-alert')).toHaveCount(0);
   await inView(dm, 'combat-quick');
   await dm.waitForTimeout(300);
