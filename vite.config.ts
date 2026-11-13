@@ -12,6 +12,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    host: true, // accesible desde los celulares de la red local
     proxy: {
       '/api': `http://localhost:${apiPort}`,
       '/socket.io': { target: `http://localhost:${apiPort}`, ws: true },

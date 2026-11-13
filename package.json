@@ -18,7 +18,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --trace off",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:test:migrate": "dotenv -e .env.test -- prisma migrate deploy",

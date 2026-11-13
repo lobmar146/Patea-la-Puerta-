@@ -31,7 +31,7 @@ export function Lobby({ publicUrl }: { publicUrl: string | null }) {
             <button
               className="btn-secondary btn-small"
               onClick={() => {
-                void navigator.clipboard?.writeText(url).then(() => setCopied(true));
+                void navigator.clipboard?.writeText(url).then(() => setCopied(true)).catch(() => setCopied(false));
               }}
             >
               {copied ? '✔ Enlace copiado' : 'Copiar enlace'}

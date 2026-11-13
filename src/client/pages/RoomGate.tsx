@@ -72,7 +72,7 @@ function JoinForm({ code, tv, info, onJoined }: { code: string; tv: boolean; inf
             {(['player', 'spectator'] as const).map((r) => (
               <label key={r} className={`btn ${role === r ? 'bg-ink text-parchment-50' : 'bg-parchment-50'} cursor-pointer`}>
                 <input type="radio" name="role" value={r} checked={role === r} onChange={() => setRole(r)} className="sr-only" />
-                {role === r ? '✔ ' : ''}
+                {role === r ? <span aria-hidden>✔ </span> : null}
                 {r === 'player' ? 'Jugador' : 'Espectador'}
               </label>
             ))}

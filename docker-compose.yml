@@ -1,0 +1,15 @@
+# PostgreSQL local para desarrollo y pruebas: docker compose up -d
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: munchkin
+      POSTGRES_PASSWORD: munchkin
+      POSTGRES_DB: patea
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+volumes:
+  pgdata:

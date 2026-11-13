@@ -1,0 +1,27 @@
+# Blueprint de Render: un Web Service Node + una base PostgreSQL.
+# Revisá planes y precios en Render antes de aplicar: este archivo no elige ni promete un plan gratuito.
+services:
+  - type: web
+    name: patea-la-puerta
+    runtime: node
+    # plan: starter   # elegí el plan en el panel de Render
+    numInstances: 1   # una sola instancia: la presencia en línea vive en memoria
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: '22'
+      - key: ROOM_TTL_DAYS
+        value: '7'
+      - key: DATABASE_URL
+        fromDatabase:
+          name: patea-la-puerta-db
+          property: connectionString
+
+databases:
+  - name: patea-la-puerta-db
+    databaseName: patea
+    # plan: basic-256mb   # elegí el plan en el panel de Render
