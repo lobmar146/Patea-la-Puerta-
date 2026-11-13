@@ -1,7 +1,7 @@
 import { Hourglass, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { Combat, GameState, Item } from '../../shared/types';
-import { combatTotals, conditionTarget, displayName, noPursue, playersWinTies } from '../../shared/rules';
+import { almostWinners, combatTotals, conditionTarget, displayName, noPursue, playersWinTies } from '../../shared/rules';
 import { Illustration } from '../components/Illustration';
 import { Modal } from '../components/Modal';
 import { MonsterForm } from '../components/MonsterForm';
@@ -73,6 +73,15 @@ export function CombatTotalsPanel({ state, combat, big = false }: { state: GameS
           </span>
         )}
       </p>
+      {(() => {
+        const atStake = almostWinners(state).filter((id) => id === combat.fighterId || id === combat.helperId);
+        if (!atStake.length || state.status === 'finished') return null;
+        return (
+          <p className={`mt-2 rounded-xl bg-gold/15 px-3 py-2 text-center font-black text-accent-gold ${big ? 'text-xl' : 'text-sm'}`} data-testid="win-at-stake">
+            <GameIcon name="victory" className="mr-1 inline size-5" />¡Si ganan este combate, {atStake.map((id) => displayName(state, id)).join(' o ')} puede ganar la partida!
+          </p>
+        );
+      })()}
     </div>
   );
 }

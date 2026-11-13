@@ -184,6 +184,12 @@ function by(state: GameState, actor: Participant): string {
 function setLevel(state: GameState, c: Character, level: number, events: EngineEvent[]) {
   const before = c.level;
   c.level = Math.max(1, Math.min(99, level));
+  if (before < WIN_LEVEL - 1 && c.level === WIN_LEVEL - 1 && state.status !== 'finished') {
+    events.push({
+      type: 'level.nine',
+      message: `¡${c.name} llegó a nivel ${c.level}! Está a un paso: el nivel ${WIN_LEVEL} solo se gana matando un monstruo.`,
+    });
+  }
   if (before < WIN_LEVEL && c.level >= WIN_LEVEL && state.status !== 'finished') {
     state.levelAlert = { participantId: c.id, level: c.level };
     events.push({

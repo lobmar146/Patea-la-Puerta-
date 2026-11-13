@@ -71,6 +71,14 @@ export type Reaction = (typeof REACTIONS)[number];
 export const MIN_LEVEL = 1;
 export const WIN_LEVEL = 10;
 
+/** Jugadores a un paso de ganar (nivel 9): el nivel 10 solo se gana matando un monstruo. */
+export function almostWinners(state: GameState): string[] {
+  return state.turn.order.filter((id) => {
+    const c = state.characters[id];
+    return c && !state.participants[id]?.removed && c.level === WIN_LEVEL - 1;
+  });
+}
+
 export function basePower(c: Pick<Character, 'level' | 'gear' | 'otherMods'>): number {
   return c.level + c.gear + c.otherMods;
 }

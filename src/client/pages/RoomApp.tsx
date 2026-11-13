@@ -1,7 +1,7 @@
 import { Pause, Tv } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { APP_NAME, activeParticipantId, displayName } from '../../shared/rules';
+import { APP_NAME, WIN_LEVEL, activeParticipantId, almostWinners, displayName } from '../../shared/rules';
 import { useRoom } from '../useRoom';
 import { ConnectionBadge, Toast } from '../components/ui';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -129,6 +129,12 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
       <main className="mx-auto max-w-4xl space-y-5 p-3 sm:p-5">
         {state.status === 'paused' && (
           <p role="status" className="card border-accent-gold/50 bg-surface-inset p-3 text-center text-lg font-bold text-accent-gold"><Pause aria-hidden className="mr-1 inline size-5" />Partida en pausa</p>
+        )}
+        {!alert && state.status === 'active' && almostWinners(state).length > 0 && (
+          <p role="status" className="flex items-center gap-2 rounded-2xl border border-gold/40 bg-gold/10 px-3 py-2 text-sm font-bold text-accent-gold" data-testid="almost-banner">
+            <GameIcon name="victory" className="size-5 shrink-0" />
+            <span>A un paso: {almostWinners(state).map((id) => (id === me.id ? 'vos' : displayName(state, id))).join(', ')} en nivel {WIN_LEVEL - 1}. El nivel {WIN_LEVEL} solo se gana matando un monstruo.</span>
+          </p>
         )}
         {alert && (
           <div role="alert" className="card border-gold p-3" data-testid="level-alert">

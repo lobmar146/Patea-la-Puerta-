@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import type { Command } from '../shared/commands.js';
 import { GameError, addParticipant, applyAction, createInitialState, type EngineEvent } from '../shared/engine.js';
-import { activeParticipantId, displayName, type AvatarId } from '../shared/rules.js';
+import { WIN_LEVEL, activeParticipantId, almostWinners, displayName, type AvatarId } from '../shared/rules.js';
 import type { PushMessage } from './push.js';
 import type { CommandResult, EventDTO, GameState, Role, Sex } from '../shared/types.js';
 import { config } from './config.js';
@@ -291,6 +291,14 @@ export function pushMessagesFor(before: GameState, after: GameState): PushMessag
   const next = activeParticipantId(after);
   if (after.status === 'active' && next && (next !== prev || before.status === 'lobby')) {
     out.push({ participantId: next, title: '¡Te toca!', body: `${displayName(after, next)}, es tu turno: andá a patear la puerta.`, tag: 'turn' });
+  }
+  // Alguien llegó a nivel 9: aviso a los demás (a un paso de ganar).
+  for (const id of almostWinners(after)) {
+    if ((before.characters[id]?.level ?? 0) >= WIN_LEVEL - 1 || after.status !== 'active') continue;
+    for (const p of Object.values(after.participants)) {
+      if (p.removed || p.id === id || p.bot || p.role !== 'player') continue;
+      out.push({ participantId: p.id, title: '¡A un paso de ganar!', body: `${displayName(after, id)} llegó a nivel ${WIN_LEVEL - 1}. Solo gana matando un monstruo.`, tag: `nine-${id}` });
+    }
   }
   const known = new Set(before.combat?.helpRequests.map((r) => r.id) ?? []);
   for (const r of after.combat?.helpRequests ?? []) {
