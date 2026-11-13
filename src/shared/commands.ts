@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { PHASES } from './types.js';
+import { AVATAR_IDS } from './rules.js';
 
 // Esquemas Zod de los comandos. El servidor valida todo; el cliente los usa para tipar.
 
@@ -8,6 +9,8 @@ const smallText = z.string().trim().max(60);
 const tagList = z.array(z.string().trim().min(1).max(40)).max(6);
 const int = (min: number, max: number) => z.number().int().min(min).max(max);
 const id = z.string().min(1).max(64);
+const color = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+const avatar = z.enum(AVATAR_IDS);
 
 export const monsterInput = z.object({
   name: smallText.default(''),
@@ -20,10 +23,8 @@ export type MonsterInput = z.infer<typeof monsterInput>;
 export const characterPatch = z
   .object({
     name: name.optional(),
-    color: z
-      .string()
-      .regex(/^#[0-9a-fA-F]{6}$/)
-      .optional(),
+    color: color.optional(),
+    avatar: avatar.optional(),
     level: int(1, 99).optional(),
     classes: tagList.optional(),
     races: tagList.optional(),
@@ -125,9 +126,13 @@ export const createRoomSchema = z.object({
   name,
   sets: z.array(z.string().trim().min(1).max(60)).max(12).optional(),
   extraSets: z.array(z.string().trim().min(1).max(60)).max(12).optional(),
+  avatar: avatar.optional(),
+  color: color.optional(),
 });
 
 export const joinRoomSchema = z.object({
   name,
   role: z.enum(['player', 'spectator']),
+  avatar: avatar.optional(),
+  color: color.optional(),
 });

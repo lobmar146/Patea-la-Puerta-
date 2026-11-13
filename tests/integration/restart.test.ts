@@ -132,6 +132,31 @@ describe('recuperación tras reinicio del backend', () => {
     socket.disconnect();
   }, 90000);
 
+  it('avatares al crear/unirse y reacciones efímeras con límite', async () => {
+    const dm = await post('/api/rooms', { name: 'Dana', avatar: 'pollo', color: '#2f6b3a' });
+    const code = dm.json.code as string;
+    const p1 = await post(`/api/rooms/${code}/join`, { name: 'Pablo', role: 'player', avatar: 'dragon' });
+    const bad = await post(`/api/rooms/${code}/join`, { name: 'X', role: 'player', avatar: 'nope' });
+    expect(bad.status).toBe(400);
+    const a = await connect(code, dm.cookie!);
+    const b = await connect(code, p1.cookie!);
+    expect(a.snap.state.characters[a.snap.me.participantId]).toMatchObject({ avatar: 'pollo', color: '#2f6b3a' });
+    expect(b.snap.state.characters[b.snap.me.participantId].avatar).toBe('dragon');
+
+    const got: { emoji: string; fromId: string }[] = [];
+    b.socket.on('reaction', (r) => got.push(r));
+    a.socket.emit('reaction', { emoji: '<script>' });
+    a.socket.emit('reaction', { emoji: '🔥' });
+    a.socket.emit('reaction', { emoji: '😂' }); // demasiado pronto: se ignora
+    await new Promise((r) => setTimeout(r, 400));
+    expect(got).toEqual([expect.objectContaining({ emoji: '🔥', fromId: a.snap.me.participantId })]);
+    // No cambia la versión de la partida.
+    const after: Snapshot = await a.socket.timeout(5000).emitWithAck('sync');
+    expect(after.version).toBe(a.snap.version);
+    a.socket.disconnect();
+    b.socket.disconnect();
+  });
+
   it('las rutas del frontend no interceptan la API', async () => {
     const r = await fetch(`${BASE}/api/no-existe`);
     expect(r.status).toBe(404);

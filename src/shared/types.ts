@@ -28,6 +28,8 @@ export interface Character {
   id: string; // = participantId
   name: string;
   color: string;
+  /** Id de AVATARS (rules.ts). Opcional: las salas viejas no lo tienen. */
+  avatar?: string;
   level: number;
   classes: string[];
   races: string[];
@@ -103,6 +105,24 @@ export interface LevelAlert {
   level: number;
 }
 
+/** Contadores por jugador para los premios del final. Solo suman; el DM no los edita. */
+export interface PlayerStats {
+  doors: number;
+  curses: number;
+  trouble: number;
+  loots: number;
+  wins: number;
+  monsters: number;
+  treasures: number;
+  /** Fuerza del monstruo más fuerte vencido. */
+  biggest: number;
+  helpAsked: number;
+  helpGiven: number;
+  helpRefused: number;
+  escaped: number;
+  caught: number;
+}
+
 export interface GameState {
   schema: 1;
   code: string;
@@ -116,6 +136,8 @@ export interface GameState {
   levelAlert: LevelAlert | null;
   winnerId: string | null;
   finishedAt: string | null;
+  /** Opcional: las salas creadas antes de los premios no lo tienen. */
+  stats?: Record<string, PlayerStats>;
 }
 
 export interface EventDTO {

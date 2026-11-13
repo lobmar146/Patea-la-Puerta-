@@ -27,6 +27,36 @@ export const COLORS = [
   '#4b5563',
 ];
 
+/** Avatares elegibles (íconos de game-icons.net). El id se guarda en el personaje. */
+export const AVATARS = [
+  { id: 'mago', label: 'Mago' },
+  { id: 'guerrero', label: 'Guerrero' },
+  { id: 'enano', label: 'Enano' },
+  { id: 'elfo', label: 'Elfo' },
+  { id: 'ladron', label: 'Ladrón' },
+  { id: 'vikingo', label: 'Vikingo' },
+  { id: 'dragon', label: 'Dragón' },
+  { id: 'pollo', label: 'Pollo' },
+  { id: 'calavera', label: 'Calavera' },
+  { id: 'vampiro', label: 'Vampiro' },
+  { id: 'bufon', label: 'Bufón' },
+  { id: 'goblin', label: 'Goblin' },
+] as const;
+export type AvatarId = (typeof AVATARS)[number]['id'];
+export const AVATAR_IDS = AVATARS.map((a) => a.id) as [AvatarId, ...AvatarId[]];
+
+/** Avatar del personaje; las salas creadas antes de los avatares reciben uno estable según su id. */
+export function avatarOf(c: Pick<Character, 'id' | 'avatar'>): AvatarId {
+  if (c.avatar && (AVATAR_IDS as string[]).includes(c.avatar)) return c.avatar as AvatarId;
+  let h = 0;
+  for (const ch of c.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return AVATAR_IDS[h % AVATAR_IDS.length];
+}
+
+/** Reacciones rápidas permitidas (efímeras: no se guardan). */
+export const REACTIONS = ['😂', '💀', '🔥', '🐔', '👏', '😱'] as const;
+export type Reaction = (typeof REACTIONS)[number];
+
 export const MIN_LEVEL = 1;
 export const WIN_LEVEL = 10;
 

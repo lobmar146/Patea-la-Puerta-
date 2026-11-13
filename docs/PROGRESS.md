@@ -102,3 +102,8 @@ npm run check && npm run test:e2e
 - Verificado: typecheck, lint, 42 pruebas (incluye envío cifrado real a un servicio push de prueba por HTTPS), build, e2e; service worker y manifiesto comprobados en Chromium. No probado en un teléfono real.
 
 - Inicio en dos pasos: primero se elige "Crear partida" o "Unirse a una partida" y recién ahí aparece el formulario (`?modo=crear|unirse`, el botón atrás del celular vuelve a la elección).
+- Avatar y color por jugador: se eligen al crear o unirse y se cambian en "Mi personaje"; aparecen en sala, mesa, turno, tele y podio. Las salas viejas reciben un avatar estable.
+- Pantalla final con podio (1°, 2°, 3°) y premios en joda calculados de `GameState.stats` (contadores que suma el motor) y del cronómetro (`src/shared/awards.ts`). También en la vista TV.
+- Reacciones rápidas (😂 💀 🔥 🐔 👏 😱): evento de Socket.IO efímero, validado y limitado a una cada 600 ms por conexión; flotan en todos los celulares y en la tele. No cambian la versión de la partida.
+- Sonidos sintetizados (patada, nivel, victoria, huida, fin y "te toca") con botón de silencio en el encabezado; la preferencia queda en el navegador.
+- El aviso "¡Estás perdiendo!" ya no reaparece al cambiar de sección.

@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import type { Command } from '../shared/commands.js';
 import { GameError, addParticipant, applyAction, createInitialState, type EngineEvent } from '../shared/engine.js';
-import { activeParticipantId, displayName } from '../shared/rules.js';
+import { activeParticipantId, displayName, type AvatarId } from '../shared/rules.js';
 import type { PushMessage } from './push.js';
 import type { CommandResult, EventDTO, GameState, Role } from '../shared/types.js';
 import { config } from './config.js';
@@ -69,7 +69,7 @@ export interface Joined {
   ttlDays: number;
 }
 
-export async function createRoom(input: { name: string; sets?: string[]; extraSets?: string[] }): Promise<Joined> {
+export async function createRoom(input: { name: string; sets?: string[]; extraSets?: string[]; avatar?: AvatarId; color?: string }): Promise<Joined> {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = newRoomCode();
     const roomId = randomUUID();
@@ -77,7 +77,7 @@ export async function createRoom(input: { name: string; sets?: string[]; extraSe
     const token = newToken();
     const now = new Date();
     let state = createInitialState(code, config.ttlDays, input.sets, input.extraSets);
-    state = addParticipant(state, { id: participantId, name: input.name, role: 'player', isDm: true, now: now.toISOString() });
+    state = addParticipant(state, { id: participantId, name: input.name, role: 'player', isDm: true, now: now.toISOString(), avatar: input.avatar, color: input.color });
     try {
       await prisma.$transaction(async (tx) => {
         await tx.room.create({
@@ -130,7 +130,7 @@ export async function getRoomPublic(code: string) {
 export async function joinRoom(
   code: string,
   existingToken: string | undefined,
-  input: { name: string; role: Role },
+  input: { name: string; role: Role; avatar?: AvatarId; color?: string },
 ): Promise<Joined & { reused: boolean }> {
   const existing = await findSession(code, existingToken);
   if (existing && existingToken) {
@@ -145,7 +145,7 @@ export async function joinRoom(
     if (room.state.status === 'finished') throw new HttpError(409, 'Esa partida ya terminó.');
     const participantId = randomUUID();
     const token = newToken();
-    const state = addParticipant(room.state, { id: participantId, name: input.name, role: input.role, isDm: false, now: new Date().toISOString() });
+    const state = addParticipant(room.state, { id: participantId, name: input.name, role: input.role, isDm: false, now: new Date().toISOString(), avatar: input.avatar, color: input.color });
     await tx.participant.create({ data: { id: participantId, roomId: room.id } });
     await tx.session.create({ data: { tokenHash: hashToken(token), roomId: room.id, participantId } });
     await saveRoom(tx, room, state, [{ type: 'participant.join', message: `${input.name} se sumó como ${input.role === 'player' ? 'jugador' : 'espectador'}.` }], participantId);

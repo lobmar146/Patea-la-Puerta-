@@ -1,6 +1,8 @@
 import type { Server as HttpServer } from 'node:http';
 import { Server, type Socket } from 'socket.io';
+import { randomUUID } from 'node:crypto';
 import { commandSchema } from '../shared/commands.js';
+import { REACTIONS } from '../shared/rules.js';
 import type { CommandResult, Snapshot } from '../shared/types.js';
 import { readCookie } from './http.js';
 import { findSession, loadRoom, processCommand, recentEvents, touchSession } from './rooms.js';
@@ -16,6 +18,7 @@ interface SocketData {
 
 // Presencia: solo en memoria (es efímera por naturaleza). La identidad vive en PostgreSQL.
 const presence = new Map<string, Map<string, number>>();
+export const REACTION_GAP_MS = 600;
 
 function online(roomId: string): string[] {
   return [...(presence.get(roomId)?.entries() ?? [])].filter(([, n]) => n > 0).map(([id]) => id);
@@ -120,6 +123,17 @@ export function createRealtime(server: HttpServer, onActivity: () => void = () =
         console.error('command', e);
         ack?.({ ok: false, code: 'server', message: 'Error del servidor. Probá de nuevo.', version: -1 });
       }
+    });
+
+    // Reacciones rápidas: efímeras (no se guardan ni cambian la versión). Máximo una cada 600 ms por conexión.
+    let lastReaction = 0;
+    socket.on('reaction', (raw: unknown) => {
+      const emoji = (raw as { emoji?: unknown } | null)?.emoji;
+      if (typeof emoji !== 'string' || !(REACTIONS as readonly string[]).includes(emoji)) return;
+      const t = Date.now();
+      if (t - lastReaction < REACTION_GAP_MS) return;
+      lastReaction = t;
+      io.to(data.roomId).emit('reaction' as never, { id: randomUUID(), emoji, fromId: data.participantId } as never);
     });
 
     socket.on('disconnect', () => {

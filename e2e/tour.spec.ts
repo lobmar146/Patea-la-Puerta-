@@ -4,6 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { startServer, stopServer } from './server';
 
 const OUT = process.env.TOUR_OUT ?? 'test-results/tour';
+test.setTimeout(60000);
 test.skip(!process.env.TOUR, 'Solo con npm run tour.');
 const PHONE = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 };
 test.beforeAll(startServer);
@@ -67,5 +68,25 @@ for (const theme of ['dark', 'light'] as const) {
     await tab(dm, 'DM');
     await shot(dm, `${theme}-10-dm`, true);
     await shot(tv, `${theme}-11-tv`);
+    // Reacciones, victoria y podio.
+    await tab(p1, 'Turno');
+    for (const e of ['🔥', '😂', '🐔']) {
+      await p1.getByTestId('reaction-bar').getByRole('button', { name: `Reaccionar con ${e}` }).click();
+      await p1.waitForTimeout(700);
+    }
+    await p1.waitForTimeout(100);
+    await p1.screenshot({ path: `${OUT}/${theme}-12-reacciones.png` });
+    await tab(dm, 'Turno');
+    await dm.getByRole('button', { name: 'Victoria', exact: true }).click();
+    await dm.getByTestId('victory-form').getByRole('button', { name: 'Confirmar victoria' }).click();
+    await tab(dm, 'DM');
+    await dm.getByRole('button', { name: 'Terminar partida' }).click();
+    await dm.locator('#winner').selectOption({ label: 'Dana' });
+    await dm.getByRole('button', { name: 'Confirmar fin' }).click();
+    await expect(p1.getByTestId('finished')).toBeVisible();
+    await p1.waitForTimeout(1600);
+    await shot(p1, `${theme}-13-podio`, true);
+    await tv.waitForTimeout(1600);
+    await shot(tv, `${theme}-14-tv-podio`);
   });
 }

@@ -2,8 +2,8 @@
 // El servidor la ejecuta dentro de una transacción; nunca se confía en el cliente.
 
 import type { Action, CharacterPatch, MonsterInput } from './commands.js';
-import { DEFAULT_SETS, COLORS, WIN_LEVEL, activeParticipantId, displayName } from './rules.js';
-import type { Character, Combat, GameState, Monster, Participant, Phase, Role } from './types.js';
+import { AVATAR_IDS, DEFAULT_SETS, COLORS, WIN_LEVEL, activeParticipantId, displayName, type AvatarId } from './rules.js';
+import type { Character, Combat, GameState, Monster, Participant, Phase, PlayerStats, Role } from './types.js';
 
 export class GameError extends Error {
   constructor(
@@ -58,13 +58,14 @@ export function createInitialState(code: string, ttlDays: number, sets?: string[
     levelAlert: null,
     winnerId: null,
     finishedAt: null,
+    stats: {},
   };
 }
 
 /** Agrega un participante (y su personaje si es jugador). No es un comando: lo usa el alta por HTTP. */
 export function addParticipant(
   state: GameState,
-  p: { id: string; name: string; role: Role; isDm: boolean; now: string },
+  p: { id: string; name: string; role: Role; isDm: boolean; now: string; avatar?: AvatarId; color?: string },
 ): GameState {
   const next = structuredClone(state);
   const participant: Participant = {
@@ -77,12 +78,16 @@ export function addParticipant(
   };
   next.participants[p.id] = participant;
   if (p.role === 'player') {
-    const used = new Set(Object.values(next.characters).map((c) => c.color));
-    const color = COLORS.find((c) => !used.has(c)) ?? COLORS[Object.keys(next.characters).length % COLORS.length];
+    const others = Object.values(next.characters);
+    const used = new Set(others.map((c) => c.color));
+    const color = p.color ?? COLORS.find((c) => !used.has(c)) ?? COLORS[others.length % COLORS.length];
+    const usedAvatars = new Set(others.map((c) => c.avatar));
+    const avatar = p.avatar ?? AVATAR_IDS.find((a) => !usedAvatars.has(a)) ?? AVATAR_IDS[others.length % AVATAR_IDS.length];
     next.characters[p.id] = {
       id: p.id,
       name: p.name,
       color,
+      avatar,
       level: 1,
       classes: [],
       races: [],
@@ -198,6 +203,19 @@ function describePatch(patch: CharacterPatch, before: Character): string {
   if (patch.color) parts.push('color');
   if (patch.notes !== undefined) parts.push('notas');
   return parts.join(', ') || 'sin cambios';
+}
+
+const EMPTY_STATS: PlayerStats = {
+  doors: 0, curses: 0, trouble: 0, loots: 0, wins: 0, monsters: 0, treasures: 0, biggest: 0,
+  helpAsked: 0, helpGiven: 0, helpRefused: 0, escaped: 0, caught: 0,
+};
+
+/** Suma a las estadísticas de un jugador (para los premios del final). */
+function bump(state: GameState, pid: string | null, key: keyof PlayerStats, n = 1) {
+  if (!pid) return;
+  state.stats ??= {};
+  const s = (state.stats[pid] ??= { ...EMPTY_STATS });
+  s[key] = (s[key] ?? 0) + n;
 }
 
 function nextActiveIndex(state: GameState): number {
@@ -361,6 +379,8 @@ export function applyAction(
       requireTurnOwner(state, actor);
       requirePhase(state, 'kickDoor');
       state.turn.doorResult = action.result;
+      bump(state, activeParticipantId(state), 'doors');
+      if (action.result === 'curse') bump(state, activeParticipantId(state), 'curses');
       if (action.result === 'monster') {
         if (!action.monster) throw new GameError('invalid', 'Cargá la fuerza del monstruo.');
         startCombat(state, 'door', action.monster, id, now);
@@ -385,6 +405,7 @@ export function applyAction(
       requireTurnOwner(state, actor);
       requirePhase(state, 'noMonster');
       startCombat(state, 'trouble', action.monster, id, now);
+      bump(state, activeParticipantId(state), 'trouble');
       log('combat.start', `${by(state, actor)} busca problemas con un monstruo de su mano.`);
       break;
     }
@@ -392,6 +413,7 @@ export function applyAction(
       requireTurnOwner(state, actor);
       requirePhase(state, 'noMonster');
       state.turn.phase = 'lootRoom';
+      bump(state, activeParticipantId(state), 'loots');
       log('turn.phase', `${by(state, actor)} saquea la habitación: roba una Puerta boca abajo.`);
       break;
     }
@@ -486,6 +508,7 @@ export function applyAction(
         throw new GameError('invalid', 'Ya le pediste ayuda a esa persona. Esperá su respuesta.');
       }
       c.helpRequests.push({ id: id(), fromId: actor.id, toId: action.toId, status: 'pending', createdAt: now });
+      bump(state, actor.id, 'helpAsked');
       log('help.request', `${displayName(state, actor.id)} le pide ayuda a ${displayName(state, action.toId)}.`);
       break;
     }
@@ -504,6 +527,7 @@ export function applyAction(
         log('help.accept', `${displayName(state, actor.id)} se suma al combate como ayudante.`);
       } else {
         r.status = 'rejected';
+        bump(state, actor.id, 'helpRefused');
         log('help.reject', `${displayName(state, actor.id)} rechazó ayudar. Que lo disfrute.`);
       }
       break;
@@ -546,6 +570,13 @@ export function applyAction(
         parts.push(`${ch.name} ${r.levels >= 0 ? '+' : ''}${r.levels} nivel${Math.abs(r.levels) === 1 ? '' : 'es'}${r.note ? ` (${r.note})` : ''}`);
       }
       const treasures = c.monsters.reduce((a, m) => a + m.treasures, 0);
+      bump(state, c.fighterId, 'wins');
+      bump(state, c.fighterId, 'monsters', c.monsters.length);
+      bump(state, c.fighterId, 'treasures', treasures);
+      const strongest = Math.max(0, ...c.monsters.map((m) => m.strength));
+      const fs = state.stats?.[c.fighterId];
+      if (fs && strongest > fs.biggest) fs.biggest = strongest;
+      bump(state, c.helperId, 'helpGiven');
       events.unshift({
         type: 'combat.victory',
         message: `¡Victoria contra ${c.monsters.map((m) => m.name).join(', ') || 'el monstruo'}! ${parts.join('; ') || 'Sin cambios de nivel'}. Tesoros a robar: ${treasures}.${action.note ? ` ${action.note}` : ''}`,
@@ -561,6 +592,7 @@ export function applyAction(
         const m = c.monsters.find((x) => x.id === o.monsterId);
         if (!fighters.has(o.participantId) || !m) throw new GameError('invalid', 'Resultado de huida inválido.');
         lines.push(`${displayName(state, o.participantId)} ${o.result === 'escaped' ? 'escapó de' : 'fue atrapado por'} ${m.name}`);
+        bump(state, o.participantId, o.result === 'escaped' ? 'escaped' : 'caught');
       }
       log('combat.flee', `Huida: ${lines.join('; ') || 'sin detalle'}.${action.note ? ` ${action.note}` : ''} Las consecuencias se resuelven en la mesa.`);
       endCombat(state);

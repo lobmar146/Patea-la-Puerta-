@@ -74,7 +74,22 @@ type CombatModal = 'monster' | 'modifier' | 'victory' | 'flee' | 'other' | { mon
 export function CombatView() {
   const { snap, me, send, pending } = useRoom();
   const [modal, setModal] = useState<CombatModal>(null);
-  const [seenAlert, setSeenAlert] = useState<string | null>(null);
+  // Se recuerda en la pestaña del navegador: cambiar de sección no vuelve a mostrar el mismo aviso.
+  const [seenAlert, setSeenAlertState] = useState<string | null>(() => {
+    try {
+      return sessionStorage.getItem('pp-losing-seen');
+    } catch {
+      return null;
+    }
+  });
+  const setSeenAlert = (k: string) => {
+    setSeenAlertState(k);
+    try {
+      sessionStorage.setItem('pp-losing-seen', k);
+    } catch {
+      /* sin almacenamiento: vale mientras siga montado */
+    }
+  };
   if (!snap || !me || !snap.state.combat) return null;
   const { state } = snap;
   const combat = snap.state.combat;

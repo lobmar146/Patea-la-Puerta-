@@ -11,6 +11,10 @@ import { useRoom } from '../useRoom';
 import { CombatTotalsPanel } from './CombatView';
 import { GameIcon } from '../components/GameIcon';
 import { Celebration } from '../components/Celebration';
+import { Avatar } from '../components/Avatar';
+import { FinalResults } from '../components/FinalResults';
+import { SoundEffects, SoundToggle } from '../components/SoundEffects';
+import { ReactionLayer } from '../components/Reactions';
 
 /** Vista de solo lectura, diseñada para verse bien tanto en una TV como en móvil. */
 export function TvView({ publicUrl }: { publicUrl: string | null }) {
@@ -32,6 +36,8 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
   return (
     <main className={`tv-shell inverse-surface min-h-dvh overflow-x-hidden p-3 text-parchment-50 sm:p-5 lg:p-6 ${state.status !== 'lobby' && state.status !== 'finished' ? 'tv-shell-live' : ''}`} data-testid="tv-view">
       <Celebration state={state} big />
+      <SoundEffects snap={snap} myId={null} />
+      <ReactionLayer state={state} big />
       <header className="tv-header mx-auto flex w-full max-w-[1800px] flex-wrap items-center justify-between gap-3 pb-4 sm:pb-6">
         <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <Link to={`/s/${snap.code}`} className="tv-control shrink-0" aria-label="Volver a la partida"><ArrowLeft aria-hidden className="size-4 shrink-0" /> <span className="hidden sm:inline">Volver a la partida</span></Link>
@@ -43,6 +49,7 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <ConnectionBadge />
+          <SoundToggle />
           <ThemeToggle compact />
           <button className="tv-control" onClick={() => (full ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => undefined)} aria-label={full ? 'Salir de pantalla completa' : 'Activar pantalla completa'}>
             {full ? <Minimize aria-hidden className="size-4 shrink-0" /> : <Maximize aria-hidden className="size-4 shrink-0" />}<span className="hidden md:inline">{full ? 'Salir de pantalla completa' : 'Pantalla completa'}</span>
@@ -54,10 +61,10 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
         {status !== 'online' && <p role="status" className="tv-connection rounded-2xl border border-gold/50 bg-gold/20 p-3 text-center font-bold text-white">Reconectando… se muestra el último estado conocido.</p>}
 
         {state.status === 'finished' ? (
-          <section className="tv-panel flex min-h-[65dvh] flex-col items-center justify-center gap-5 p-6 text-center sm:p-12" data-testid="tv-finished">
-            <GameIcon name="victory" className="size-14 text-accent-gold" /><p className="text-sm font-black uppercase tracking-[.25em] text-accent-wine">Partida terminada</p>
-            <p className="font-display text-4xl font-black sm:text-7xl">{state.winnerId ? `¡${displayName(state, state.winnerId)} gana!` : 'Fin de la partida'}</p>
-            <p className="text-ui-muted">Una aventura para recordar… y discutir en la revancha.</p>
+          <section className="tv-panel flex min-h-[65dvh] flex-col items-center justify-center gap-4 p-6 text-center sm:p-10" data-testid="tv-finished">
+            <p className="text-sm font-black uppercase tracking-[.25em] text-accent-wine">Partida terminada</p>
+            <p className="font-display text-4xl font-black sm:text-6xl">{state.winnerId ? `¡${displayName(state, state.winnerId)} gana!` : 'Fin de la partida'}</p>
+            <FinalResults state={state} big />
           </section>
         ) : state.status === 'lobby' ? (
           <section className="tv-panel grid min-h-[65dvh] items-center gap-8 p-6 text-center md:grid-cols-[1fr_auto] md:p-12 md:text-left">
@@ -81,7 +88,10 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
                   <span className="tv-kicker !bg-white/10">{guide.title}</span>
                 </div>
                 <p className="mt-4 text-xs font-black uppercase tracking-[.26em] text-parchment-100/80 sm:text-sm">Ahora juega</p>
-                <h1 className="mt-1 break-words font-display text-4xl font-black leading-[.98] tracking-tight sm:text-6xl lg:text-[clamp(3rem,5.3vw,6rem)]" data-testid="tv-active">{displayName(state, active)}</h1>
+                <div className="mt-1 flex items-center gap-3 sm:gap-5">
+                {active && state.characters[active] && <Avatar c={state.characters[active]} size="lg" className="max-sm:!size-14 max-sm:[&_svg]:!size-9" />}
+                <h1 className="min-w-0 break-words font-display text-4xl font-black leading-[.98] tracking-tight sm:text-6xl lg:text-[clamp(3rem,5.3vw,6rem)]" data-testid="tv-active">{displayName(state, active)}</h1>
+                </div>
                 <p className="mt-3 font-display text-xl font-bold leading-tight text-parchment-50 sm:text-2xl" data-testid="tv-phase">{guide.title}</p>
                 <p className="mt-1 max-w-2xl text-sm leading-relaxed text-parchment-50 sm:text-base">{guide.reminder}</p>
                 <div className="mt-4 max-w-xl"><ActiveStopwatch state={state} big /></div>
@@ -114,7 +124,7 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
               <ul className="tv-roster-list grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-2">
                 {players.map((c) => (
                   <li key={c.id} className={`tv-player ${active === c.id ? 'tv-player-active' : ''}`}>
-                    <div className="flex items-center gap-2"><span className="h-9 w-1.5 shrink-0 rounded-full" style={{ background: c.color }} /><div className="min-w-0 flex-1"><p className="truncate text-base font-black sm:text-lg">{active === c.id && <Play aria-hidden className="mr-1 inline size-4 text-[#ffd36a]" />}{c.name}</p><p className="truncate text-xs text-parchment-50/80">{[...c.races, ...c.classes].join(' · ') || 'Humano sin clase'}</p></div><div className="text-center"><span className="block text-[9px] font-black uppercase tracking-widest text-parchment-50/80">Nivel</span><strong className="font-display text-2xl font-black tabular-nums sm:text-3xl">{c.level}</strong></div></div>
+                    <div className="flex items-center gap-2"><Avatar c={c} size="sm" /><div className="min-w-0 flex-1"><p className="truncate text-base font-black sm:text-lg">{active === c.id && <Play aria-hidden className="mr-1 inline size-4 text-[#ffd36a]" />}{c.name}</p><p className="truncate text-xs text-parchment-50/80">{[...c.races, ...c.classes].join(' · ') || 'Humano sin clase'}</p></div><div className="text-center"><span className="block text-[9px] font-black uppercase tracking-widest text-parchment-50/80">Nivel</span><strong className="font-display text-2xl font-black tabular-nums sm:text-3xl">{c.level}</strong></div></div>
                     <div className="mt-2 flex items-center justify-between border-t border-white/15 pt-2"><span className="inline-flex items-center gap-1 text-xs font-semibold text-parchment-50/80">{online.has(c.id) ? <Wifi aria-hidden className="size-3 shrink-0" /> : <WifiOff aria-hidden className="size-3 shrink-0" />}{online.has(c.id) ? 'En línea' : 'Desconectado'}</span><span className="rounded-lg bg-[#692424] px-2.5 py-1 inline-flex items-center gap-1 text-xs font-black text-white"><GameIcon name="combat" className="size-3 shrink-0" /> Poder {basePower(c)}</span></div>
                   </li>
                 ))}

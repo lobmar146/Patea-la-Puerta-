@@ -4,6 +4,7 @@ import { activeParticipantId, basePower } from '../../shared/rules';
 import { PlayerTime } from '../components/Stopwatch';
 import { useRoom } from '../useRoom';
 import { GameIcon } from '../components/GameIcon';
+import { Avatar } from '../components/Avatar';
 
 export function TableView() {
   const { snap, online } = useRoom();
@@ -30,7 +31,7 @@ export function TableView() {
               <details className="group">
                 <summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-3 sm:px-4 [&::-webkit-details-marker]:hidden">
                   <span className="relative shrink-0">
-                    <span className="grid size-11 place-items-center rounded-2xl font-display text-lg font-extrabold text-white shadow-[inset_0_-3px_0_rgba(0,0,0,.2)]" style={{ background: c.color }}>{c.name.slice(0, 1).toUpperCase()}</span>
+                    <Avatar c={c} size="sm" />
                     <span className={`absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full ring-2 ring-surface ${online.has(c.id) ? 'bg-[#7ed38a]' : 'bg-ui-muted/50'}`} title={online.has(c.id) ? 'En línea' : 'Desconectado'} />
                   </span>
                   <span className="min-w-0 flex-1">
