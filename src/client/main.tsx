@@ -5,6 +5,9 @@ import { App } from './App';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/bricolage-grotesque';
 import './index.css';
+import { registerServiceWorker } from './pwa';
+
+registerServiceWorker();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

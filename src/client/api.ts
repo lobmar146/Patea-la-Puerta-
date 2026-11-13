@@ -36,6 +36,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+  pushKey: () => request<{ publicKey: string }>('/api/push/key'),
+  pushSubscribe: (code: string, sub: PushSubscriptionJSON) =>
+    request<{ ok: true }>(`/api/rooms/${encodeURIComponent(code)}/push`, { method: 'POST', body: JSON.stringify(sub) }),
+  pushUnsubscribe: (code: string, endpoint: string) =>
+    request<{ ok: true }>(`/api/rooms/${encodeURIComponent(code)}/push`, { method: 'DELETE', body: JSON.stringify({ endpoint }) }),
 };
 
 /** UUID v4 que funciona también fuera de HTTPS (crypto.randomUUID exige contexto seguro). */

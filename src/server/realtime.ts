@@ -5,6 +5,7 @@ import type { CommandResult, Snapshot } from '../shared/types.js';
 import { readCookie } from './http.js';
 import { findSession, loadRoom, processCommand, recentEvents, touchSession } from './rooms.js';
 import { cookieName, normalizeCode } from './sessions.js';
+import { sendPush } from './push.js';
 
 interface SocketData {
   code: string;
@@ -106,6 +107,7 @@ export function createRealtime(server: HttpServer, onActivity: () => void = () =
         const out = await processCommand(data.code, data.tokenHash, parsed.data);
         ack?.(out.result);
         if (out.changed) {
+          if (out.notify?.length) void sendPush(data.code, out.notify).catch((e) => console.warn('push', e));
           await broadcast(data.roomId);
           if (out.revokedParticipant) {
             const sockets = await io.in(data.roomId).fetchSockets();

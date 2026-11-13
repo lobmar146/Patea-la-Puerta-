@@ -7,8 +7,15 @@ import { createRoomSchema, joinRoomSchema } from '../shared/commands.js';
 import { config } from './config.js';
 import { prisma } from './db.js';
 import { rateLimit } from './rateLimit.js';
+import { removeSubscription, saveSubscription, vapidKeys } from './push.js';
+import { z } from 'zod';
 import { HttpError, createRoom, findSession, getRoomPublic, joinRoom } from './rooms.js';
 import { cookieName, cookieOptions, normalizeCode } from './sessions.js';
+
+const pushSubscriptionSchema = z.object({
+  endpoint: z.string().url().max(1000).refine((u) => u.startsWith('https://'), 'Endpoint inválido.'),
+  keys: z.object({ p256dh: z.string().min(10).max(200), auth: z.string().min(8).max(100) }),
+});
 
 type Handler = (req: Request, res: Response) => Promise<unknown>;
 const wrap = (fn: Handler) => (req: Request, res: Response, next: NextFunction) => fn(req, res).catch(next);
@@ -68,12 +75,42 @@ export function createApp(hooks: HttpHooks) {
     res.json({ code, participantId: joined.participantId, reused: joined.reused });
   }));
 
+  // Notificaciones push: clave pública y alta/baja de la suscripción de este dispositivo.
+  app.get('/api/push/key', wrap(async (_req, res) => {
+    res.json({ publicKey: (await vapidKeys()).publicKey });
+  }));
+
+  app.post('/api/rooms/:code/push', joinLimit, wrap(async (req, res) => {
+    const code = normalizeCode(req.params.code);
+    const session = await findSession(code, readCookie(req.headers.cookie, cookieName(code)));
+    if (!session) throw new HttpError(401, 'Entrá a la sala antes de activar los avisos.');
+    const sub = pushSubscriptionSchema.parse(req.body);
+    await saveSubscription(session.roomId, session.participantId, sub);
+    res.status(201).json({ ok: true });
+  }));
+
+  app.delete('/api/rooms/:code/push', wrap(async (req, res) => {
+    const code = normalizeCode(req.params.code);
+    const session = await findSession(code, readCookie(req.headers.cookie, cookieName(code)));
+    if (!session) throw new HttpError(401, 'Sesión inválida.');
+    const { endpoint } = pushSubscriptionSchema.pick({ endpoint: true }).parse(req.body);
+    await removeSubscription(endpoint);
+    res.json({ ok: true });
+  }));
+
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Ruta inexistente.' }));
 
   // Frontend compilado. Las rutas del cliente caen en index.html; /api y /socket.io no.
   const clientDir = path.resolve(process.cwd(), 'dist/client');
   if (fs.existsSync(clientDir)) {
-    app.use(express.static(clientDir, { index: false, maxAge: '1h' }));
+    app.use(express.static(clientDir, {
+      index: false,
+      maxAge: '1h',
+      setHeaders: (res, file) => {
+        // El service worker y el manifiesto se revisan siempre para que las actualizaciones lleguen enseguida.
+        if (/(sw\.js|manifest\.webmanifest)$/.test(file)) res.setHeader('Cache-Control', 'no-cache');
+      },
+    }));
     app.get(/^\/(?!api\/|socket\.io\/).*/, (_req, res) => res.sendFile(path.join(clientDir, 'index.html')));
   }
 

@@ -6,6 +6,7 @@ import { useRoom } from '../useRoom';
 import { ConnectionBadge, Toast } from '../components/ui';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { Celebration } from '../components/Celebration';
+import { PushCard } from '../components/PushCard';
 import { CharacterEditor } from './CharacterEditor';
 import { DmPanel } from './DmPanel';
 import { Finished } from './Finished';
@@ -82,10 +83,10 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
     <div className="min-h-dvh pb-24">
       <Toast />
       <Celebration state={state} />
-      <header className="inverse-surface sticky top-0 z-30 border-b border-white/[.06] bg-[#120d0a]/90 px-3 py-2.5 text-parchment-50 backdrop-blur-xl sm:px-5">
+      <header className="inverse-surface sticky top-0 z-30 border-b border-white/[.06] bg-[#120d0a]/90 px-3 pb-2.5 pt-[calc(.625rem+env(safe-area-inset-top))] text-parchment-50 backdrop-blur-xl sm:px-5">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-b from-[#f6b64a] to-[#d98a16] text-[#2a1606] shadow-[inset_0_1px_0_rgba(255,255,255,.35)]" aria-hidden><GameIcon name="door" className="size-5" /></span>
+            <img src="/logo.svg" alt="" width={40} height={40} className="size-10 shrink-0 drop-shadow-[0_4px_10px_rgba(0,0,0,.4)]" />
             <span className="min-w-0 leading-tight">
               <span className="block truncate font-display text-base font-extrabold tracking-tight sm:text-lg">{APP_NAME}</span>
               <span className="block text-[11px] font-semibold uppercase tracking-[.14em] text-parchment-100/60">Sala <b className="font-black tracking-[.2em] text-[#f6b64a]" data-testid="room-code">{snap.code}</b></span>
@@ -134,6 +135,7 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
           </div>
         )}
         <HelpInbox />
+        {isPlayer && current !== 'dm' && <PushCard code={snap.code} hideWhenOn={current !== 'me'} />}
 
         {current === 'me' && isPlayer && <CharacterEditor targetId={me.id} />}
         {current === 'turn' && (state.status === 'lobby' ? <Lobby publicUrl={publicUrl} /> : <TurnView />)}
