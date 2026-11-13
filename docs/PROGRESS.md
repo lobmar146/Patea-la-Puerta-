@@ -117,3 +117,4 @@ npm run check && npm run test:e2e
 - Turno más limpio: "Ver ayuda de esta fase" se oculta con modo novato; las reacciones van en un botón flotante; "Últimos eventos" quedó solo en Mesa.
 - Revancha con un toque (`POST /api/rooms/:code/rematch` y `/rematch/join`): el DM arma una sala nueva con el mismo grupo, orden, avatares y roles (todos desde nivel 1); la sala vieja guarda `rematch` y los demás entran con su sesión vieja. La tele muestra el enlace.
 - Vista TV escalada: un escenario de 1280×720 que se achica con `transform` en pantallas más chicas (navegadores de tele a 960×540, etc.). Prueba `e2e/tv-fit.spec.ts`.
+- Turno compacto en el celular: fase, quién juega y reloj en una sola línea (el reloj grande queda en la tele). En combate, "Resolver combate" (o "Jugar una carta" para el resto) va justo debajo de los totales; el aviso de notificaciones ya no ocupa lugar en el turno. Prueba `e2e/mobile-fold.spec.ts` a 390×700.

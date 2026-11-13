@@ -5,7 +5,7 @@ import { activeParticipantId, displayName, upcoming } from '../../shared/rules';
 import { Illustration } from '../components/Illustration';
 import { Modal } from '../components/Modal';
 import { MonsterForm } from '../components/MonsterForm';
-import { ActiveStopwatch } from '../components/Stopwatch';
+import { TurnTimer } from '../components/Stopwatch';
 import { useRoom } from '../useRoom';
 import { CombatView } from './CombatView';
 import { GameIcon } from '../components/GameIcon';
@@ -47,37 +47,37 @@ export function TurnView() {
   return (
     <div className="space-y-4">
       <section key={phase} className="card phase-transition overflow-hidden" data-testid="turn-panel" data-phase={phase}>
-        <div className="phase-hero p-4 sm:p-6">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-ui-muted">Turno {state.turn.turnNumber}</p>
-            <span className={`chip border-transparent py-0.5 pl-0.5 font-bold ${mine ? 'bg-accent-brand text-[#2a1606]' : 'bg-surface-raised/80'}`}>
-              {activeId && state.characters[activeId] && <Avatar c={state.characters[activeId]} size="xs" />}
-              {mine ? '¡Tu turno!' : `Juega ${displayName(state, activeId)}`}
-            </span>
+        {/* Una sola línea: quién juega, la fase y el reloj. Así el combate entra de entrada en el celular. */}
+        <div className="phase-hero flex items-center gap-3 px-3 py-2.5 sm:px-5 sm:py-3">
+          {activeId && state.characters[activeId] && <Avatar c={state.characters[activeId]} size="sm" />}
+          <div className="min-w-0 flex-1">
+            <p className={`truncate text-xs font-bold uppercase tracking-[.12em] ${mine ? 'text-accent-brand' : 'text-ui-muted'}`}>
+              {mine ? '¡Tu turno!' : `Juega ${displayName(state, activeId)}`} · T{state.turn.turnNumber}
+            </p>
+            <h2 className="line-clamp-2 text-lg font-extrabold leading-tight sm:text-2xl" data-testid="phase-title">{guide.title}</h2>
           </div>
-          <div className={`flex items-center gap-4 sm:gap-6 ${phase === 'combat' ? 'mt-1' : 'mt-4'}`}>
-            <div className={`${phase === 'combat' ? 'hidden' : ''} w-[5.25rem] shrink-0 -rotate-3 rounded-2xl bg-surface-raised/60 p-1.5 shadow-[0_14px_30px_-12px_rgba(0,0,0,.7)] ring-1 ring-ui-line/10 sm:w-28`}>
+          <TurnTimer state={state} />
+        </div>
+        {phase !== 'combat' && (
+          <div className="flex items-center gap-3 px-3 pt-3 sm:px-5">
+            <div className="w-14 shrink-0 -rotate-3 rounded-xl bg-surface-raised/60 p-1 ring-1 ring-ui-line/10 sm:w-20">
               <Illustration name={guide.illustration} className="w-full" />
             </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-[1.75rem] font-extrabold leading-[1.05] sm:text-4xl" data-testid="phase-title">{guide.title}</h2>
-              {phase !== 'combat' && <p className="mt-2 text-[15px] leading-snug text-ui-muted sm:text-lg">{guide.reminder}</p>}
-            </div>
+            <p className="text-[15px] leading-snug text-ui-muted sm:text-lg">{guide.reminder}</p>
           </div>
-        </div>
-        <div className="space-y-3 p-4 sm:p-6">
-          <ActiveStopwatch state={state} />
+        )}
+        {phase !== 'combat' && <div className="space-y-3 px-3 py-3 sm:px-5">
           {!(novice || state.config.practice) && <details className="group rounded-2xl px-1">
             <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ui-muted hover:text-ui-fg [&::-webkit-details-marker]:hidden"><span aria-hidden className="grid size-6 place-items-center rounded-full bg-surface-raised text-xs transition-transform group-open:rotate-90">›</span>Ver ayuda de esta fase</summary>
             <ul className="list-inside list-disc space-y-2 px-1 pb-3 text-sm text-ui-muted">{guide.details.map((d) => <li key={d}>{d}</li>)}</ul>
           </details>}
-          {!canAct && phase !== 'combat' && (
+          {!canAct && (
             <p className="rounded-2xl bg-surface-muted p-4 font-semibold" role="status">
               {state.status === 'paused' ? 'Partida en pausa.' : `Esperando a ${displayName(state, activeId)}. Mientras tanto podés editar tus estadísticas.`}
             </p>
           )}
-          {canAct && !mine && phase !== 'combat' && <p className="rounded-2xl bg-accent-blue/10 p-3 text-sm font-semibold text-accent-blue">{state.config.practice && activeId && state.participants[activeId]?.bot ? `Turno de ${displayName(state, activeId)}: jugalo vos para practicar.` : 'Sos DM: podés avanzar este turno como corrección.'}</p>}
-        </div>
+          {canAct && !mine && <p className="rounded-2xl bg-accent-blue/10 p-3 text-sm font-semibold text-accent-blue">{state.config.practice && activeId && state.participants[activeId]?.bot ? `Turno de ${displayName(state, activeId)}: jugalo vos para practicar.` : 'Sos DM: podés avanzar este turno como corrección.'}</p>}
+        </div>}
       </section>
       {/* La acción del turno queda fija sobre la barra inferior: siempre a mano del pulgar. */}
       {action && <div className="action-bar" data-testid="turn-action"><div className="mx-auto max-w-4xl [&>button]:min-h-14 [&>button]:shadow-xl">{action}</div></div>}
