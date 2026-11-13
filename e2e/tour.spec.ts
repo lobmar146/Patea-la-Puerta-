@@ -30,7 +30,9 @@ for (const theme of ['dark', 'light'] as const) {
     const tv = await mk({ viewport: { width: 1920, height: 1080 } });
     await p1.goto('/');
     await shot(p1, `${theme}-01-home`, true);
-    await dm.goto('/');
+    await p1.getByTestId('home-create').click();
+    await shot(p1, `${theme}-01b-home-create`, true);
+    await dm.goto('/?modo=crear');
     await dm.getByLabel('Tu nombre').fill('Dana');
     await dm.getByRole('button', { name: 'Crear partida' }).click();
     const code = (await dm.getByTestId('lobby-code').textContent())!.trim();

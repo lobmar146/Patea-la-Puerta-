@@ -40,6 +40,11 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
 
   // 1. El DM crea la sala (y su personaje).
   await dm.goto('/');
+  await expect(dm.getByLabel('Tu nombre')).toHaveCount(0);
+  await dm.getByTestId('home-join').click();
+  await expect(dm.getByLabel('Código de sala')).toBeVisible();
+  await dm.getByRole('button', { name: 'Volver' }).click();
+  await dm.getByTestId('home-create').click();
   await expect(dm.getByLabel('Munchkin (juego base)')).toBeChecked();
   await expect(dm.getByLabel('Munchkin 2: Hacha sobrenatural (Unnatural Axe)')).toBeChecked();
   await expect(dm.getByLabel('Munchkin 3: Errores clericales (Clerical Errors)')).toBeChecked();
