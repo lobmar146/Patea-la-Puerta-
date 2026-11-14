@@ -56,13 +56,13 @@ export const ASSETS: Record<IllustrationKey, AssetEntry> = {
     label: 'Monstruo: Plutonium Dragon',
     fallback: '/illustrations/monster.svg',
     // Recorte: Dragón de Plutonio en la fila inferior, al centro.
-    source: { file: 'selection-amazon.jpg', url: 'https://m.media-amazon.com/images/I/81kd4nstzlL._AC_SL1500_.jpg', sheet: true, crop: { x: 31, y: 50, w: 38, h: 47 } },
+    source: { file: 'selection-amazon.jpg', url: 'https://m.media-amazon.com/images/I/81kd4nstzlL._AC_SL1500_.jpg', sheet: true, crop: { x: 33, y: 51, w: 31, h: 46 } },
   },
   trouble: {
     label: 'Buscar problemas: Wandering Monster (ilustración temática)',
     fallback: '/illustrations/trouble.svg',
     // Segunda fila, derecha.
-    source: { file: 'door5.jpg', url: 'https://net-clan.com/PDFS/Munchkin/door5.jpg', sheet: true, crop: { x: 68, y: 58, w: 31, h: 41 } },
+    source: { file: 'door5.jpg', url: 'https://net-clan.com/PDFS/Munchkin/door5.jpg', sheet: true, crop: { x: 67, y: 34, w: 29, h: 31 } },
   },
   help: {
     label: 'Pedir ayuda: Help Me Out Here! (ilustración temática)',
