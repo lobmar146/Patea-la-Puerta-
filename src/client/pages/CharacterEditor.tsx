@@ -2,7 +2,7 @@ import { Coins, Skull, Undo2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { CharacterPatch } from '../../shared/commands';
 import { undoFor } from '../../shared/engine';
-import { CLASS_SUGGESTIONS, RACE_SUGGESTIONS, avatarOf, basePower, identityLine } from '../../shared/rules';
+import { CLASS_SUGGESTIONS, RACE_SUGGESTIONS, appliedPowers, avatarOf, basePower, identityLine } from '../../shared/rules';
 import { Avatar, AvatarPicker, SexPicker } from '../components/Avatar';
 import { EquipmentEditor } from '../components/EquipmentEditor';
 import { DeathGuide, NoviceSwitch, SellCalculator } from '../components/NoviceHelp';
@@ -151,6 +151,12 @@ export function CharacterEditor({ targetId }: { targetId: string }) {
           <TagEditor id="races" label="Razas" values={c.races} suggestions={RACE_SUGGESTIONS} disabled={pending} onChange={(v) => patch({ races: v })} />
           <TagEditor id="classes" label="Clases" values={c.classes} suggestions={CLASS_SUGGESTIONS} disabled={pending} onChange={(v) => patch({ classes: v })} />
         </div>
+        {appliedPowers(c).length > 0 && (
+          <ul className="mt-4 space-y-1.5 rounded-2xl bg-moss/10 p-3 text-sm" data-testid="applied-powers">
+            <li className="text-xs font-black uppercase tracking-[.14em] text-accent-moss">La app ya aplica</li>
+            {appliedPowers(c).map((p) => <li key={p}>{p}</li>)}
+          </ul>
+        )}
       </Section>
 
       <Section title="Nombre, avatar y notas">

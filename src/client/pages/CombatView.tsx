@@ -1,7 +1,7 @@
 import { Hourglass, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { Combat, GameState, Item } from '../../shared/types';
-import { almostWinners, combatTotals, conditionTarget, displayName, noPursue, playersWinTies } from '../../shared/rules';
+import { almostWinners, combatTotals, conditionTarget, displayName, fleeTarget, helperLevels as elfHelperLevels, isElf, noPursue, playersWinTies } from '../../shared/rules';
 import { Illustration } from '../components/Illustration';
 import { Modal } from '../components/Modal';
 import { MonsterForm } from '../components/MonsterForm';
@@ -366,7 +366,9 @@ function VictoryForm({ combat }: { combat: Combat }) {
   const { snap, send, pending } = useRoom();
   const defaultLevels = combat.monsters.reduce((a, m) => a + m.levels, 0);
   const [fighter, setFighter] = useState(String(defaultLevels));
-  const [helper, setHelper] = useState('0');
+  // Elfo ayudante: sube 1 nivel por cada monstruo que ayuda a vencer.
+  const elfHelper = isElf(combat.helperId ? snap?.state.characters[combat.helperId] : undefined);
+  const [helper, setHelper] = useState(String(elfHelperLevels(combat.helperId ? snap?.state.characters[combat.helperId] : undefined, combat.monsters.length)));
   const [note, setNote] = useState('');
   if (!snap) return null;
   const treasures = combat.monsters.reduce((a, m) => a + m.treasures, 0);
@@ -395,7 +397,7 @@ function VictoryForm({ combat }: { combat: Combat }) {
           </label>
           {combat.helperId && (
             <label className="flex items-center justify-between gap-2">
-              <span>Niveles para {displayName(snap.state, combat.helperId)} (ayudante; solo si una carta o raza lo indica)</span>
+              <span>Niveles para {displayName(snap.state, combat.helperId)} {elfHelper ? '(Elfo: +1 por monstruo vencido)' : '(ayudante; solo si una carta o raza lo indica)'}</span>
               <input className="input w-24" type="number" min={-10} max={10} value={helper} onChange={(e) => setHelper(e.target.value)} />
             </label>
           )}
@@ -485,7 +487,7 @@ function FleeForm({ combat }: { combat: Combat }) {
     <form className="mt-3 space-y-2" onSubmit={(e) => { e.preventDefault(); void send({ type: 'combat.resolveFlee', outcomes, note: note.trim() }); }} data-testid="flee-form">
       <div className="flex items-center gap-3">
         <Illustration name="flee" className="w-14 shrink-0" />
-        <p>Tiren el dado físico por cada monstruo (en el juego base, 5 o más escapa). Registren el resultado; las consecuencias se aplican a mano.</p>
+        <p>Tiren el dado físico por cada monstruo (en el juego base, 5 o más escapa; el Elfo, 4 o más). Registren el resultado; las consecuencias se aplican a mano.</p>
       </div>
       {people.map((p) =>
         combat.monsters.map((m) => {
@@ -501,7 +503,7 @@ function FleeForm({ combat }: { combat: Combat }) {
           return (
             <fieldset key={k} className="flex flex-wrap items-center justify-between gap-2 rounded border border-ui-line bg-surface-raised p-2">
               <legend className="sr-only">{displayName(snap.state, p)} contra {m.name}</legend>
-              <span>{displayName(snap.state, p)} vs {m.name}</span>
+              <span>{displayName(snap.state, p)} vs {m.name} <span className="text-xs text-ui-muted" data-testid="flee-target">· escapa con {fleeTarget(snap.state.characters[p])}+{isElf(snap.state.characters[p]) ? ' (Elfo)' : ''}</span></span>
               <span className="flex gap-1">
                 {(['escaped', 'caught'] as const).map((r) => (
                   <label key={r} className={`btn btn-small cursor-pointer ${(res[k] ?? 'escaped') === r ? 'bg-ink text-parchment-50' : 'bg-surface'} focus-within:ring-2 focus-within:ring-accent-blue`}>

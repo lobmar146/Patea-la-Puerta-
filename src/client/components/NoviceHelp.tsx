@@ -1,7 +1,7 @@
 import { Coins, GraduationCap, Lightbulb, Skull, X } from 'lucide-react';
 import { useState } from 'react';
 import { DEATH_STEPS, GOLD_PER_LEVEL, coaching, sale } from '../../shared/novice';
-import { WIN_LEVEL } from '../../shared/rules';
+import { WIN_LEVEL, isHalfling } from '../../shared/rules';
 import { useNoviceMode } from '../noviceMode';
 import { useRoom } from '../useRoom';
 import { Modal } from './Modal';
@@ -149,7 +149,8 @@ export function SellCalculator({ open, onClose }: { open: boolean; onClose: () =
   if (!snap || !me) return null;
   const c = snap.state.characters[me.id];
   if (!c) return null;
-  const r = sale(values, c.level);
+  const half = isHalfling(c);
+  const r = sale(values, c.level, half);
   const addCustom = () => {
     const v = Math.round(Number(custom));
     if (Number.isFinite(v) && v > 0 && v <= 10000) setValues([...values, v]);
@@ -175,6 +176,7 @@ export function SellCalculator({ open, onClose }: { open: boolean; onClose: () =
         )}
         <div className="rounded-2xl bg-surface-muted p-4 text-center" data-testid="sell-result">
           <p className="text-sm text-ui-muted">Total: <b className="text-ui-fg">{r.total}</b> de oro</p>
+          {half && values.length > 0 && <p className="text-xs font-semibold text-accent-moss" data-testid="sell-halfling">Mediano: tu objeto más caro ({Math.max(...values)}) cuenta doble.</p>}
           <p className="font-display text-3xl font-black">{r.levels > 0 ? `+${r.levels} ${r.levels === 1 ? 'nivel' : 'niveles'}` : 'Sin nivel'}</p>
           {r.leftover > 0 && <p className="text-sm text-ui-muted">Sobran {r.leftover} de oro que se pierden (no hay cambio).</p>}
           {r.capped && <p className="mt-1 text-sm font-semibold text-accent-wine">Vendiendo no se puede llegar al nivel {WIN_LEVEL}: como mucho llegás a {WIN_LEVEL - 1}.</p>}
