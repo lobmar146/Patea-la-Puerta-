@@ -93,8 +93,9 @@ export const DUEL_GUIDE: { intro: string; setup: string[]; sections: GuideSectio
       title: 'El Mercader',
       icon: 'merchant',
       items: [
-        'En tu turno (fuera del combate) podés cambiar objetos tuyos por cartas del Mercader de igual o mayor valor en oro.',
-        'El oro se puede sumar con varias cartas, para los dos lados. El Mercader puede juntar todos los objetos que quiera.',
+        'En tu turno (fuera del combate) podés llevarte cartas del Mercader dando objetos tuyos que valgan igual o más oro.',
+        'Podés sumar varias cartas tuyas para llegar al valor. Ejemplo: das dos objetos de 300 y 400 (700) por uno de 600. También vale al revés: un objeto tuyo caro por varias cartas baratas.',
+        'El Mercader puede juntar todos los objetos que quiera.',
         'Si le quedan menos de 5 cartas, quien hizo el cambio roba Tesoros hasta reponerlas.',
         'Si el Mercader tiene una carta sin valor en oro, el rival corta el mazo de Tesoros donde quiera y la carta vuelve ahí.',
         'Una carta de ¡Trampa! te deja usar el Mercader en cualquier momento, incluso en combate o en el turno del rival.',
