@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Action } from '../../src/shared/commands';
 import { GameError, addParticipant, applyAction, createInitialState, undoFor } from '../../src/shared/engine';
-import { activeParticipantId, almostWinners, avatarOf, combatTotals, identityLine, matchesCondition, noPursue } from '../../src/shared/rules';
+import { activeParticipantId, almostWinners, appliedPowers, fleeTarget, helperLevels, playersWinTies, avatarOf, combatTotals, identityLine, matchesCondition, noPursue } from '../../src/shared/rules';
 import { actionSchema } from '../../src/shared/commands';
 import { computeAwards, podium } from '../../src/shared/awards';
 import { coaching, equipmentWarnings, gearFromItems, sale } from '../../src/shared/novice';
@@ -38,6 +38,25 @@ function expectError(fn: () => unknown, code: GameError['code']) {
 
 const started = () => run(setup(), 'dm', { type: 'game.start' });
 const monster = { name: 'Planta', strength: 5, levels: 1, treasures: 1 };
+
+describe('poderes simples de razas y clases', () => {
+  it('Elfo, Mediano, Enano y Guerrero', () => {
+    const elf = { races: ['Elfos'], classes: [] };
+    const human = { races: [], classes: [] };
+    expect(fleeTarget(elf)).toBe(4);
+    expect(fleeTarget(human)).toBe(5);
+    expect(helperLevels(elf, 2)).toBe(2);
+    expect(helperLevels(human, 2)).toBe(0);
+    expect(sale([400, 700], 3, true)).toMatchObject({ total: 1800, levels: 1 });
+    expect(sale([400, 700], 3, false)).toMatchObject({ total: 1100, levels: 1 });
+    expect(appliedPowers({ races: ['Enano', 'Mediano'], classes: ['Guerrero'] }).map((p) => p.split(':')[0])).toEqual(['Guerrero', 'Enano', 'Mediano']);
+    expect(appliedPowers(human)).toEqual([]);
+    let s = started();
+    s = run(s, 'p2', { type: 'character.update', targetId: 'p2', patch: { classes: ['Guerrero'] } });
+    expect(playersWinTies(s, 'p1', 'p2')).toBe(true);
+    expect(playersWinTies(s, 'p1', null)).toBe(false);
+  });
+});
 
 describe('aviso de nivel 9', () => {
   it('avisa al llegar a 9 (una vez) y lista a quienes están a un paso', () => {

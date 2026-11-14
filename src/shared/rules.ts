@@ -165,11 +165,41 @@ export function combatTotals(state: GameState, combat: Combat): CombatTotals {
   return { fighter, helper, playerMods, players, monsterBase, monsterMods, conditionMods, conditions, monsters, diff: players - monsters };
 }
 
+// ---------------------------------------------------------------- poderes simples (juego base)
+// Solo los que no dependen de descartar cartas; el resto se juega en la mesa.
+
+// Tolera plurales y tildes: "Elfos", "Guerreros", "medianos".
+const tagIs = (list: string[], ...names: string[]) => list.some((x) => names.includes(norm(x).replace(/s$/, '')));
+export const isElf = (c: Pick<Character, 'races'> | undefined) => !!c && tagIs(c.races, 'elfo', 'elf');
+export const isDwarf = (c: Pick<Character, 'races'> | undefined) => !!c && tagIs(c.races, 'enano', 'dwarf');
+export const isHalfling = (c: Pick<Character, 'races'> | undefined) => !!c && tagIs(c.races, 'mediano', 'halfling');
+export const isWarrior = (c: Pick<Character, 'classes'> | undefined) => !!c && tagIs(c.classes, 'guerrero', 'warrior');
+
+/** Número del dado para escapar: 5 o más; el Elfo suma +1 (escapa con 4). */
+export function fleeTarget(c: Pick<Character, 'races'> | undefined): number {
+  return isElf(c) ? 4 : 5;
+}
+
+/** Niveles por ayudar a vencer: el Elfo sube 1 por cada monstruo que ayuda a matar. */
+export function helperLevels(c: Pick<Character, 'races'> | undefined, monsters: number): number {
+  return isElf(c) ? monsters : 0;
+}
+
+/** Poderes que la app aplica sola, para mostrarlos en la ficha. */
+export function appliedPowers(c: Pick<Character, 'races' | 'classes'>): string[] {
+  const out: string[] = [];
+  if (isWarrior(c)) out.push('Guerrero: ganás los empates en combate (peleando o ayudando).');
+  if (isElf(c)) out.push('Elfo: +1 para huir (escapás con 4, 5 o 6) y subís 1 nivel por cada monstruo que ayudás a vencer.');
+  if (isDwarf(c)) out.push('Enano: podés llevar varios objetos Grandes y tener hasta 6 cartas en la mano.');
+  if (isHalfling(c)) out.push('Mediano: en tu turno, un objeto por turno se vende al doble (la calculadora de venta lo suma).');
+  return out;
+}
+
 /** En el juego base, un Guerrero en cualquiera de los dos puestos gana los empates. */
 export function playersWinTies(state: GameState, fighterId: string | null, helperId?: string | null): boolean {
   return [fighterId, helperId].some((id) => {
     if (!id) return false;
-    return state.characters[id]?.classes.some((label) => ['guerrero', 'warrior'].includes(label.trim().toLowerCase()));
+    return isWarrior(state.characters[id]);
   });
 }
 

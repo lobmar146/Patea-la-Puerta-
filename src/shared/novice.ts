@@ -124,8 +124,9 @@ export interface SaleResult {
 }
 
 /** Cada 1000 de oro es un nivel; vendiendo no se puede llegar al nivel ganador. */
-export function sale(values: number[], level: number): SaleResult {
-  const total = values.reduce((a, v) => a + Math.max(0, v), 0);
+export function sale(values: number[], level: number, halfling = false): SaleResult {
+  // Mediano: un objeto por turno vale el doble (el más caro, que es lo que conviene).
+  const total = values.reduce((a, v) => a + Math.max(0, v), 0) + (halfling && values.length ? Math.max(0, ...values) : 0);
   const raw = Math.floor(total / GOLD_PER_LEVEL);
   const max = Math.max(0, WIN_LEVEL - 1 - level);
   const levels = Math.min(raw, max);
