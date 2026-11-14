@@ -109,7 +109,7 @@ export const DUEL_GUIDE: { intro: string; setup: string[]; sections: GuideSectio
         'Para jugar una carta del Puño descartás una carta de tu mano, la que quieras. Se puede repetir, pero de a una acción por vez.',
         'Al final de tu turno sumás una Puerta a tu Puño.',
         'Si sale una Raza o Clase (incluidas Súper Munchkin y Mestizo), el rival corta el mazo y la carta vuelve ahí.',
-        'Jugando una carta de ¡Trampa! podés usar el Puño en cualquier momento, incluso en tu propio turno.',
+        'Jugando una carta de ¡Trampa! podés usar el Puño en cualquier momento, no solo en el turno del rival.',
       ],
     },
   ],
