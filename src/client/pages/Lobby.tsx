@@ -6,6 +6,7 @@ import { useRoom } from '../useRoom';
 import { Avatar } from '../components/Avatar';
 import { CoachCard } from '../components/NoviceHelp';
 import { GameIcon } from '../components/GameIcon';
+import { MODE_INFO, modeOf } from '../../shared/modes';
 
 export function Lobby({ publicUrl }: { publicUrl: string | null }) {
   const { snap, me, online, send, pending } = useRoom();
@@ -26,6 +27,13 @@ export function Lobby({ publicUrl }: { publicUrl: string | null }) {
   return (
     <div className="space-y-4">
       <CoachCard />
+      {modeOf(state.config) !== 'normal' && (
+        <Section title={MODE_INFO[modeOf(state.config)].label}>
+          <ul className="list-disc space-y-1 pl-5 text-sm" data-testid="lobby-mode">
+            {MODE_INFO[modeOf(state.config)].rules.map((r) => <li key={r}>{r}</li>)}
+          </ul>
+        </Section>
+      )}
       <Section title="Invitá a la mesa">
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
           <QrCode text={url} />

@@ -112,12 +112,16 @@ export interface Combat {
   startedAt: string;
 }
 
+/** Modo elegido al crear la sala. Las salas viejas no lo tienen: equivale a 'normal'. */
+export type GameMode = 'normal' | 'fast';
+
 export interface RoomConfig {
   sets: string[];
   extraSets: string[];
   ttlDays: number;
   /** Sala de práctica: jugadores de mentira que maneja quien la creó. */
   practice?: boolean;
+  mode?: GameMode;
 }
 
 export type DoorResult = 'monster' | 'curse' | 'other';

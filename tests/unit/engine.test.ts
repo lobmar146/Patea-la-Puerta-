@@ -477,3 +477,15 @@ describe('ayudas para novatos', () => {
     expectError(() => applyAction(normal, 'dm', { type: 'help.respond', requestId: toBot.id, accept: true }), 'forbidden');
   });
 });
+
+describe('modos de juego', () => {
+  it('el modo rápido cambia la guía de preparación y saqueo; las salas viejas son normales', async () => {
+    const { phaseGuide, modeOf } = await import('../../src/shared/modes');
+    const { PHASE_GUIDE } = await import('../../src/shared/phases');
+    expect(modeOf({})).toBe('normal');
+    expect(phaseGuide('setup', {})).toEqual(PHASE_GUIDE.setup);
+    expect(phaseGuide('setup', { mode: 'fast' }).title).toBe('Escuchar en la puerta');
+    expect(phaseGuide('lootRoom', { mode: 'fast' }).reminder).toMatch(/Tesoro/);
+    expect(phaseGuide('kickDoor', { mode: 'fast' })).toEqual(PHASE_GUIDE.kickDoor);
+  });
+});

@@ -65,4 +65,23 @@ describe('revancha', () => {
     await expect(joinRematch(r.code, 'token-falso')).rejects.toMatchObject({ status: 401 });
     expect(tv.code).toBe(r.code);
   });
+
+  it('el modo de juego se guarda en la sala y la revancha lo conserva', async () => {
+    const r = await createRoom({ name: 'Dana', mode: 'fast' });
+    rooms.push(r.roomId);
+    expect((await loadRoom(r.roomId)).state.config.mode).toBe('fast');
+    const cmd = async (action: Action) => {
+      const res = await processCommand(r.code, hashToken(r.token), { commandId: randomUUID(), expectedVersion: (await loadRoom(r.roomId)).version, action });
+      expect(res.result).toMatchObject({ ok: true });
+    };
+    await cmd({ type: 'game.start' });
+    await cmd({ type: 'game.end', winnerId: null });
+    const made = await createRematch(r.code, r.token);
+    rooms.push(made.roomId);
+    expect((await loadRoom(made.roomId)).state.config.mode).toBe('fast');
+
+    const normal = await createRoom({ name: 'Leo' });
+    rooms.push(normal.roomId);
+    expect((await loadRoom(normal.roomId)).state.config.mode).toBeUndefined();
+  });
 });

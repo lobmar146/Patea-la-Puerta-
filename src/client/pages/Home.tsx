@@ -9,6 +9,8 @@ import { InstallApp } from '../components/InstallApp';
 import { AvatarPicker, SexPicker, type Look } from '../components/Avatar';
 import type { Sex } from '../../shared/types';
 import { NoviceSwitch } from '../components/NoviceHelp';
+import { ModePicker } from '../components/ModePicker';
+import type { GameMode } from '../../shared/types';
 
 export function Home() {
   const nav = useNavigate();
@@ -24,6 +26,7 @@ export function Home() {
   const [code, setCode] = useState('');
   const [look, setLook] = useState<Look>({});
   const [sex, setSex] = useState<Sex | undefined>();
+  const [gameMode, setGameMode] = useState<GameMode>('normal');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -33,7 +36,7 @@ export function Home() {
     setError(null);
     try {
       const extraSets = extra.split(',').map((s) => s.trim()).filter(Boolean);
-      const r = await api.createRoom({ name: name.trim(), sets, extraSets, ...look, sex });
+      const r = await api.createRoom({ name: name.trim(), sets, extraSets, mode: gameMode, ...look, sex });
       nav(`/s/${r.code}`);
     } catch (err) {
       setError((err as Error).message);
@@ -147,10 +150,11 @@ export function Home() {
                 <p className="mt-1 text-sm text-ui-muted">Prepará una sala nueva para tu grupo.</p>
               </div>
             </div>
+            <ModePicker value={gameMode} onChange={setGameMode} />
             <p className="rounded-xl bg-surface-muted p-3 text-sm">Quien crea la sala será Dungeon Master y también jugará con su personaje.</p>
             <div>
               <label className="label" htmlFor="dm-name">Tu nombre</label>
-              <input id="dm-name" className="input" autoFocus required maxLength={40} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej.: Gonzalo el Implacable" />
+              <input id="dm-name" className="input" required maxLength={40} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej.: Gonzalo el Implacable" />
             </div>
             <SexPicker value={sex} onChange={setSex} idPrefix="create" />
             <AvatarPicker avatar={look.avatar} color={look.color} onChange={setLook} idPrefix="create" />
