@@ -7,7 +7,7 @@ La app elige imágenes desde `src/client/assets/manifest.ts`. Las cartas se usan
 - Las seis descargas de las referencias indicadas en el prompt se comprobaron visualmente el 2026-11-13 y se guardan en `public/cards/` para evitar hotlinks.
 - `available.json` lista solo las copias disponibles. Las hojas con varias cartas se recortan desde el manifiesto; los recortes no modifican el original.
 - `npm run build` ejecuta `scripts/fetch-assets.mjs` antes de Vite, así el despliegue en Render incluye las imágenes. Si una descarga falla, se usa la copia de `public/cards/` si está versionada o, si no, el SVG de respaldo.
-- Para no depender de los sitios de origen, se pueden versionar las copias locales (`git add public/cards/*.jpg`); `.gitignore` ya no las excluye.
+- Desde el 2026-11-14 las seis imágenes están versionadas en `public/cards/` (copias que subió el usuario, sin metadatos): Render no podía descargarlas de los sitios de origen y mostraba solo los SVG. `fetch-assets.mjs` usa la copia del repo si existe y solo intenta descargar las que falten. Los recortes del manifiesto corresponden a estas copias.
 - Decisión del usuario (2026-11-13): se usan en el despliegue porque es un uso privado entre amigos y sin fines comerciales. El permiso de redistribución de SJ Games no está confirmado.
 - Los reversos de carta no identifican artista en las copias consultadas. La página oficial de Munchkin identifica a John Kovalic como ilustrador del juego base y las páginas de las expansiones muestran el crédito en sus productos.
 

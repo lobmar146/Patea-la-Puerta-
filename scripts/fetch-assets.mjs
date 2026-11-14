@@ -1,5 +1,6 @@
 // Descarga las referencias del manifiesto a public/cards/ para usarlas sin hotlinks.
-// Uso: npm run assets:fetch. También corre dentro de `npm run build` (así Render las incluye).
+// Uso: npm run assets:fetch. También corre dentro de `npm run build`. Si la imagen ya está en public/cards/
+// (versionada en el repo), se usa esa y no se descarga.
 //
 // - Hace un GET simple con tiempo límite. Si un sitio bloquea la descarga, NO se intenta eludir:
 //   se conserva la copia local si existe o queda el fallback SVG. Nunca hace fallar el build.
@@ -17,6 +18,13 @@ for (const m of manifest.matchAll(/file: '([^']+)', url: '([^']+)'/g)) pairs.set
 const available = [];
 for (const [file, url] of pairs) {
   const target = new URL(file, dir);
+  // Las copias versionadas en el repo mandan: no se reemplazan (los recortes dependen de esa imagen)
+  // y así el deploy no depende de sitios que bloquean descargas.
+  if (existsSync(target)) {
+    available.push(file);
+    console.log(`REPO ${file}`);
+    continue;
+  }
   try {
     const res = await fetch(url, { headers: { 'user-agent': 'patea-la-puerta-asset-fetch/1.0' }, redirect: 'follow', signal: AbortSignal.timeout(15000) });
     const type = res.headers.get('content-type') ?? '';

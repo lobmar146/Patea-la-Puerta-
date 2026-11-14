@@ -141,6 +141,8 @@ h1, h2, h3 {
   .btn-gold { @apply btn bg-gradient-to-b from-[#f6b64a] to-[#d98a16] text-[#2a1606] shadow-[inset_0_1px_0_rgba(255,255,255,.35),0_8px_20px_-10px_rgba(227,154,45,.9)] hover:brightness-105; }
   .reaction-fab { bottom: calc(5.25rem + env(safe-area-inset-bottom)); }
   .reaction-fab-raised { bottom: calc(10rem + env(safe-area-inset-bottom)); }
+  /* Si está la acción fija del turno, los botones flotantes suben para no taparla. */
+  body:has(.action-bar) .reaction-fab { bottom: calc(10rem + env(safe-area-inset-bottom)); }
   .action-bar { @apply fixed inset-x-0 z-20 px-3 pb-2 pt-6 sm:px-5; bottom: calc(4.5rem + env(safe-area-inset-bottom)); background: linear-gradient(to top, rgb(var(--page)) 55%, rgb(var(--page) / 0)); }
   .choice-card { @apply flex min-h-[7rem] w-full items-center gap-4 rounded-2xl border-2 border-ui-control bg-surface-raised p-4 text-left text-ui-fg shadow-sm transition hover:border-blood hover:bg-surface-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[.99] disabled:opacity-50 motion-reduce:transition-none; }
   .btn-small { @apply min-h-[40px] rounded-lg px-3 py-1 text-sm; }
