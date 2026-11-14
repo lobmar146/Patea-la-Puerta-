@@ -98,7 +98,7 @@ export const DUEL_GUIDE: { intro: string; setup: string[]; sections: GuideSectio
         'El Mercader puede juntar todos los objetos que quiera.',
         'Si le quedan menos de 5 cartas, quien hizo el cambio roba Tesoros hasta reponerlas.',
         'Si el Mercader tiene una carta sin valor en oro, el rival corta el mazo de Tesoros donde quiera y la carta vuelve ahí.',
-        'Una carta de ¡Trampa! te deja usar el Mercader en cualquier momento, incluso en combate o en el turno del rival.',
+        '¡Trampa! es la carta de Tesoro que normalmente te deja equiparte algo que no podrías (en inglés, "Cheat!"). En este modo, en vez de eso, la podés jugar para usar el Mercader en cualquier momento, incluso en combate o en el turno del rival. El post no dice si se descarta: lo lógico es gastarla, pero decide la mesa.',
       ],
     },
     {
@@ -109,7 +109,7 @@ export const DUEL_GUIDE: { intro: string; setup: string[]; sections: GuideSectio
         'Para jugar una carta del Puño descartás una carta de tu mano, la que quieras. Se puede repetir, pero de a una acción por vez.',
         'Al final de tu turno sumás una Puerta a tu Puño.',
         'Si sale una Raza o Clase (incluidas Súper Munchkin y Mestizo), el rival corta el mazo y la carta vuelve ahí.',
-        'Una carta de ¡Trampa! te deja usar el Puño en cualquier momento.',
+        'Jugando una carta de ¡Trampa! podés usar el Puño en cualquier momento, no solo en el turno del rival.',
       ],
     },
   ],
