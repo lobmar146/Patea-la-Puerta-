@@ -4,7 +4,7 @@
 import type { GameMode, Phase, RoomConfig } from './types.js';
 import { PHASE_GUIDE, type PhaseGuide } from './phases.js';
 
-export const GAME_MODES = ['normal', 'fast'] as const satisfies readonly GameMode[];
+export const GAME_MODES = ['normal', 'fast', 'duel'] as const satisfies readonly GameMode[];
 
 export interface ModeInfo {
   label: string;
@@ -27,6 +27,91 @@ export const MODE_INFO: Record<GameMode, ModeInfo> = {
       'Victoria compartida: si alguien llega a nivel 10 en un combate con ayuda, quien ayudó también gana.',
     ],
   },
+  duel: {
+    label: '2 jugadores',
+    short: 'Variante casera de r/Munchkin para jugar mano a mano.',
+    rules: [
+      'Exactamente 2 jugadores. Usa las reglas del modo rápido (escuchar en la puerta y saquear un Tesoro).',
+      'Codicia: en la caridad lo que sobra se descarta, no se regala.',
+      'Tratado: no le podés jugar maldiciones ni monstruos al rival hasta que tenga nivel 4.',
+      'Suma el Mercader (5 tesoros en el medio para intercambiar) y el Puño (cartas para sabotear al rival).',
+    ],
+  },
+};
+
+/** Nivel desde el que el Tratado deja de proteger al rival. */
+export const TREATY_LEVEL = 4;
+
+export interface GuideSection {
+  title: string;
+  icon: 'fast' | 'greed' | 'treaty' | 'deal' | 'merchant' | 'fist';
+  items: string[];
+}
+
+/**
+ * Guía completa del modo 2 jugadores. Paráfrasis de las reglas que un jugador
+ * publicó en r/Munchkin (base + Hacha Antinatural). La mesa manda.
+ */
+export const DUEL_GUIDE: { intro: string; setup: string[]; sections: GuideSection[] } = {
+  intro: 'Reglas caseras pensadas para que Munchkin funcione mano a mano. La app las recuerda en cada fase; las cartas siguen en la mesa.',
+  setup: [
+    'Pongan 5 cartas de Tesoro boca arriba en el medio: es el Mercader.',
+    'Cada jugador recibe 3 cartas de Puerta boca abajo aparte de su mano: es su Puño.',
+    'Después se reparte como siempre y arranca la partida.',
+  ],
+  sections: [
+    {
+      title: 'Juego rápido',
+      icon: 'fast',
+      items: [
+        'Escuchar en la puerta: antes de patear, robás una Puerta boca abajo y la sumás a tu mano.',
+        'Saquear la habitación: robás un Tesoro en vez de una Puerta.',
+      ],
+    },
+    {
+      title: 'Codicia',
+      icon: 'greed',
+      items: ['En la caridad, las cartas que te sobran se descartan: no se le dan al rival.'],
+    },
+    {
+      title: 'Tratado',
+      icon: 'treaty',
+      items: [
+        'No podés jugarle una maldición ni un monstruo al rival mientras tenga menos de nivel 4.',
+        'Los tesoros de un solo uso (como las pociones) sí se pueden usar.',
+      ],
+    },
+    {
+      title: 'An-Cap (negociar niveles)',
+      icon: 'deal',
+      items: [
+        'Si uno ayuda al otro en combate, también se pueden negociar los niveles, igual que los tesoros.',
+        'Ejemplo: ayudo contra un monstruo que da 2 niveles a cambio de uno de esos niveles y los tesoros que quiera.',
+      ],
+    },
+    {
+      title: 'El Mercader',
+      icon: 'merchant',
+      items: [
+        'En tu turno (fuera del combate) podés cambiar objetos tuyos por cartas del Mercader de igual o mayor valor en oro.',
+        'El oro se puede sumar con varias cartas, para los dos lados. El Mercader puede juntar todos los objetos que quiera.',
+        'Si le quedan menos de 5 cartas, quien hizo el cambio roba Tesoros hasta reponerlas.',
+        'Si el Mercader tiene una carta sin valor en oro, el rival corta el mazo de Tesoros donde quiera y la carta vuelve ahí.',
+        'Una carta de ¡Trampa! te deja usar el Mercader en cualquier momento, incluso en combate o en el turno del rival.',
+      ],
+    },
+    {
+      title: 'El Puño',
+      icon: 'fist',
+      items: [
+        'Tus 3 Puertas boca abajo. Solo sirven para sabotear al rival durante su turno.',
+        'Para jugar una carta del Puño descartás una carta de tu mano, la que quieras. Se puede repetir, pero de a una acción por vez.',
+        'Al final de tu turno sumás una Puerta a tu Puño.',
+        'Si sale una Raza o Clase (incluidas Súper Munchkin y Mestizo), el rival corta el mazo y la carta vuelve ahí.',
+        'Una carta de ¡Trampa! te deja usar el Puño en cualquier momento.',
+      ],
+    },
+  ],
 };
 
 export function modeOf(config: Pick<RoomConfig, 'mode'>): GameMode {
@@ -62,9 +147,48 @@ const FAST_OVERRIDES: Partial<Record<Phase, Partial<PhaseGuide>>> = {
   },
 };
 
+const DUEL_OVERRIDES: Partial<Record<Phase, Partial<PhaseGuide>>> = {
+  setup: {
+    ...FAST_OVERRIDES.setup,
+    details: [
+      ...FAST_OVERRIDES.setup!.details!,
+      'Fuera del combate podés cambiar objetos con el Mercader.',
+    ],
+  },
+  kickDoor: {
+    details: [
+      ...PHASE_GUIDE.kickDoor.details,
+      'Tu rival puede sabotearte con su Puño (descartando una carta de su mano por cada una).',
+    ],
+  },
+  combat: {
+    details: [
+      ...PHASE_GUIDE.combat.details,
+      'An-Cap: si tu rival te ayuda, pueden negociar niveles además de tesoros.',
+      'Tratado: nadie juega monstruos ni maldiciones al rival hasta que tenga nivel 4.',
+    ],
+  },
+  charity: {
+    reminder: 'Codicia: si te pasás del límite de mano, el excedente se descarta.',
+    details: ['Modo 2 jugadores: lo que sobra va al descarte, no al rival.', 'La app no ve tu mano: solo confirmá cuando esté resuelto.'],
+  },
+  endTurn: {
+    reminder: 'Sumá una Puerta a tu Puño y pasale el turno a tu rival.',
+    details: ['Al final del turno cada jugador agrega una carta de Puerta a su Puño.', ...PHASE_GUIDE.endTurn.details],
+  },
+};
+
 /** Guía de la fase según el modo de la sala. */
 export function phaseGuide(phase: Phase, config: Pick<RoomConfig, 'mode'>): PhaseGuide {
   const base = PHASE_GUIDE[phase];
-  if (modeOf(config) === 'fast') return { ...base, ...FAST_OVERRIDES[phase] };
+  const mode = modeOf(config);
+  if (mode === 'fast') return { ...base, ...FAST_OVERRIDES[phase] };
+  if (mode === 'duel') return { ...base, ...FAST_OVERRIDES[phase], ...DUEL_OVERRIDES[phase] };
   return base;
+}
+
+/** Jugadores que el Tratado todavía protege (modo 2 jugadores). */
+export function treatyProtected(state: { config: Pick<RoomConfig, 'mode'>; turn: { order: string[] }; characters: Record<string, { level: number }> }): string[] {
+  if (modeOf(state.config) !== 'duel') return [];
+  return state.turn.order.filter((id) => (state.characters[id]?.level ?? 0) < TREATY_LEVEL);
 }

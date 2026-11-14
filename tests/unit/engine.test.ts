@@ -488,4 +488,25 @@ describe('modos de juego', () => {
     expect(phaseGuide('lootRoom', { mode: 'fast' }).reminder).toMatch(/Tesoro/);
     expect(phaseGuide('kickDoor', { mode: 'fast' })).toEqual(PHASE_GUIDE.kickDoor);
   });
+
+  it('modo 2 jugadores: exige 2 jugadores, recuerda Codicia y Puño, y el Tratado protege hasta nivel 4', async () => {
+    const { phaseGuide, treatyProtected } = await import('../../src/shared/modes');
+    const three = setup();
+    three.config.mode = 'duel';
+    expectError(() => applyAction(three, 'dm', { type: 'game.start' }, { now, id }), 'invalid');
+    let s = createInitialState('DUELO', 7);
+    s.config.mode = 'duel';
+    s = addParticipant(s, { id: 'dm', name: 'Dana', role: 'player', isDm: true, now });
+    s = addParticipant(s, { id: 'p1', name: 'Pablo', role: 'player', isDm: false, now });
+    s = addParticipant(s, { id: 'tv', name: 'TV', role: 'spectator', isDm: false, now });
+    s = run(s, 'dm', { type: 'game.start' });
+    expect(s.status).toBe('active');
+    expect(treatyProtected(s)).toEqual(['dm', 'p1']);
+    s = run(s, 'p1', { type: 'character.update', targetId: 'p1', patch: { level: 4 } });
+    expect(treatyProtected(s)).toEqual(['dm']);
+    expect(treatyProtected(started())).toEqual([]);
+    expect(phaseGuide('setup', s.config).title).toBe('Escuchar en la puerta');
+    expect(phaseGuide('charity', s.config).reminder).toMatch(/descarta/);
+    expect(phaseGuide('endTurn', s.config).reminder).toMatch(/Puño/);
+  });
 });

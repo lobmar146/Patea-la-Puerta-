@@ -1,5 +1,6 @@
 import { GAME_MODES, MODE_INFO } from '../../shared/modes';
 import type { GameMode } from '../../shared/types';
+import { DuelGuideButton } from './DuelGuide';
 
 /** Selector del modo de juego al crear la sala. */
 export function ModePicker({ value, onChange }: { value: GameMode; onChange: (m: GameMode) => void }) {
@@ -7,7 +8,7 @@ export function ModePicker({ value, onChange }: { value: GameMode; onChange: (m:
   return (
     <fieldset data-testid="mode-picker">
       <legend className="label">Modo de juego</legend>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-3">
         {GAME_MODES.map((m) => (
           <label
             key={m}
@@ -24,6 +25,7 @@ export function ModePicker({ value, onChange }: { value: GameMode; onChange: (m:
       <ul className="mt-2 list-disc space-y-1 rounded-xl bg-surface-muted p-3 pl-8 text-sm" aria-live="polite">
         {info.rules.map((r) => <li key={r}>{r}</li>)}
       </ul>
+      {value === 'duel' && <div className="mt-2"><DuelGuideButton /></div>}
     </fieldset>
   );
 }

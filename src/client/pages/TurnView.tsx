@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
-import { phaseGuide } from '../../shared/modes';
+import { TREATY_LEVEL, phaseGuide, treatyProtected } from '../../shared/modes';
+import { DuelGuideButton } from '../components/DuelGuide';
 import { activeParticipantId, displayName, upcoming } from '../../shared/rules';
 import { Illustration } from '../components/Illustration';
 import { Modal } from '../components/Modal';
@@ -24,7 +25,7 @@ export function TurnView() {
   const { state } = snap;
   const phase = state.turn.phase;
   const guide = phaseGuide(phase, state.config);
-  const loot = state.config.mode === 'fast' ? 'un Tesoro' : 'una carta de Puerta';
+  const loot = state.config.mode && state.config.mode !== 'normal' ? 'un Tesoro' : 'una carta de Puerta';
   const activeId = activeParticipantId(state);
   const mine = activeId === me.id;
   const canAct = (mine || me.isDm) && state.status === 'active';
@@ -59,6 +60,19 @@ export function TurnView() {
           </div>
           <TurnTimer state={state} />
         </div>
+        {state.config.mode === 'duel' && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-ui-line/10 px-3 py-1.5 text-sm sm:px-5" data-testid="duel-strip">
+            <span className="min-w-0 flex-1 text-ui-muted">
+              {(() => {
+                const prot = treatyProtected(state);
+                return prot.length
+                  ? `Tratado: sin monstruos ni maldiciones contra ${prot.map((id) => displayName(state, id)).join(' ni ')} (nivel menor a ${TREATY_LEVEL}).`
+                  : 'Tratado terminado: ya se pueden jugar monstruos y maldiciones al rival.';
+              })()}
+            </span>
+            <DuelGuideButton className="btn-secondary btn-small" label="Guía" />
+          </div>
+        )}
         {phase !== 'combat' && (
           <div className="flex items-center gap-3 px-3 pt-3 sm:px-5">
             <div className="w-14 shrink-0 -rotate-3 rounded-xl bg-surface-raised/60 p-1 ring-1 ring-ui-line/10 sm:w-20">

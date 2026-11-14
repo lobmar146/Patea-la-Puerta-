@@ -392,6 +392,7 @@ export function applyAction(
       requireDm(actor);
       requireStatus(state, 'lobby');
       if (state.turn.order.length === 0) throw new GameError('invalid', 'Hace falta al menos un jugador.');
+      if (state.config.mode === 'duel' && state.turn.order.length !== 2) throw new GameError('invalid', 'El modo 2 jugadores necesita exactamente 2 jugadores.');
       state.status = 'active';
       state.turn = { ...state.turn, activeIndex: 0, phase: 'setup', turnNumber: 1, doorResult: null };
       startClock(state, now);

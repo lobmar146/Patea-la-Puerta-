@@ -30,7 +30,7 @@ export interface RoomInfo {
 export const api = {
   practice: (body: { name: string; avatar?: string; color?: string; sex?: 'male' | 'female' }) =>
     request<{ code: string }>('/api/practice', { method: 'POST', body: JSON.stringify(body) }),
-  createRoom: (body: { name: string; sets: string[]; extraSets: string[]; mode?: 'normal' | 'fast'; avatar?: string; color?: string; sex?: 'male' | 'female' }) =>
+  createRoom: (body: { name: string; sets: string[]; extraSets: string[]; mode?: 'normal' | 'fast' | 'duel'; avatar?: string; color?: string; sex?: 'male' | 'female' }) =>
     request<{ code: string }>('/api/rooms', { method: 'POST', body: JSON.stringify(body) }),
   roomInfo: (code: string) => request<RoomInfo>(`/api/rooms/${encodeURIComponent(code)}`),
   join: (code: string, body: { name: string; role: 'player' | 'spectator'; avatar?: string; color?: string; sex?: 'male' | 'female' }) =>

@@ -113,7 +113,7 @@ export interface Combat {
 }
 
 /** Modo elegido al crear la sala. Las salas viejas no lo tienen: equivale a 'normal'. */
-export type GameMode = 'normal' | 'fast';
+export type GameMode = 'normal' | 'fast' | 'duel';
 
 export interface RoomConfig {
   sets: string[];
