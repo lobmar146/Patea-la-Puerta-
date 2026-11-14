@@ -156,6 +156,7 @@ export const createRoomSchema = z.object({
   name,
   sets: z.array(z.string().trim().min(1).max(60)).max(12).optional(),
   extraSets: z.array(z.string().trim().min(1).max(60)).max(12).optional(),
+  mode: z.enum(['normal', 'fast', 'duel']).optional(),
   avatar: avatar.optional(),
   color: color.optional(),
   sex: sex.optional(),

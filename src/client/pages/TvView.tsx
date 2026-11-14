@@ -1,7 +1,7 @@
 import { ArrowLeft, Maximize, Minimize, Pause, Play, Wifi, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PHASE_GUIDE } from '../../shared/phases';
+import { phaseGuide } from '../../shared/modes';
 import { APP_NAME, activeParticipantId, almostWinners, basePower, displayName, identityLine, upcoming } from '../../shared/rules';
 import { Illustration } from '../components/Illustration';
 import { ActiveStopwatch } from '../components/Stopwatch';
@@ -61,7 +61,7 @@ export function TvView({ publicUrl }: { publicUrl: string | null }) {
   if (!snap) return <main className="grid min-h-dvh place-items-center bg-ink p-6 text-2xl font-bold text-parchment-50">Conectando con la mesa…</main>;
   const { state } = snap;
   const active = activeParticipantId(state);
-  const guide = PHASE_GUIDE[state.turn.phase];
+  const guide = phaseGuide(state.turn.phase, state.config);
   const next = upcoming(state, 3);
   const players = state.turn.order.map((id) => state.characters[id]).filter(Boolean);
 

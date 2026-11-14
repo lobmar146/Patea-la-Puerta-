@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
-import { PHASE_GUIDE } from '../../shared/phases';
+import { TREATY_LEVEL, phaseGuide, treatyProtected } from '../../shared/modes';
+import { DuelGuideButton } from '../components/DuelGuide';
 import { activeParticipantId, displayName, upcoming } from '../../shared/rules';
 import { Illustration } from '../components/Illustration';
 import { Modal } from '../components/Modal';
@@ -23,7 +24,8 @@ export function TurnView() {
   if (!snap || !me) return null;
   const { state } = snap;
   const phase = state.turn.phase;
-  const guide = PHASE_GUIDE[phase];
+  const guide = phaseGuide(phase, state.config);
+  const loot = state.config.mode && state.config.mode !== 'normal' ? 'un Tesoro' : 'una carta de Puerta';
   const activeId = activeParticipantId(state);
   const mine = activeId === me.id;
   const canAct = (mine || me.isDm) && state.status === 'active';
@@ -58,6 +60,19 @@ export function TurnView() {
           </div>
           <TurnTimer state={state} />
         </div>
+        {state.config.mode === 'duel' && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-ui-line/10 px-3 py-1.5 text-sm sm:px-5" data-testid="duel-strip">
+            <span className="min-w-0 flex-1 text-ui-muted">
+              {(() => {
+                const prot = treatyProtected(state);
+                return prot.length
+                  ? `Tratado: sin monstruos ni maldiciones contra ${prot.map((id) => displayName(state, id)).join(' ni ')} (nivel menor a ${TREATY_LEVEL}).`
+                  : 'Tratado terminado: ya se pueden jugar monstruos y maldiciones al rival.';
+              })()}
+            </span>
+            <DuelGuideButton className="btn-secondary btn-small" label="Guía" />
+          </div>
+        )}
         {phase !== 'combat' && (
           <div className="flex items-center gap-3 px-3 pt-3 sm:px-5">
             <div className="w-14 shrink-0 -rotate-3 rounded-xl bg-surface-raised/60 p-1 ring-1 ring-ui-line/10 sm:w-20">
@@ -129,7 +144,7 @@ export function TurnView() {
                 <Illustration name="loot" className="w-20 shrink-0 sm:w-24" />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2 text-xl font-black"><GameIcon name="loot" className="size-5 shrink-0" />Saquear la sala</span>
-                  <span className="mt-1 block text-sm text-ui-muted">Robás una carta de Puerta boca abajo y la guardás en tu mano. Sin pelea.</span>
+                  <span className="mt-1 block text-sm text-ui-muted">Robás {loot} boca abajo y lo guardás en tu mano. Sin pelea.</span>
                 </span>
               </button>
             </div>
@@ -142,7 +157,7 @@ export function TurnView() {
         <button className="btn-go w-full" disabled={pending} onClick={() => { void send({ type: 'turn.curseResolved' }); setModal(null); }}>Sí, seguir al camino sin monstruo</button>
       </Modal>
       <Modal open={modal === 'loot'} title="Confirmar saqueo" onClose={() => setModal(null)}>
-        <p className="mb-4">¿Robaste una carta de Puerta boca abajo y la guardaste en tu mano?</p>
+        <p className="mb-4">¿Robaste {loot} boca abajo y lo guardaste en tu mano?</p>
         <button className="btn-go w-full" disabled={pending} onClick={() => { void send({ type: 'turn.lootDone' }); setModal(null); }}>Sí, saqué una Puerta</button>
       </Modal>
       <Modal open={modal === 'charity'} title="Caridad resuelta" onClose={() => setModal(null)}>

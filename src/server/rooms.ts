@@ -7,7 +7,7 @@ import type { Command } from '../shared/commands.js';
 import { GameError, addParticipant, applyAction, createInitialState, type EngineEvent } from '../shared/engine.js';
 import { WIN_LEVEL, activeParticipantId, almostWinners, displayName, type AvatarId } from '../shared/rules.js';
 import type { PushMessage } from './push.js';
-import type { CommandResult, EventDTO, GameState, Role, Sex } from '../shared/types.js';
+import type { CommandResult, EventDTO, GameState, GameMode, Role, Sex } from '../shared/types.js';
 import { config } from './config.js';
 import { prisma } from './db.js';
 import { hashToken, newRoomCode, newToken } from './sessions.js';
@@ -89,7 +89,7 @@ export async function assertRoomQuota(db: Pick<Tx, 'room'> = prisma, now = new D
   }
 }
 
-export async function createRoom(input: { name: string; sets?: string[]; extraSets?: string[]; avatar?: AvatarId; color?: string; sex?: Sex; practice?: boolean }): Promise<Joined> {
+export async function createRoom(input: { name: string; sets?: string[]; extraSets?: string[]; avatar?: AvatarId; color?: string; sex?: Sex; practice?: boolean; mode?: GameMode }): Promise<Joined> {
   await assertRoomQuota();
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = newRoomCode();
@@ -98,6 +98,7 @@ export async function createRoom(input: { name: string; sets?: string[]; extraSe
     const token = newToken();
     const now = new Date();
     let state = createInitialState(code, input.practice ? 1 : config.ttlDays, input.sets, input.extraSets);
+    if (input.mode && input.mode !== 'normal' && !input.practice) state.config.mode = input.mode;
     state = addParticipant(state, { id: participantId, name: input.name, role: 'player', isDm: true, now: now.toISOString(), avatar: input.avatar, color: input.color, sex: input.sex });
     const botIds: string[] = [];
     const extraEvents: EngineEvent[] = [];
@@ -167,6 +168,7 @@ export async function createRematch(oldCode: string, token: string | undefined):
     const code = await freeCode(tx);
     const roomId = randomUUID();
     let state = createInitialState(code, practice ? 1 : config.ttlDays, prev.config.sets, prev.config.extraSets);
+    if (prev.config.mode) state.config.mode = prev.config.mode;
     const active = Object.values(prev.participants).filter((p) => !p.removed);
     const ordered = [...prev.turn.order.map((id) => prev.participants[id]).filter((p) => p && !p.removed), ...active.filter((p) => p.role === 'spectator')];
     const map: Record<string, string> = {};

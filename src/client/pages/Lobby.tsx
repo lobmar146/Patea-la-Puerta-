@@ -6,6 +6,8 @@ import { useRoom } from '../useRoom';
 import { Avatar } from '../components/Avatar';
 import { CoachCard } from '../components/NoviceHelp';
 import { GameIcon } from '../components/GameIcon';
+import { MODE_INFO, modeOf } from '../../shared/modes';
+import { DuelGuideButton } from '../components/DuelGuide';
 
 export function Lobby({ publicUrl }: { publicUrl: string | null }) {
   const { snap, me, online, send, pending } = useRoom();
@@ -26,6 +28,19 @@ export function Lobby({ publicUrl }: { publicUrl: string | null }) {
   return (
     <div className="space-y-4">
       <CoachCard />
+      {modeOf(state.config) !== 'normal' && (
+        <Section title={MODE_INFO[modeOf(state.config)].label}>
+          <ul className="list-disc space-y-1 pl-5 text-sm" data-testid="lobby-mode">
+            {MODE_INFO[modeOf(state.config)].rules.map((r) => <li key={r}>{r}</li>)}
+          </ul>
+          {modeOf(state.config) === 'duel' && (
+            <div className="mt-3 space-y-2">
+              {order.length !== 2 && <p className="rounded-xl bg-accent-wine/10 p-2 text-sm font-semibold text-accent-wine" role="status">Este modo necesita exactamente 2 jugadores (ahora hay {order.length}). Los demás pueden entrar como espectadores.</p>}
+              <DuelGuideButton />
+            </div>
+          )}
+        </Section>
+      )}
       <Section title="Invitá a la mesa">
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
           <QrCode text={url} />
@@ -71,7 +86,7 @@ export function Lobby({ publicUrl }: { publicUrl: string | null }) {
         {me.isDm ? (
           <div className="mt-4 flex flex-wrap gap-2">
             <button className="btn-secondary" disabled={pending || order.length < 2} onClick={() => send({ type: 'order.randomize' })}><GameIcon name="dice" className="size-4 shrink-0" /> Sortear orden</button>
-            <button className="btn-go flex-1" disabled={pending || order.length === 0} onClick={() => send({ type: 'game.start' })} data-testid="start-game">¡Empezar partida!</button>
+            <button className="btn-go flex-1" disabled={pending || order.length === 0 || (state.config.mode === 'duel' && order.length !== 2)} onClick={() => send({ type: 'game.start' })} data-testid="start-game">¡Empezar partida!</button>
           </div>
         ) : (
           <p className="mt-4 font-bold">Esperando que el DM arranque la partida…</p>
