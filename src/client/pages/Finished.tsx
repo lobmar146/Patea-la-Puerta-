@@ -2,7 +2,7 @@ import { RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
-import { displayName } from '../../shared/rules';
+import { winnersTitle } from '../../shared/rules';
 import { EventList } from '../components/ui';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { FinalResults } from '../components/FinalResults';
@@ -33,7 +33,7 @@ export function Finished() {
       <div className="flex justify-end"><ThemeToggle /></div>
       <section className="text-center">
         <p className="text-xs font-black uppercase tracking-[.22em] text-ui-muted">Partida terminada</p>
-        <h1 className="mt-2 font-display text-4xl font-black sm:text-5xl">{state.winnerId ? `¡${displayName(state, state.winnerId)} gana!` : 'Fin de la partida'}</h1>
+        <h1 className="mt-2 font-display text-4xl font-black sm:text-5xl">{winnersTitle(state)}</h1>
         <p className="mt-2 text-ui-muted">Las amistades se reparan con el tiempo. Probablemente.</p>
       </section>
       <FinalResults state={state} />

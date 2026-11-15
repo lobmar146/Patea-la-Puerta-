@@ -76,7 +76,7 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('game.start') }),
   z.object({ type: z.literal('game.pause') }),
   z.object({ type: z.literal('game.resume') }),
-  z.object({ type: z.literal('game.end'), winnerId: id.nullable().default(null) }),
+  z.object({ type: z.literal('game.end'), winnerId: id.nullable().default(null), winnerIds: z.array(id).max(12).optional() }),
   z.object({ type: z.literal('turn.kickDoor') }),
   z.object({
     type: z.literal('turn.doorResult'),

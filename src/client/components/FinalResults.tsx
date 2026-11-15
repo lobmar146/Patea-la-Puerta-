@@ -1,5 +1,5 @@
 import { computeAwards, podium } from '../../shared/awards';
-import { displayName } from '../../shared/rules';
+import { displayName, winnersOf } from '../../shared/rules';
 import type { GameState } from '../../shared/types';
 import { Avatar } from './Avatar';
 import { GameIcon } from './GameIcon';
@@ -25,10 +25,12 @@ export function FinalResults({ state, big = false }: { state: GameState; big?: b
         {layout.map((slot, i) => {
           if (!slot) return <li key={`empty-${i}`} className="w-[30%] max-w-44" aria-hidden />;
           const c = state.characters[slot.id];
-          const st = STEP[slot.rank];
+          // Si ganaron varios juntos, todos van al escalón del 1°.
+          const tied = slot.rank < winnersOf(state).length;
+          const st = tied ? STEP[0] : STEP[slot.rank];
           return (
             <li key={slot.id} className="podium-step flex w-[30%] max-w-44 flex-col items-center" style={{ animationDelay: `${(2 - slot.rank) * 220}ms` }} data-testid={`podium-${slot.rank + 1}`}>
-              {slot.rank === 0 && <GameIcon name="victory" className="mb-1 size-8 text-accent-gold" />}
+              {(slot.rank === 0 || tied) && <GameIcon name="victory" className="mb-1 size-8 text-accent-gold" />}
               <Avatar c={c} size={big ? (slot.rank === 0 ? 'xl' : 'lg') : st.size} />
               <p className={`mt-2 w-full truncate text-center font-display font-extrabold ${big ? 'text-2xl' : 'text-base sm:text-lg'}`}>{c.name}</p>
               <p className="text-xs font-semibold text-ui-muted">Nivel {c.level}</p>

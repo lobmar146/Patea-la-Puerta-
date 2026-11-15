@@ -222,3 +222,26 @@ export function upcoming(state: GameState, count: number): string[] {
   }
   return out;
 }
+
+/** Ganadores de la partida (pueden ser varios si llegaron juntos al nivel ganador). */
+export function winnersOf(state: Pick<GameState, 'winnerId' | 'winnerIds'>): string[] {
+  if (state.winnerIds?.length) return state.winnerIds;
+  return state.winnerId ? [state.winnerId] : [];
+}
+
+/** "Ana", "Ana y Beto", "Ana, Beto y Caro". */
+export function joinNames(names: string[]): string {
+  return names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} y ${names[names.length - 1]}`;
+}
+
+/** Texto del final: "¡Ana gana!" o "¡Ana y Beto ganan!". */
+export function winnersTitle(state: GameState): string {
+  const ids = winnersOf(state);
+  if (ids.length === 0) return 'Fin de la partida';
+  return `¡${joinNames(ids.map((id) => displayName(state, id)))} ${ids.length > 1 ? 'ganan' : 'gana'}!`;
+}
+
+/** Quiénes figuran en el aviso de nivel ganador. */
+export function alertIds(alert: { participantId: string; alsoIds?: string[] } | null): string[] {
+  return alert ? [alert.participantId, ...(alert.alsoIds ?? [])] : [];
+}

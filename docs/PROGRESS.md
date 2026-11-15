@@ -156,3 +156,8 @@ npm run check && npm run test:e2e
 ## El DM elige quién ayuda (2026-11-15)
 - `dm.setHelper`: el DM pone al ayudante con un toque ("Ayuda X" en el combate y en el siguiente paso), sin pedido ni respuesta desde el celular del otro. Cancela pedidos pendientes y se puede volver atrás.
 - Arreglo: el aviso "¡Te toca!" quedaba colgado si el estado cambiaba antes de 6 s (mismo problema que el cartel de nivel).
+
+## Varios ganadores (2026-11-15)
+- Si dos llegan al nivel ganador con el mismo cambio (el que pelea y un Elfo que ayuda), el aviso los junta (`levelAlert.alsoIds`) y al confirmar ganan los dos (`winnerIds`; `winnerId` queda como el primero para salas viejas).
+- "¡Ana y Beto ganan!" en el celular, la TV y el registro; los dos en el escalón del 1° del podio.
+- Terminar partida: el DM toca uno o varios ganadores (o ninguno).

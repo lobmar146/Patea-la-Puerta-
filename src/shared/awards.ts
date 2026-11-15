@@ -1,4 +1,5 @@
 // Podio y premios "en joda" del final de la partida. Función pura sobre el estado guardado.
+import { winnersOf } from './rules.js';
 import type { GameState, PlayerStats } from './types.js';
 
 export type AwardIcon = 'monster' | 'victory' | 'help' | 'curse' | 'flee' | 'treasure' | 'kick' | 'time' | 'loot' | 'trouble';
@@ -48,9 +49,10 @@ const ZERO: PlayerStats = {
 
 /** Jugadores que siguen en la sala, ordenados para el podio: ganador primero, después por nivel. */
 export function podium(state: GameState): string[] {
+  const winners = winnersOf(state);
   return Object.values(state.characters)
     .filter((c) => !state.participants[c.id]?.removed)
-    .sort((a, b) => Number(b.id === state.winnerId) - Number(a.id === state.winnerId) || b.level - a.level || a.name.localeCompare(b.name))
+    .sort((a, b) => Number(winners.includes(b.id)) - Number(winners.includes(a.id)) || b.level - a.level || a.name.localeCompare(b.name))
     .map((c) => c.id);
 }
 
