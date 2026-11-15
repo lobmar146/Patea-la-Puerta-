@@ -9,7 +9,7 @@ import { prisma } from './db.js';
 import { rateLimit } from './rateLimit.js';
 import { removeSubscription, saveSubscription, vapidKeys } from './push.js';
 import { z } from 'zod';
-import { HttpError, createRematch, createRoom, findSession, getRoomPublic, joinRematch, joinRoom } from './rooms.js';
+import { HttpError, listCustomMonsters, createRematch, createRoom, findSession, getRoomPublic, joinRematch, joinRoom } from './rooms.js';
 import { cookieName, cookieOptions, normalizeCode } from './sessions.js';
 
 const pushSubscriptionSchema = z.object({
@@ -105,6 +105,11 @@ export function createApp(hooks: HttpHooks) {
   }));
 
   // Notificaciones push: clave pública y alta/baja de la suscripción de este dispositivo.
+  // Monstruos que se cargaron a mano en partidas anteriores (se suman al buscador).
+  app.get('/api/monsters', wrap(async (_req, res) => {
+    res.json({ monsters: await listCustomMonsters() });
+  }));
+
   app.get('/api/push/key', wrap(async (_req, res) => {
     res.json({ publicKey: (await vapidKeys()).publicKey });
   }));

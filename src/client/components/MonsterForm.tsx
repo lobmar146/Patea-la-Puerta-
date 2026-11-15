@@ -1,9 +1,10 @@
 import { List, Plus, X } from 'lucide-react';
-import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { MonsterInput } from '../../shared/commands';
 import { CLASS_SUGGESTIONS, RACE_SUGGESTIONS, activeParticipantId, basePower, combatTotals, conditionTarget, matchesCondition, playersWinTies } from '../../shared/rules';
 import type { GameState, MonsterCondition } from '../../shared/types';
-import { monsterSets, searchMonsters, type MonsterPreset } from '../assets/monsters';
+import { monsterSets, searchMonsters, setCustomMonsters, type MonsterPreset } from '../assets/monsters';
+import { api } from '../api';
 import { GameIcon } from './GameIcon';
 
 export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, initial }: {
@@ -24,6 +25,16 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
   const [selectedSet, setSelectedSet] = useState('');
   const catalogId = useId();
   const nameField = useRef<HTMLInputElement>(null);
+  // Monstruos cargados a mano en partidas anteriores: se suman al listado al abrir el formulario.
+  const [, setCustomLoaded] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    api.monsters().then((r) => {
+      setCustomMonsters(r.monsters);
+      if (alive) setCustomLoaded((n) => n + 1);
+    }, () => undefined);
+    return () => { alive = false; };
+  }, []);
   const catalogOpen = catalogQuery !== null;
   const matches = catalogQuery === null ? [] : searchMonsters(catalogQuery)
     .filter((monster) => !selectedSet || monster.set === selectedSet);
@@ -148,7 +159,7 @@ export function MonsterForm({ state, onSubmit, submitLabel, disabled, extra, ini
         {catalogOpen && (
           <select className="input min-w-0 flex-1" aria-label="Edición" value={selectedSet} onChange={(event) => setSelectedSet(event.target.value)}>
             <option value="">Todos los mazos</option>
-            {monsterSets.map((set) => <option key={set}>{set}</option>)}
+            {monsterSets().map((set) => <option key={set}>{set}</option>)}
           </select>
         )}
       </div>

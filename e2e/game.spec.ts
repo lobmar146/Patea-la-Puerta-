@@ -106,18 +106,18 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(tv.getByTestId('active-stopwatch')).toBeVisible();
   await p1.getByRole('button', { name: /Patear la puerta/ }).click();
   await phaseIs(p1, 'Patear la puerta');
-  await p1.getByRole('button', { name: /Qué salió detrás de la puerta/ }).click();
   await p1.getByRole('button', { name: /Otra carta/ }).click();
   await phaseIs(p1, 'Sin monstruo');
-  await p1.getByRole('button', { name: /Elegir: buscar problemas/ }).click();
+  // Sin monstruo: las dos opciones a un toque, sin panel intermedio.
   await expect(p1.getByTestId('monster-form')).toHaveCount(0);
-  await expect(p1.getByRole('button', { name: /Saquear la sala/ })).toBeVisible();
+  await expect(p1.getByRole('button', { name: 'Saquear', exact: true })).toBeVisible();
   await p1.waitForTimeout(400);
   await p1.screenshot({ path: 'test-results/screens/movil-elegir-sin-monstruo.png' });
   await p1.getByRole('button', { name: /Buscar problemas/ }).click();
   await expect(p1.getByRole('button', { name: 'Pelear contra este monstruo' })).toBeDisabled();
   // El buscador muestra las coincidencias justo debajo del campo.
   // El listado ya está abierto y escribir no mueve el campo ni el panel.
+  await p1.waitForTimeout(400); // termina la animación de apertura del panel
   await expect(p1.getByRole('listbox', { name: 'Monstruos del catálogo' })).toBeVisible();
   const before = await p1.getByPlaceholder(/Buscá por nombre/).boundingBox();
   await p1.getByPlaceholder(/Buscá por nombre/).fill('co');
@@ -180,34 +180,27 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(dm.getByTestId('level-Pablo')).toHaveText('3');
 
   // 11. Caridad permite pasar al siguiente turno.
-  await p1.getByRole('button', { name: /Confirmar caridad resuelta/ }).click();
-  await p1.getByRole('button', { name: 'Listo, continuar' }).click();
-  await p1.getByRole('button', { name: /Preparar pase de turno a Dana/ }).click();
-  await p1.getByRole('button', { name: /Sí, pasar el turno/ }).click();
+  await p1.getByRole('button', { name: /Caridad lista/ }).click();
+  await p1.getByRole('button', { name: /Pasar turno a Dana/ }).click();
   await expect(tv.getByTestId('tv-active')).toContainText('Dana');
 
   // 8b. Dana: maldición -> saquear.
   await tab(dm, 'Turno');
   await dm.getByRole('button', { name: /Patear la puerta/ }).click();
-  await dm.getByRole('button', { name: /Qué salió detrás de la puerta/ }).click();
   await dm.getByRole('button', { name: /Maldición/ }).click();
   await phaseIs(dm, 'Resolver maldición');
   await expect(tv.getByTestId('tv-phase')).toHaveText('Resolver maldición');
-  await dm.getByRole('button', { name: /Registrar que resolví la maldición/ }).click();
-  await dm.getByRole('button', { name: /Sí, seguir al camino/ }).click();
-  await dm.getByRole('button', { name: /Elegir: buscar problemas o saquear/ }).click();
-  await dm.getByRole('button', { name: /Saquear la sala/ }).click();
+  // Cada etapa avanza con un solo toque, sin confirmaciones.
+  await dm.getByRole('button', { name: /Maldición resuelta/ }).click();
+  await phaseIs(dm, 'Sin monstruo');
+  await dm.getByRole('button', { name: 'Saquear', exact: true }).click();
   await phaseIs(dm, 'Saquear la habitación');
-  await dm.getByRole('button', { name: 'Confirmar saqueo' }).click();
-  await dm.getByRole('button', { name: /Sí, saqué una Puerta/ }).click();
-  await dm.getByRole('button', { name: /Confirmar caridad resuelta/ }).click();
-  await dm.getByRole('button', { name: 'Listo, continuar' }).click();
-  await dm.getByRole('button', { name: /Preparar pase de turno a Lu/ }).click();
-  await dm.getByRole('button', { name: /Sí, pasar el turno/ }).click();
+  await dm.getByRole('button', { name: /Ya saqué/ }).click();
+  await dm.getByRole('button', { name: /Caridad lista/ }).click();
+  await dm.getByRole('button', { name: /Pasar turno a Lu/ }).click();
 
   // 8c. Lu: monstruo al patear -> huida.
   await p2.getByRole('button', { name: /Patear la puerta/ }).click();
-  await p2.getByRole('button', { name: /Qué salió detrás de la puerta/ }).click();
   await p2.getByRole('button', { name: /Monstruo/ }).click();
   await p2.getByTestId('monster-strength').fill('10');
   await p2.getByRole('button', { name: 'Entrar en combate' }).click();
@@ -267,7 +260,6 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
 
   // Combate abierto para verificar que sobrevive al reinicio.
   await tab(p1, 'Turno');
-  await p1.getByRole('button', { name: /Qué salió detrás de la puerta/ }).click();
   await p1.getByRole('button', { name: /Monstruo/ }).click();
   await p1.getByTestId('monster-strength').fill('8');
   await p1.getByRole('button', { name: 'Entrar en combate' }).click();

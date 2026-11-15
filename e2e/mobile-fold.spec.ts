@@ -51,7 +51,6 @@ test('opciones rápidas sin scroll en cada fase', async ({ browser }) => {
   await inView(dm, 'turn-action');
   await dm.getByRole('button', { name: /Patear la puerta/ }).click();
   await inView(dm, 'turn-action');
-  await dm.getByRole('button', { name: /Qué salió detrás de la puerta/ }).click();
   await dm.getByRole('button', { name: /Monstruo/ }).click();
   await dm.getByTestId('monster-strength').fill('6');
   // Condición de la carta: +5 contra hombres (Martín es hombre, así que aplica).

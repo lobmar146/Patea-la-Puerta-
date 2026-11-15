@@ -57,7 +57,6 @@ for (const theme of ['dark', 'light'] as const) {
     await shot(p1, `${theme}-05-turno-espera`, true);
     await tab(dm, 'Turno');
     await dm.getByRole('button', { name: /Patear la puerta/ }).click();
-    await dm.getByRole('button', { name: /Qué salió detrás de la puerta/ }).click();
     await shot(dm, `${theme}-06-dm-modal-puerta`);
     await dm.getByRole('button', { name: /Monstruo/ }).click();
     await dm.getByTestId('monster-strength').fill('6');

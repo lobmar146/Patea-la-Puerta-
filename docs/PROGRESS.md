@@ -136,3 +136,7 @@ npm run check && npm run test:e2e
 - Los +/− son optimistas: varios toques seguidos suman bien aunque el servidor todavía no haya confirmado.
 - Resumen de todos arriba (nivel, poder, a quién le toca; toca y salta a su ficha), aviso de combate en curso con totales que lleva al turno, y últimos cambios.
 - e2e: el DM edita desde las fichas y la TV muestra el cambio.
+
+## Etapas a un toque y monstruos de la mesa (2026-11-15)
+- Pasar de etapa es un toque: Maldición resuelta, Saquear, Ya saqué, Caridad lista y Pasar turno mandan el comando directo. La puerta muestra Monstruo / Maldición / Otra carta lado a lado y "sin monstruo" muestra Buscar problemas / Saquear. Solo cargar un monstruo abre un panel.
+- Los monstruos cargados a mano en partidas reales se guardan en `CustomMonster` (clave sin tildes ni mayúsculas, cuenta usos, guarda los últimos números) y aparecen en el buscador como "Cargados en la mesa" en las próximas partidas. Las de práctica no guardan.

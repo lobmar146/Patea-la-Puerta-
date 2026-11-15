@@ -1,4 +1,5 @@
 import type { MonsterInput } from '../../shared/commands';
+import { monsterKey } from '../../shared/monsterKey';
 
 export type MonsterPreset = Readonly<MonsterInput & {
   set: string;
@@ -91,26 +92,35 @@ const monsters: readonly MonsterPreset[] = [
   { name: 'Dibujo con Palitos', strength: 1, levels: 1, treasures: 1, set: CLERICAL_ERRORS, aliases: ['Monigote', 'Stick Figure'], buro: true },
 ];
 
-function normalize(text: string): string {
-  return text.normalize('NFD')
-    .replace(/\p{M}/gu, '')
-    .toLowerCase()
-    .replace(/(\d)[.,](?=\d)/g, '$1')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
+const normalize = monsterKey;
 
 const sortedMonsters = monsters.filter((monster) => monster.buro)
   .sort((a, b) => a.name.localeCompare(b.name, 'es-AR'));
 
-export const monsterSets = [...new Set(sortedMonsters.map((monster) => monster.set))];
+export const TABLE_SET = 'Cargados en la mesa';
+const knownKeys = new Set(sortedMonsters.flatMap((m) => [m.name, ...m.aliases].map(normalize)));
+let customMonsters: MonsterPreset[] = [];
+
+/** Suma al catálogo los monstruos que la mesa cargó a mano en otras partidas (sin repetir los del listado). */
+export function setCustomMonsters(list: readonly MonsterInput[]) {
+  customMonsters = list
+    .filter((m) => !knownKeys.has(normalize(m.name)))
+    .map((m) => ({ ...m, set: TABLE_SET, aliases: [] }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'es-AR'));
+}
+
+const allMonsters = () => (customMonsters.length ? [...sortedMonsters, ...customMonsters] : sortedMonsters);
+
+export function monsterSets(): string[] {
+  return [...new Set(allMonsters().map((monster) => monster.set))];
+}
 
 export function searchMonsters(query: string): MonsterPreset[] {
   const normalizedQuery = normalize(query);
-  if (!normalizedQuery) return [...sortedMonsters];
+  if (!normalizedQuery) return [...allMonsters()];
 
   const terms = normalizedQuery.split(' ');
-  return sortedMonsters.filter((monster) => {
+  return allMonsters().filter((monster) => {
     const names = [monster.name, ...monster.aliases].map(normalize);
     return names.some((name) => terms.every((term) => name.includes(term)));
   });

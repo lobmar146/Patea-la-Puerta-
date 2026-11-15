@@ -28,6 +28,7 @@ export interface RoomInfo {
 }
 
 export const api = {
+  monsters: () => request<{ monsters: import('../shared/commands').MonsterInput[] }>('/api/monsters'),
   practice: (body: { name: string; avatar?: string; color?: string; sex?: 'male' | 'female' }) =>
     request<{ code: string }>('/api/practice', { method: 'POST', body: JSON.stringify(body) }),
   createRoom: (body: { name: string; sets: string[]; extraSets: string[]; mode?: 'normal' | 'fast' | 'duel'; avatar?: string; color?: string; sex?: 'male' | 'female' }) =>
