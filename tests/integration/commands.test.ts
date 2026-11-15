@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Action } from '../../src/shared/commands';
 import type { GameState } from '../../src/shared/types';
 import { prisma } from '../../src/server/db';
-import { createRoom, joinRoom, loadRoom, processCommand } from '../../src/server/rooms';
+import { createRoom, joinRoom, listCustomMonsters, loadRoom, processCommand } from '../../src/server/rooms';
 import { hashToken } from '../../src/server/sessions';
 
 interface Who {
@@ -143,6 +143,20 @@ describe('idempotencia y concurrencia', () => {
     expect(s.turn.phase).toBe('charity');
     const events = await prisma.gameEvent.count({ where: { roomId, type: 'combat.victory' } });
     expect(events).toBe(1);
+  });
+
+  it('un monstruo cargado a mano queda en el catálogo para otras partidas', async () => {
+    await prisma.customMonster.deleteMany({ where: { key: { in: ['babosa', 'caracol gigante'] } } });
+    const s = await state();
+    await cmd(dm, { type: 'dm.setTurn', activeId: s.turn.order[s.turn.activeIndex], phase: 'noMonster' });
+    const r = await cmd(dm, { type: 'turn.lookForTrouble', confirmed: true, monster: { name: 'Caracol Gigante ', strength: 3, levels: 1, treasures: 2 } });
+    expect(r.result.ok).toBe(true);
+    await cmd(dm, { type: 'combat.addMonster', monster: { name: 'Cáracol gigante', strength: 4, levels: 1, treasures: 2 } });
+    const row = await prisma.customMonster.findUnique({ where: { key: 'caracol gigante' } });
+    // Mismo monstruo sin importar tildes ni mayúsculas: se actualiza y cuenta los usos.
+    expect(row).toMatchObject({ strength: 4, uses: 2 });
+    expect(await listCustomMonsters()).toContainEqual({ name: 'Cáracol gigante', strength: 4, levels: 1, treasures: 2 });
+    await prisma.customMonster.deleteMany({ where: { key: { in: ['babosa', 'caracol gigante'] } } });
   });
 
   it('quitar a un participante revoca su sesión', async () => {

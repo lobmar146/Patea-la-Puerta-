@@ -97,3 +97,16 @@ model AppSetting {
   key   String @id
   value String
 }
+
+// Monstruos que la mesa cargó a mano (no estaban en el listado): se ofrecen en el buscador de las próximas partidas.
+model CustomMonster {
+  key        String   @id // nombre normalizado (sin tildes ni mayúsculas)
+  name       String
+  strength   Int
+  levels     Int
+  treasures  Int
+  conditions Json?
+  uses       Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

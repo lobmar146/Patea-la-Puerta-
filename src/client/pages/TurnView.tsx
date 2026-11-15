@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { TREATY_LEVEL, phaseGuide, treatyProtected } from '../../shared/modes';
 import { DuelGuideButton } from '../components/DuelGuide';
@@ -14,12 +14,11 @@ import { Avatar } from '../components/Avatar';
 import { CoachCard } from '../components/NoviceHelp';
 import { useNoviceMode } from '../noviceMode';
 
-type TurnModal = 'door' | 'trouble' | 'curse' | 'loot' | 'charity' | 'endTurn' | null;
+type TurnModal = 'trouble' | null;
 
 export function TurnView() {
   const { snap, me, send, pending } = useRoom();
   const [modal, setModal] = useState<TurnModal>(null);
-  const [troubleStep, setTroubleStep] = useState(false);
   const [novice] = useNoviceMode();
   if (!snap || !me) return null;
   const { state } = snap;
@@ -31,17 +30,30 @@ export function TurnView() {
   const canAct = (mine || me.isDm) && state.status === 'active';
   const next = upcoming(state, 1)[0];
   const open = (nextModal: TurnModal) => setModal(nextModal);
-  const closeTrouble = () => { setModal(null); setTroubleStep(false); };
+  const closeTrouble = () => setModal(null);
 
   const actionButton = () => {
     if (!canAct) return null;
     if (phase === 'setup') return <button className="btn-gold min-h-14 w-full text-lg sm:text-xl" disabled={pending} onClick={() => send({ type: 'turn.kickDoor' })}><GameIcon name="kick" className="size-6 shrink-0" /> Patear la puerta</button>;
-    if (phase === 'kickDoor') return <button className="btn-primary w-full text-lg sm:text-xl" onClick={() => open('door')}>¿Qué salió detrás de la puerta? <ChevronRight aria-hidden className="size-4 shrink-0" /></button>;
-    if (phase === 'curse') return <button className="btn-go w-full text-lg" onClick={() => open('curse')}>Registrar que resolví la maldición</button>;
-    if (phase === 'noMonster') return <button className="btn-primary w-full text-lg sm:text-xl" onClick={() => open('trouble')}>Elegir: buscar problemas o saquear</button>;
-    if (phase === 'lootRoom') return <button className="btn-go w-full text-lg" onClick={() => open('loot')}>Confirmar saqueo</button>;
-    if (phase === 'charity') return <button className="btn-go w-full text-lg" onClick={() => open('charity')}>Confirmar caridad resuelta</button>;
-    if (phase === 'endTurn') return <button className="btn-go w-full text-lg sm:text-xl" onClick={() => open('endTurn')}>Preparar pase de turno{next ? ` a ${displayName(state, next)}` : ''} <ArrowRight aria-hidden className="size-4 shrink-0" /></button>;
+    // Un toque = avanzar. Solo se abre un panel cuando hay que cargar un monstruo.
+    const row = 'grid gap-2 [&>button]:min-h-14 [&>button]:shadow-xl';
+    if (phase === 'kickDoor') return (
+      <div className={`${row} grid-cols-3`} role="group" aria-label="¿Qué salió detrás de la puerta?">
+        <button className="btn-primary px-2 text-base sm:text-lg" disabled={pending} onClick={() => open('trouble')}><GameIcon name="monster" className="size-5 shrink-0" /> Monstruo</button>
+        <button className="btn-secondary px-2 text-base sm:text-lg" disabled={pending} onClick={() => send({ type: 'turn.doorResult', result: 'curse' })}><GameIcon name="curse" className="size-5 shrink-0" /> Maldición</button>
+        <button className="btn-secondary px-2 text-base sm:text-lg" disabled={pending} onClick={() => send({ type: 'turn.doorResult', result: 'other' })}><GameIcon name="otherCard" className="size-5 shrink-0" /> Otra carta</button>
+      </div>
+    );
+    if (phase === 'curse') return <button className="btn-go w-full text-lg" disabled={pending} onClick={() => send({ type: 'turn.curseResolved' })}>Maldición resuelta: seguir <ChevronRight aria-hidden className="size-4 shrink-0" /></button>;
+    if (phase === 'noMonster') return (
+      <div className={`${row} grid-cols-2`} role="group" aria-label="Sin monstruo">
+        <button className="btn-primary px-2 text-base sm:text-lg" disabled={pending} onClick={() => open('trouble')}><GameIcon name="monster" className="size-5 shrink-0" /> Buscar problemas</button>
+        <button className="btn-go px-2 text-base sm:text-lg" disabled={pending} onClick={() => send({ type: 'turn.lootRoom' })}><GameIcon name="loot" className="size-5 shrink-0" /> Saquear</button>
+      </div>
+    );
+    if (phase === 'lootRoom') return <button className="btn-go w-full text-lg" disabled={pending} onClick={() => send({ type: 'turn.lootDone' })}>Ya saqué {loot}: seguir <ChevronRight aria-hidden className="size-4 shrink-0" /></button>;
+    if (phase === 'charity') return <button className="btn-go w-full text-lg" disabled={pending} onClick={() => send({ type: 'turn.charityDone' })}>Caridad lista: seguir <ChevronRight aria-hidden className="size-4 shrink-0" /></button>;
+    if (phase === 'endTurn') return <button className="btn-go w-full text-lg sm:text-xl" disabled={pending} onClick={() => send({ type: 'turn.end' })}>Pasar turno{next ? ` a ${displayName(state, next)}` : ''} <ArrowRight aria-hidden className="size-4 shrink-0" /></button>;
     return null;
   };
   const action = actionButton();
@@ -104,21 +116,11 @@ export function TurnView() {
       {/* Espacio al final para que la acción fija no tape lo último de la pantalla. */}
       {action && <div aria-hidden className="h-16" />}
 
-      <Modal open={modal === 'door'} title="¿Qué carta apareció?" onClose={() => setModal(null)}>
-        <div className="space-y-3">
-          <p className="text-sm">Elegí el resultado de la carta que robaste en la mesa.</p>
-          <button className="btn-primary w-full" disabled={pending} onClick={() => setModal('trouble')}><GameIcon name="monster" className="size-5 shrink-0" /> Monstruo: cargarlo y entrar en combate</button>
-          <button className="btn-secondary w-full" disabled={pending} onClick={() => { void send({ type: 'turn.doorResult', result: 'curse' }); setModal(null); }}><GameIcon name="curse" className="size-5 shrink-0" /> Maldición</button>
-          <button className="btn-secondary w-full" disabled={pending} onClick={() => { void send({ type: 'turn.doorResult', result: 'other' }); setModal(null); }}><GameIcon name="otherCard" className="size-5 shrink-0" /> Otra carta</button>
-        </div>
-      </Modal>
-
-      <Modal tall={phase === 'kickDoor' || troubleStep} open={modal === 'trouble'} title={phase === 'kickDoor' ? 'Cargar monstruo' : troubleStep ? 'Buscar problemas' : '¿Qué vas a hacer?'} onClose={closeTrouble}>
+      <Modal tall open={modal === 'trouble'} title={phase === 'kickDoor' ? 'Cargar monstruo' : 'Buscar problemas'} onClose={closeTrouble}>
         {phase === 'kickDoor' ? (
           <MonsterForm state={state} submitLabel="Entrar en combate" disabled={pending} onSubmit={(monster) => { void send({ type: 'turn.doorResult', result: 'monster', monster }); setModal(null); }} />
-        ) : troubleStep ? (
+        ) : (
           <div className="space-y-3">
-            <button type="button" className="btn-secondary btn-small" onClick={() => setTroubleStep(false)}><ArrowLeft aria-hidden className="size-4 shrink-0" /> Volver a elegir</button>
             <p className="text-sm text-ui-muted">Jugá un monstruo de tu mano y buscalo o cargá sus datos.</p>
             <MonsterForm
               state={state}
@@ -127,46 +129,7 @@ export function TurnView() {
               onSubmit={(monster) => { void send({ type: 'turn.lookForTrouble', confirmed: true, monster }); closeTrouble(); }}
             />
           </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm">Elegí una sola opción para este turno.</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {canAct && (
-                <button type="button" className="choice-card" disabled={pending} onClick={() => setTroubleStep(true)}>
-                  <Illustration name="trouble" className="w-20 shrink-0 sm:w-24" />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2 text-xl font-black"><GameIcon name="combat" className="size-5 shrink-0" />Buscar problemas</span>
-                    <span className="mt-1 block text-sm text-ui-muted">Jugás un monstruo de tu mano y peleás contra él. Si ganás, subís de nivel y te llevás tesoros.</span>
-                  </span>
-                </button>
-              )}
-              <button type="button" className="choice-card" disabled={pending} onClick={() => { void send({ type: 'turn.lootRoom' }); closeTrouble(); }}>
-                <Illustration name="loot" className="w-20 shrink-0 sm:w-24" />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2 text-xl font-black"><GameIcon name="loot" className="size-5 shrink-0" />Saquear la sala</span>
-                  <span className="mt-1 block text-sm text-ui-muted">Robás {loot} boca abajo y lo guardás en tu mano. Sin pelea.</span>
-                </span>
-              </button>
-            </div>
-          </div>
         )}
-      </Modal>
-
-      <Modal open={modal === 'curse'} title="Maldición resuelta" onClose={() => setModal(null)}>
-        <p className="mb-4">¿Ya aplicaron el efecto en la mesa y actualizaron las estadísticas si cambiaron?</p>
-        <button className="btn-go w-full" disabled={pending} onClick={() => { void send({ type: 'turn.curseResolved' }); setModal(null); }}>Sí, seguir al camino sin monstruo</button>
-      </Modal>
-      <Modal open={modal === 'loot'} title="Confirmar saqueo" onClose={() => setModal(null)}>
-        <p className="mb-4">¿Robaste {loot} boca abajo y lo guardaste en tu mano?</p>
-        <button className="btn-go w-full" disabled={pending} onClick={() => { void send({ type: 'turn.lootDone' }); setModal(null); }}>Sí, saqué una Puerta</button>
-      </Modal>
-      <Modal open={modal === 'charity'} title="Caridad resuelta" onClose={() => setModal(null)}>
-        <p className="mb-4">Revisá el límite de tu mano y resolvé el excedente con las reglas y cartas de la mesa.</p>
-        <button className="btn-go w-full" disabled={pending} onClick={() => { void send({ type: 'turn.charityDone' }); setModal(null); }}>Listo, continuar</button>
-      </Modal>
-      <Modal open={modal === 'endTurn'} title="Pasar el turno" onClose={() => setModal(null)}>
-        <p className="mb-4">{next ? `${displayName(state, next)} empieza su turno. ¿Está todo listo?` : '¿Está todo listo para finalizar el turno?'}</p>
-        <button className="btn-go w-full" disabled={pending} onClick={() => { void send({ type: 'turn.end' }); setModal(null); }}>Sí, pasar el turno <ArrowRight aria-hidden className="size-4 shrink-0" /></button>
       </Modal>
     </div>
   );

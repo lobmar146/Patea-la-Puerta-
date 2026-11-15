@@ -3,7 +3,8 @@
 
 import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
-import type { Command } from '../shared/commands.js';
+import type { Action, Command } from '../shared/commands.js';
+import { isCatalogName, monsterKey } from '../shared/monsterKey.js';
 import { GameError, addParticipant, applyAction, createInitialState, type EngineEvent } from '../shared/engine.js';
 import { WIN_LEVEL, activeParticipantId, almostWinners, displayName, type AvatarId } from '../shared/rules.js';
 import type { PushMessage } from './push.js';
@@ -371,11 +372,39 @@ export async function processCommand(code: string, tokenHash: string, cmd: Comma
     await tx.processedCommand.create({
       data: { roomId: room.id, commandId: cmd.commandId, participantId: session.participantId, type: cmd.action.type, resultVersion: version },
     });
+    await rememberMonster(tx, room.state, cmd.action);
     if (outcome.revokeParticipant) {
       await tx.session.updateMany({ where: { participantId: outcome.revokeParticipant }, data: { revokedAt: new Date() } });
     }
     return { changed: true, revokedParticipant: outcome.revokeParticipant, notify: pushMessagesFor(room.state, outcome.state), result: { ok: true, version, duplicate: false } };
   });
+}
+
+/** Monstruo cargado a mano en una partida real: queda en el catálogo para las próximas. */
+async function rememberMonster(tx: Prisma.TransactionClient, state: GameState, action: Action) {
+  if (state.config.practice) return;
+  const monster =
+    action.type === 'turn.doorResult' || action.type === 'turn.lookForTrouble' || action.type === 'combat.addMonster' || action.type === 'combat.updateMonster'
+      ? action.monster
+      : undefined;
+  if (!monster || !isCatalogName(monster.name)) return;
+  const data = {
+    name: monster.name.trim(),
+    strength: monster.strength,
+    levels: monster.levels,
+    treasures: monster.treasures,
+    conditions: monster.conditions?.length ? (monster.conditions as Prisma.InputJsonValue) : Prisma.JsonNull,
+  };
+  await tx.customMonster.upsert({
+    where: { key: monsterKey(monster.name) },
+    create: { key: monsterKey(monster.name), ...data },
+    update: { ...data, uses: { increment: 1 } },
+  });
+}
+
+export async function listCustomMonsters() {
+  const rows = await prisma.customMonster.findMany({ orderBy: [{ uses: 'desc' }, { name: 'asc' }], take: 400 });
+  return rows.map((r) => ({ name: r.name, strength: r.strength, levels: r.levels, treasures: r.treasures, ...(Array.isArray(r.conditions) ? { conditions: r.conditions } : {}) }));
 }
 
 /** Borra salas vencidas por inactividad. Nunca se ejecuta por un reinicio: solo por fecha. */

@@ -7,7 +7,7 @@ Las cartas, dados y negociaciones pasan en la mesa: la app lleva números, turno
 - Un solo proceso Node (`src/server`): Express (API `/api/*`), Socket.IO (`/socket.io`) y el frontend compilado (`dist/client`).
 - `src/shared`: tipos, esquemas Zod de comandos (`commands.ts`), máquina de estados pura (`engine.ts`), cálculos (`rules.ts`), textos de fases (`phases.ts`). Lo usan servidor y cliente.
 - `src/client`: React + Vite + Tailwind. Estado en vivo vía `useRoom.tsx` (Socket.IO). Ilustraciones en `src/client/assets/manifest.ts`.
-- PostgreSQL + Prisma (`prisma/schema.prisma`): `Room` guarda el estado JSONB versionado; `Participant`, `Session`, `GameEvent`, `ProcessedCommand` son relacionales.
+- PostgreSQL + Prisma (`prisma/schema.prisma`): `Room` guarda el estado JSONB versionado; `Participant`, `Session`, `GameEvent`, `ProcessedCommand` son relacionales. `CustomMonster` guarda los monstruos cargados a mano (fuera de práctica) y `/api/monsters` los suma al buscador.
 - El cronómetro se persiste dentro de `GameState.clock`; el servidor marca inicio/pausa/reanudación/cambio de turno y el cliente calcula los segundos desde `activeSince` sin emitir comandos periódicos.
 
 ## Comandos
@@ -41,7 +41,7 @@ Las pruebas usan `TEST_DATABASE_URL` (por defecto `postgresql://munchkin:munchki
 - Al terminar una etapa: correr verificaciones y actualizar `docs/PROGRESS.md`.
 
 ## UX móvil y transiciones
-- Las decisiones y formularios del turno/combate van en `Modal`: en móvil se muestra como panel inferior, en escritorio centrado. Mantener botones táctiles de al menos 48 px, scroll dentro del panel, cierre con Escape y fondo, y área segura inferior.
+- Avanzar de etapa es UN toque, sin confirmaciones (pedido de M): el botón de la barra inferior manda el comando directo; si hay que elegir (puerta, sin monstruo) van botones lado a lado. Solo lo que necesita datos (cargar monstruo, resolver combate) abre un `Modal`. Los formularios van en `Modal`: en móvil se muestra como panel inferior, en escritorio centrado. Mantener botones táctiles de al menos 48 px, scroll dentro del panel, cierre con Escape y fondo, y área segura inferior.
 - El resumen de fase queda visible detrás del modal; el modal no cambia reglas ni confirma una acción al cerrarse.
 - Transiciones breves de fase y modal; respetar `prefers-reduced-motion`.
 - En monstruos, “nivel de combate” equivale al nivel/fuerza impreso; “niveles al vencer” describe la recompensa. No mezclar ambos campos ni cambiar el contrato de datos sin migración.

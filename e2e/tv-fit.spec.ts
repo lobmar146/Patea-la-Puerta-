@@ -36,7 +36,6 @@ test('vista TV en combate a 960×540, 1280×720 y 1920×1080', async ({ browser 
   }
   await dm.getByTestId('start-game').click();
   await dm.getByRole('button', { name: /Patear la puerta/ }).click();
-  await dm.getByRole('button', { name: /Qué salió detrás de la puerta/ }).click();
   await dm.getByRole('button', { name: /Monstruo/ }).click();
   await dm.getByTestId('monster-strength').fill('6');
   await dm.getByRole('button', { name: 'Entrar en combate' }).click();
