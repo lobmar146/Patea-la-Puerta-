@@ -133,18 +133,17 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(p1.getByTestId('combat')).toBeVisible();
   await expect(tv.getByTestId('tv-combat')).toBeVisible();
 
-  // 9. Ayuda: al ir perdiendo aparece el aviso guiado. Lu rechaza, Dana acepta desde su dispositivo.
-  await expect(p1.getByTestId('losing-alert')).toBeVisible();
+  // 9. Ayuda: al ir perdiendo, el siguiente paso ofrece pedir ayuda (sin cartel que tape). Lu rechaza, Dana acepta.
+  const nextStep = p1.getByTestId('combat-next-step');
+  await expect(nextStep).toContainText('Vas perdiendo');
   await p1.screenshot({ path: 'test-results/screens/movil-aviso-perdiendo.png' });
-  await expect(p1.getByTestId('combat-next-step')).toContainText('Vas perdiendo');
-  await p1.getByTestId('losing-alert').getByRole('button', { name: 'Pedir ayuda a Lu' }).click();
-  await expect(p1.getByTestId('losing-alert')).toHaveCount(0);
+  await nextStep.getByRole('button', { name: 'Pedir ayuda a Lu' }).click();
   await expect(p2.getByTestId('help-inbox')).toBeVisible();
   await p2.getByRole('button', { name: 'Rechazar' }).click();
   await expect(p2.getByTestId('help-inbox')).toHaveCount(0);
-  // Tras el rechazo, el aviso vuelve a ofrecer ayuda solo a quien no se la negó.
-  await expect(p1.getByTestId('losing-alert').getByRole('button', { name: /Pedir ayuda a/ })).toHaveCount(1);
-  await p1.getByTestId('losing-alert').getByRole('button', { name: 'Pedir ayuda a Dana' }).click();
+  // Tras el rechazo, solo se ofrece ayuda a quien no se la negó.
+  await expect(nextStep.getByRole('button', { name: /Pedir ayuda a/ })).toHaveCount(1);
+  await nextStep.getByRole('button', { name: 'Pedir ayuda a Dana' }).click();
   await dm.getByRole('button', { name: 'Acepto ayudar' }).click();
   await expect(p1.getByTestId('players-total')).toHaveText('3'); // Pablo 2 + Dana 1
   await expect(p1.getByTestId('monsters-total')).toHaveText('3');
@@ -163,14 +162,13 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(tv.getByTestId('players-total')).toHaveText('7');
   await expect(p1.getByTestId('combat-next-step')).toContainText('¡Vas ganando!');
 
-  // 10. Victoria confirmada a mano; doble clic no duplica la recompensa.
-  await p1.getByRole('button', { name: /Victoria/ }).click();
-  await expect(p1.getByTestId('victory-summary')).toContainText('Pablo: +1 nivel');
-  await p1.getByText('Ajustar niveles o agregar una nota').click();
-  await p1.getByTestId('reward-fighter').fill('1');
-  await p1.waitForTimeout(400);
-  await p1.screenshot({ path: 'test-results/screens/movil-victoria.png' });
-  await p1.getByRole('button', { name: 'Confirmar victoria' }).dblclick();
+  // 10. Victoria con un toque, sin confirmar; se puede volver atrás y repetir.
+  await p1.getByTestId('combat-quick').getByRole('button', { name: 'Victoria' }).click();
+  await phaseIs(p1, 'Caridad');
+  await p1.getByTestId('step-undo').click();
+  await expect(p1.getByTestId('combat')).toBeVisible();
+  await expect(tv.getByTestId('tv-combat')).toBeVisible();
+  await p1.getByTestId('combat-quick').getByRole('button', { name: 'Victoria' }).click();
   await phaseIs(p1, 'Caridad');
   await expect(tv.getByTestId('celebration')).toContainText('+1 NIVEL');
   await tab(dm, 'Mesa');
@@ -180,7 +178,6 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(dm.getByTestId('level-Pablo')).toHaveText('3');
 
   // 11. Caridad permite pasar al siguiente turno.
-  await p1.getByRole('button', { name: /Caridad lista/ }).click();
   await p1.getByRole('button', { name: /Pasar turno a Dana/ }).click();
   await expect(tv.getByTestId('tv-active')).toContainText('Dana');
 
@@ -194,9 +191,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await dm.getByRole('button', { name: /Maldición resuelta/ }).click();
   await phaseIs(dm, 'Sin monstruo');
   await dm.getByRole('button', { name: 'Saquear', exact: true }).click();
-  await phaseIs(dm, 'Saquear la habitación');
-  await dm.getByRole('button', { name: /Ya saqué/ }).click();
-  await dm.getByRole('button', { name: /Caridad lista/ }).click();
+  await phaseIs(dm, 'Caridad');
   await dm.getByRole('button', { name: /Pasar turno a Lu/ }).click();
 
   // 8c. Lu: monstruo al patear -> huida.
@@ -205,10 +200,10 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await p2.getByTestId('monster-strength').fill('10');
   await p2.getByRole('button', { name: 'Entrar en combate' }).click();
   await expect(tv.getByTestId('monsters-total')).toHaveText('10');
-  await expect(p2.getByTestId('losing-alert')).toBeVisible();
-  await p2.getByTestId('losing-alert').getByRole('button', { name: /Huir/ }).click();
-  await p2.getByText('Lo atrapó').click();
-  await p2.getByRole('button', { name: 'Registrar huida' }).click();
+  await expect(p2.getByTestId('combat-next-step')).toContainText('Vas perdiendo');
+  await p2.getByTestId('combat-next-step').getByRole('button', { name: /Huir/ }).click();
+  // Una sola tirada: el resultado se toca y queda registrado.
+  await p2.getByTestId('flee-form').getByRole('button', { name: 'Lo atrapó' }).click();
   await phaseIs(p2, 'Caridad');
   await expect(tv.getByTestId('tv-combat')).toHaveCount(0);
 

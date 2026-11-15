@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Action } from '../../src/shared/commands';
-import { GameError, addParticipant, applyAction, createInitialState, undoFor } from '../../src/shared/engine';
+import { GameError, addParticipant, applyAction, createInitialState, stepUndoFor, undoFor } from '../../src/shared/engine';
 import { activeParticipantId, almostWinners, appliedPowers, fleeTarget, helperLevels, playersWinTies, avatarOf, combatTotals, identityLine, matchesCondition, noPursue } from '../../src/shared/rules';
 import { actionSchema } from '../../src/shared/commands';
 import { computeAwards, podium } from '../../src/shared/awards';
@@ -171,12 +171,53 @@ describe('turnos', () => {
     s = applyAction(s, 'dm', { type: 'turn.kickDoor' }, { now: '2026-01-01T00:00:45.000Z', id }).state;
     s = applyAction(s, 'dm', { type: 'turn.doorResult', result: 'other' }, { now: '2026-01-01T00:00:46.000Z', id }).state;
     s = applyAction(s, 'dm', { type: 'turn.lootRoom' }, { now: '2026-01-01T00:00:47.000Z', id }).state;
-    s = applyAction(s, 'dm', { type: 'turn.lootDone' }, { now: '2026-01-01T00:00:48.000Z', id }).state;
     s = applyAction(s, 'dm', { type: 'turn.charityDone' }, { now: '2026-01-01T00:00:49.000Z', id }).state;
     s = applyAction(s, 'dm', { type: 'turn.end' }, { now: '2026-01-01T00:00:50.000Z', id }).state;
     expect(s.clock).toMatchObject({ activeSince: '2026-01-01T00:00:50.000Z', turnElapsedMs: 0 });
     expect(s.clock.totalsByParticipant.dm).toBe(20_000);
     expect(s.clock.totalsByParticipant.p1).toBeUndefined();
+  });
+
+  it('saquear va directo a caridad y desde caridad se pasa el turno con un toque', () => {
+    let s = run(started(), 'dm', { type: 'turn.kickDoor' }, { type: 'turn.doorResult', result: 'other' }, { type: 'turn.lootRoom' });
+    expect(s.turn.phase).toBe('charity');
+    s = run(s, 'dm', { type: 'turn.end' });
+    expect(activeParticipantId(s)).toBe('p1');
+    expect(s.turn.phase).toBe('setup');
+  });
+
+  it('volver atrás deshace el último paso sin confirmaciones', () => {
+    let s = run(started(), 'dm', { type: 'turn.kickDoor' }, { type: 'turn.doorResult', result: 'other' }, { type: 'turn.lootRoom' }, { type: 'turn.end' });
+    expect(activeParticipantId(s)).toBe('p1');
+    expect(stepUndoFor(s)?.label).toBe('pasar turno');
+    s = run(s, 'dm', { type: 'step.undo' });
+    expect(activeParticipantId(s)).toBe('dm');
+    expect(s.turn.phase).toBe('charity');
+    // Un solo nivel: no se encadena.
+    expect(stepUndoFor(s)).toBeNull();
+    expectError(() => applyAction(s, 'dm', { type: 'step.undo' }), 'invalid');
+  });
+
+  it('volver atrás una victoria devuelve los niveles y el combate', () => {
+    let s = run(started(), 'dm', { type: 'turn.kickDoor' }, { type: 'turn.doorResult', result: 'monster', monster: { name: 'Babosa', strength: 1, levels: 2, treasures: 1 } });
+    const lvl = s.characters.dm.level;
+    s = run(s, 'dm', { type: 'combat.resolveVictory', rewards: [{ participantId: 'dm', levels: 2, note: '' }], note: '' });
+    expect(s.characters.dm.level).toBe(lvl + 2);
+    // Solo el DM o quien hizo el paso.
+    expectError(() => applyAction(s, 'p1', { type: 'step.undo' }), 'forbidden');
+    s = run(s, 'dm', { type: 'step.undo' });
+    expect(s.characters.dm.level).toBe(lvl);
+    expect(s.combat?.monsters[0].name).toBe('Babosa');
+  });
+
+  it('no se vuelve atrás si después cambió algo; el orden de las claves (JSONB) no importa', () => {
+    let s = run(started(), 'dm', { type: 'turn.kickDoor' });
+    s = run(s, 'p1', { type: 'character.update', targetId: 'p1', patch: { level: 3 } });
+    expect(stepUndoFor(s)).toBeNull();
+    // Sobrevive al paso por JSON (JSONB reordena claves).
+    const s2 = run(started(), 'dm', { type: 'turn.kickDoor' });
+    const reordered = JSON.parse(JSON.stringify(s2, [...new Set(collectKeys(s2))].sort().reverse())) as GameState;
+    expect(stepUndoFor(reordered)).not.toBeNull();
   });
 
   it('solo el jugador activo avanza la fase', () => {
@@ -192,7 +233,7 @@ describe('turnos', () => {
     expect(s.turn.phase).toBe('curse');
     s = run(s, 'dm', { type: 'turn.curseResolved' });
     expect(s.turn.phase).toBe('noMonster');
-    s = run(s, 'dm', { type: 'turn.lootRoom' }, { type: 'turn.lootDone' });
+    s = run(s, 'dm', { type: 'turn.lootRoom' }); // saquear va directo a caridad
     expect(s.turn.phase).toBe('charity');
     s = run(s, 'dm', { type: 'turn.charityDone' }, { type: 'turn.end' });
     expect(activeParticipantId(s)).toBe('p1');
@@ -510,3 +551,8 @@ describe('modos de juego', () => {
     expect(phaseGuide('endTurn', s.config).reminder).toMatch(/Puño/);
   });
 });
+
+function collectKeys(o: unknown, out: string[] = []): string[] {
+  if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) { out.push(k); collectKeys(v, out); }
+  return out;
+}

@@ -93,6 +93,7 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('turn.lootDone') }),
   z.object({ type: z.literal('turn.charityDone') }),
   z.object({ type: z.literal('turn.end') }),
+  z.object({ type: z.literal('step.undo') }),
   z.object({ type: z.literal('combat.addMonster'), monster: monsterInput }),
   z.object({
     type: z.literal('combat.updateMonster'),
@@ -134,7 +135,7 @@ export const actionSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('combat.resolveOther'),
-    text: z.string().trim().min(1, 'Contá brevemente qué pasó').max(200),
+    text: z.string().trim().max(200).default(''),
   }),
   z.object({ type: z.literal('dm.setTurn'), activeId: id, phase: z.enum(PHASES) }),
   z.object({ type: z.literal('dm.transfer'), toId: id }),

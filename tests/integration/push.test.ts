@@ -50,7 +50,6 @@ describe('a quién se avisa', () => {
     let s = run(s1, 'dm', { type: 'turn.kickDoor' });
     s = run(s, 'dm', { type: 'turn.doorResult', result: 'other' });
     s = run(s, 'dm', { type: 'turn.lootRoom' });
-    s = run(s, 'dm', { type: 'turn.lootDone' });
     const before = run(s, 'dm', { type: 'turn.charityDone' });
     const after = run(before, 'dm', { type: 'turn.end' });
     expect(pushMessagesFor(before, after)).toEqual([expect.objectContaining({ participantId: 'p1', title: '¡Te toca!' })]);

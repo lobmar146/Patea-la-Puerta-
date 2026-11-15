@@ -1,4 +1,5 @@
-import { ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronRight, Undo2 } from 'lucide-react';
+import { stepUndoFor } from '../../shared/engine';
 import { useState } from 'react';
 import { TREATY_LEVEL, phaseGuide, treatyProtected } from '../../shared/modes';
 import { DuelGuideButton } from '../components/DuelGuide';
@@ -24,7 +25,6 @@ export function TurnView() {
   const { state } = snap;
   const phase = state.turn.phase;
   const guide = phaseGuide(phase, state.config);
-  const loot = state.config.mode && state.config.mode !== 'normal' ? 'un Tesoro' : 'una carta de Puerta';
   const activeId = activeParticipantId(state);
   const mine = activeId === me.id;
   const canAct = (mine || me.isDm) && state.status === 'active';
@@ -51,15 +51,26 @@ export function TurnView() {
         <button className="btn-go px-2 text-base sm:text-lg" disabled={pending} onClick={() => send({ type: 'turn.lootRoom' })}><GameIcon name="loot" className="size-5 shrink-0" /> Saquear</button>
       </div>
     );
-    if (phase === 'lootRoom') return <button className="btn-go w-full text-lg" disabled={pending} onClick={() => send({ type: 'turn.lootDone' })}>Ya saqué {loot}: seguir <ChevronRight aria-hidden className="size-4 shrink-0" /></button>;
-    if (phase === 'charity') return <button className="btn-go w-full text-lg" disabled={pending} onClick={() => send({ type: 'turn.charityDone' })}>Caridad lista: seguir <ChevronRight aria-hidden className="size-4 shrink-0" /></button>;
-    if (phase === 'endTurn') return <button className="btn-go w-full text-lg sm:text-xl" disabled={pending} onClick={() => send({ type: 'turn.end' })}>Pasar turno{next ? ` a ${displayName(state, next)}` : ''} <ArrowRight aria-hidden className="size-4 shrink-0" /></button>;
+    // Salas viejas que quedaron en "saquear": un toque y sigue.
+    if (phase === 'lootRoom') return <button className="btn-go w-full text-lg" disabled={pending} onClick={() => send({ type: 'turn.lootDone' })}>Seguir <ChevronRight aria-hidden className="size-4 shrink-0" /></button>;
+    if (phase === 'endTurn' || phase === 'charity') return <button className="btn-go w-full text-lg sm:text-xl" disabled={pending} onClick={() => send({ type: 'turn.end' })}>Pasar turno{next ? ` a ${displayName(state, next)}` : ''} <ArrowRight aria-hidden className="size-4 shrink-0" /></button>;
     return null;
   };
   const action = actionButton();
 
   return (
     <div className="space-y-4">
+      {(() => {
+        // Sin confirmaciones: el último paso se vuelve atrás con un toque.
+        const step = stepUndoFor(state);
+        if (!step || state.status !== 'active' || (!me.isDm && step.by !== me.id)) return null;
+        return (
+          <button type="button" className="flex min-h-12 w-full items-center gap-2 rounded-2xl border border-ui-line/[.12] bg-surface-raised px-4 text-left text-sm font-bold active:scale-[.98]" disabled={pending} onClick={() => send({ type: 'step.undo' })} data-testid="step-undo">
+            <Undo2 aria-hidden className="size-5 shrink-0 text-accent-brand" />
+            <span className="truncate">Volver atrás: {step.label}</span>
+          </button>
+        );
+      })()}
       <section key={phase} className="card phase-transition overflow-hidden" data-testid="turn-panel" data-phase={phase}>
         {/* Una sola línea: quién juega, la fase y el reloj. Así el combate entra de entrada en el celular. */}
         <div className="phase-hero flex items-center gap-3 px-3 py-2.5 sm:px-5 sm:py-3">
