@@ -130,3 +130,9 @@ npm run check && npm run test:e2e
   - Modo rápido (reglas opcionales oficiales): la preparación pasa a "Escuchar en la puerta" (robar una Puerta boca abajo), saquear roba un Tesoro y se recuerda la victoria compartida.
   - 2 jugadores (variante casera de r/Munchkin): exige exactamente 2 jugadores para empezar; usa el modo rápido más Codicia (la caridad descarta), Tratado (sin monstruos ni maldiciones al rival hasta nivel 4; el turno muestra a quién protege), An-Cap (negociar niveles al ayudar), Mercader y Puño. Guía completa en un modal desde el selector, el lobby y el turno; las fases muestran sus recordatorios.
 - Imágenes de cartas en Render: las seis copias quedaron versionadas en `public/cards/` (sin metadatos) y `fetch-assets.mjs` usa la copia del repo antes de intentar descargar; Render no podía bajarlas y mostraba solo los SVG. Recortes de las hojas ajustados a estas copias. Los botones flotantes suben cuando está la acción fija del turno.
+
+## Panel del DM para jugar con la tele (2026-11-15)
+- Fichas rápidas por jugador en la pestaña DM: nivel, equipo y otros bonus con botones de 56 px, sexo en dos botones, raza y clase en un panel de botones grandes (un toque reemplaza; opción "Dos a la vez"), deshacer y "Más" con la ficha completa.
+- Los +/− son optimistas: varios toques seguidos suman bien aunque el servidor todavía no haya confirmado.
+- Resumen de todos arriba (nivel, poder, a quién le toca; toca y salta a su ficha), aviso de combate en curso con totales que lleva al turno, y últimos cambios.
+- e2e: el DM edita desde las fichas y la TV muestra el cambio.

@@ -155,7 +155,7 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
         {current === 'me' && isPlayer && <CharacterEditor targetId={me.id} />}
         {current === 'turn' && (state.status === 'lobby' ? <Lobby publicUrl={publicUrl} /> : <TurnView />)}
         {current === 'table' && <TableView />}
-        {current === 'dm' && me.isDm && <DmPanel />}
+        {current === 'dm' && me.isDm && <DmPanel onGoTurn={() => setTab('turn')} />}
 
         <p className="pt-4 text-center text-sm">
           <Link className="inline-flex items-center gap-2 underline" to={`/s/${snap.code}/tv`}><Tv aria-hidden className="size-4 shrink-0" /> Abrir vista TV</Link>
