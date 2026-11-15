@@ -2,7 +2,7 @@ import { Lock, Pause, Tv } from 'lucide-react';
 import { isLocked } from '../../shared/engine';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { APP_NAME, WIN_LEVEL, activeParticipantId, almostWinners, displayName } from '../../shared/rules';
+import { APP_NAME, WIN_LEVEL, activeParticipantId, alertIds, almostWinners, displayName, joinNames } from '../../shared/rules';
 import { useRoom } from '../useRoom';
 import { ConnectionBadge, Toast } from '../components/ui';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -143,11 +143,11 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
         )}
         {alert && (
           <div role="alert" className="card border-gold p-3" data-testid="level-alert">
-            <p className="text-lg font-bold"><GameIcon name="victory" className="mr-1 inline size-5" />{displayName(state, alert.participantId)} figura en nivel {alert.level}.</p>
+            <p className="text-lg font-bold"><GameIcon name="victory" className="mr-1 inline size-5" />{alertIds(alert).length > 1 ? `${joinNames(alertIds(alert).map((id) => displayName(state, id)))} llegaron juntos al nivel ${WIN_LEVEL}: ganan los ${alertIds(alert).length}.` : `${displayName(state, alert.participantId)} figura en nivel ${alert.level}.`}</p>
             <p className="text-sm">La app no declara ganadores sola: según el reglamento, el nivel 10 normalmente se alcanza matando un monstruo. El DM confirma lo que pasó en la mesa.</p>
             {me.isDm && (
               <div className="mt-2 flex flex-wrap gap-2">
-                <button className="btn-go" onClick={() => send({ type: 'levelAlert.confirmWinner' })}>Confirmar victoria</button>
+                <button className="btn-go" onClick={() => send({ type: 'levelAlert.confirmWinner' })}>{alertIds(alert).length > 1 ? 'Confirmar: ganan juntos' : 'Confirmar victoria'}</button>
                 <button className="btn-secondary" onClick={() => send({ type: 'levelAlert.dismiss' })}>Todavía no gana</button>
               </div>
             )}

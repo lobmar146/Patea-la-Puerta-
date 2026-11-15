@@ -3,7 +3,7 @@
 
 import type { Action, CharacterPatch, MonsterInput } from './commands.js';
 import { gearFromItems } from './novice.js';
-import { AVATAR_IDS, DEFAULT_SETS, COLORS, SEX_LABEL, WIN_LEVEL, activeParticipantId, displayName, type AvatarId } from './rules.js';
+import { AVATAR_IDS, DEFAULT_SETS, COLORS, SEX_LABEL, WIN_LEVEL, activeParticipantId, alertIds, displayName, joinNames, winnersTitle, type AvatarId } from './rules.js';
 import type { Character, Combat, GameState, Monster, Participant, Phase, PlayerStats, Role, Sex, StepUndo, UndoEntry } from './types.js';
 
 export class GameError extends Error {
@@ -191,13 +191,27 @@ function setLevel(state: GameState, c: Character, level: number, events: EngineE
     });
   }
   if (before < WIN_LEVEL && c.level >= WIN_LEVEL && state.status !== 'finished') {
-    state.levelAlert = { participantId: c.id, level: c.level };
+    // Si otro ya llegó en el mismo combate (por ejemplo, el Elfo que ayudó), ganan juntos.
+    const prev = state.levelAlert;
+    state.levelAlert =
+      prev && prev.participantId !== c.id && state.characters[prev.participantId]?.level >= WIN_LEVEL
+        ? { ...prev, alsoIds: [...new Set([...(prev.alsoIds ?? []), c.id])] }
+        : { participantId: c.id, level: c.level };
     events.push({
       type: 'level.alert',
       message: `¡${c.name} llegó a nivel ${c.level}! El DM debe confirmar qué pasó en la mesa.`,
     });
   }
-  if (state.levelAlert?.participantId === c.id && c.level < WIN_LEVEL) state.levelAlert = null;
+  if (c.level < WIN_LEVEL) dropFromAlert(state, c.id);
+}
+
+/** Saca a alguien del aviso de nivel ganador; si quedan otros, el aviso sigue con ellos. */
+function dropFromAlert(state: GameState, id: string) {
+  const a = state.levelAlert;
+  if (!a) return;
+  const rest = alertIds(a).filter((x) => x !== id);
+  if (rest.length === alertIds(a).length) return;
+  state.levelAlert = rest.length ? { participantId: rest[0], level: state.characters[rest[0]]?.level ?? a.level, ...(rest.length > 1 ? { alsoIds: rest.slice(1) } : {}) } : null;
 }
 
 /** Guarda el último cambio manual del personaje para poder deshacerlo. */
@@ -514,17 +528,20 @@ function applyActionCore(
     }
     case 'game.end': {
       requireDm(actor);
-      if (action.winnerId) player(state, action.winnerId);
+      const winners = [...new Set(action.winnerIds?.length ? action.winnerIds : action.winnerId ? [action.winnerId] : [])];
+      for (const w of winners) player(state, w);
       accrueClock(state, now, true);
       state.status = 'finished';
-      state.winnerId = action.winnerId;
+      state.winnerId = winners[0] ?? null;
+      if (winners.length > 1) state.winnerIds = winners;
+      else delete state.winnerIds;
       state.finishedAt = now;
       state.combat = null;
       state.levelAlert = null;
       log(
         'game.end',
-        action.winnerId
-          ? `Fin de la partida. ¡${displayName(state, action.winnerId)} gana!`
+        winners.length
+          ? `Fin de la partida. ${winnersTitle(state)}`
           : 'El DM terminó la partida sin ganador declarado.',
       );
       break;
@@ -870,27 +887,28 @@ function applyActionCore(
         }
       }
       if (removedActive) startClock(state, now);
-      if (state.levelAlert?.participantId === target.id) state.levelAlert = null;
+      dropFromAlert(state, target.id);
       log('dm.remove', `El DM quitó a ${displayName(state, target.id)} de la sala.`);
       return { state, events, revokeParticipant: target.id };
     }
     case 'levelAlert.confirmWinner': {
       requireDm(actor);
       if (!state.levelAlert) throw new GameError('invalid', 'No hay ningún aviso de nivel pendiente.');
-      const w = state.levelAlert.participantId;
+      const winners = alertIds(state.levelAlert).filter((x) => state.characters[x] && !state.participants[x]?.removed);
       accrueClock(state, now, true);
       state.status = 'finished';
-      state.winnerId = w;
+      state.winnerId = winners[0] ?? null;
+      if (winners.length > 1) state.winnerIds = winners;
       state.finishedAt = now;
       state.combat = null;
       state.levelAlert = null;
-      log('game.end', `El DM confirmó la victoria: ¡${displayName(state, w)} gana la partida!`);
+      log('game.end', `El DM confirmó la victoria: ${winnersTitle(state)}`);
       break;
     }
     case 'levelAlert.dismiss': {
       requireDm(actor);
       if (!state.levelAlert) throw new GameError('invalid', 'No hay ningún aviso de nivel pendiente.');
-      log('dm.correction', `El DM indicó que ${displayName(state, state.levelAlert.participantId)} todavía no gana.`);
+      log('dm.correction', `El DM indicó que ${joinNames(alertIds(state.levelAlert).map((x) => displayName(state, x)))} todavía no ${alertIds(state.levelAlert).length > 1 ? 'ganan' : 'gana'}.`);
       state.levelAlert = null;
       break;
     }

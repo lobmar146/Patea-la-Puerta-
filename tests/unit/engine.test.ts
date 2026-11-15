@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Action } from '../../src/shared/commands';
 import { GameError, addParticipant, applyAction, createInitialState, isLocked, stepUndoFor, undoFor } from '../../src/shared/engine';
-import { activeParticipantId, almostWinners, appliedPowers, fleeTarget, helperLevels, playersWinTies, avatarOf, combatTotals, identityLine, matchesCondition, noPursue } from '../../src/shared/rules';
+import { activeParticipantId, alertIds, almostWinners, winnersOf, winnersTitle, appliedPowers, fleeTarget, helperLevels, playersWinTies, avatarOf, combatTotals, identityLine, matchesCondition, noPursue } from '../../src/shared/rules';
 import { actionSchema } from '../../src/shared/commands';
 import { computeAwards, podium } from '../../src/shared/awards';
 import { coaching, equipmentWarnings, gearFromItems, sale } from '../../src/shared/novice';
@@ -248,6 +248,32 @@ describe('turnos', () => {
     expect(s.combat?.helperId).toBe('p2');
     expect(stepUndoFor(s)?.label).toBe('ayudante');
     expect(run(s, 'dm', { type: 'step.undo' }).combat?.helperId).toBeNull();
+  });
+
+  it('si el que pelea y el ayudante llegan juntos a nivel 10, ganan los dos', () => {
+    let s = run(started(), 'dm', { type: 'character.update', targetId: 'dm', patch: { level: 9 } }, { type: 'character.update', targetId: 'p1', patch: { level: 9 } });
+    s = run(s, 'dm', { type: 'turn.kickDoor' }, { type: 'turn.doorResult', result: 'monster', monster: { name: 'Dragón', strength: 1, levels: 1, treasures: 1 } });
+    s = run(s, 'dm', { type: 'dm.setHelper', helperId: 'p1' });
+    s = run(s, 'dm', { type: 'combat.resolveVictory', rewards: [{ participantId: 'dm', levels: 1, note: '' }, { participantId: 'p1', levels: 1, note: '' }], note: '' });
+    expect(alertIds(s.levelAlert)).toEqual(['dm', 'p1']);
+    s = run(s, 'dm', { type: 'levelAlert.confirmWinner' });
+    expect(s.status).toBe('finished');
+    expect(winnersOf(s)).toEqual(['dm', 'p1']);
+    expect(winnersTitle(s)).toMatch(/ganan!$/);
+    expect(podium(s).slice(0, 2).sort()).toEqual(['dm', 'p1']);
+  });
+
+  it('si uno de los dos baja de nivel, el aviso queda solo con el otro', () => {
+    let s = run(started(), 'dm', { type: 'character.update', targetId: 'p1', patch: { level: 10 } }, { type: 'character.update', targetId: 'p2', patch: { level: 10 } });
+    expect(alertIds(s.levelAlert)).toEqual(['p1', 'p2']);
+    s = run(s, 'dm', { type: 'character.update', targetId: 'p1', patch: { level: 9 } });
+    expect(alertIds(s.levelAlert)).toEqual(['p2']);
+  });
+
+  it('el DM termina la partida con varios ganadores', () => {
+    const s = run(started(), 'dm', { type: 'game.end', winnerId: 'p1', winnerIds: ['p1', 'p2'] });
+    expect(s.winnerId).toBe('p1');
+    expect(winnersOf(s)).toEqual(['p1', 'p2']);
   });
 
   it('solo el jugador activo avanza la fase', () => {

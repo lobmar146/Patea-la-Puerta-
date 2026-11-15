@@ -14,7 +14,7 @@ export function DmPanel({ onGoTurn }: { onGoTurn?: () => void }) {
   const [turnId, setTurnId] = useState<string>('');
   const [phase, setPhase] = useState<Phase | ''>('');
   const [confirmEnd, setConfirmEnd] = useState(false);
-  const [winner, setWinner] = useState('');
+  const [winners, setWinners] = useState<string[]>([]);
   // Ficha que se ve abajo: la que tocó el DM; si no eligió, la de quien juega. Al cambiar el turno, sigue al nuevo jugador.
   const [pick, setPick] = useState<string | null>(null);
   const turnKey = snap ? `${snap.state.turn.turnNumber}:${activeParticipantId(snap.state)}` : '';
@@ -108,13 +108,19 @@ export function DmPanel({ onGoTurn }: { onGoTurn?: () => void }) {
         </label>
         {confirmEnd && (
           <div className="mt-3 space-y-3 rounded-2xl border border-accent-wine/30 bg-blood/[.06] p-4">
-            <label className="label" htmlFor="winner">¿Hubo ganador?</label>
-            <select id="winner" className="input" value={winner} onChange={(e) => setWinner(e.target.value)}>
-              <option value="">Sin ganador declarado</option>
-              {players.map((id) => <option key={id} value={id}>{displayName(state, id)}</option>)}
-            </select>
+            <p className="label">¿Quién ganó? <span className="font-normal text-ui-muted">(tocá uno o varios si ganaron juntos)</span></p>
+            <div className="grid grid-cols-2 gap-2" data-testid="end-winners">
+              {players.map((id) => {
+                const on = winners.includes(id);
+                return (
+                  <button key={id} type="button" aria-pressed={on} className={`min-h-12 rounded-2xl border-2 px-2 font-bold ${on ? 'border-accent-gold bg-gold/15 text-accent-gold' : 'border-ui-line/[.12] bg-surface-raised'}`} onClick={() => setWinners(on ? winners.filter((x) => x !== id) : [...winners, id])}>
+                    {displayName(state, id)}
+                  </button>
+                );
+              })}
+            </div>
             <div className="flex gap-2">
-              <button className="btn-primary" disabled={pending} onClick={() => send({ type: 'game.end', winnerId: winner || null })}>Confirmar fin</button>
+              <button className="btn-primary" disabled={pending} onClick={() => send({ type: 'game.end', winnerId: winners[0] ?? null, winnerIds: winners })}>{winners.length === 0 ? 'Terminar sin ganador' : winners.length > 1 ? 'Terminar: ganan juntos' : 'Terminar partida'}</button>
               <button className="btn-secondary" onClick={() => setConfirmEnd(false)}>Cancelar</button>
             </div>
           </div>

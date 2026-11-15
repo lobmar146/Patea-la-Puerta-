@@ -148,6 +148,8 @@ export interface TurnClockState {
 export interface LevelAlert {
   participantId: string;
   level: number;
+  /** Otros que llegaron al nivel ganador con el mismo cambio (ej.: un Elfo que ayudó). Opcional en salas viejas. */
+  alsoIds?: string[];
 }
 
 /** Contadores por jugador para los premios del final. Solo suman; el DM no los edita. */
@@ -180,6 +182,8 @@ export interface GameState {
   combat: Combat | null;
   levelAlert: LevelAlert | null;
   winnerId: string | null;
+  /** Todos los ganadores si fueron varios (ganan juntos). `winnerId` queda como el primero. */
+  winnerIds?: string[];
   finishedAt: string | null;
   /** Opcional: las salas creadas antes de los premios no lo tienen. */
   stats?: Record<string, PlayerStats>;

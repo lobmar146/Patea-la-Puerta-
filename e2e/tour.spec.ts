@@ -82,8 +82,8 @@ for (const theme of ['dark', 'light'] as const) {
     await dm.getByRole('button', { name: 'Victoria', exact: true }).click();
     await tab(dm, 'DM');
     await dm.getByRole('button', { name: 'Terminar partida' }).click();
-    await dm.locator('#winner').selectOption({ label: 'Dana' });
-    await dm.getByRole('button', { name: 'Confirmar fin' }).click();
+    await dm.getByTestId('end-winners').getByRole('button', { name: 'Dana' }).click();
+    await dm.getByRole('button', { name: 'Terminar partida' }).last().click();
     await expect(p1.getByTestId('finished')).toBeVisible();
     await p1.waitForTimeout(1600);
     await shot(p1, `${theme}-13-podio`, true);
