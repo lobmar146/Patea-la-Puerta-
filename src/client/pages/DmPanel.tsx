@@ -1,5 +1,5 @@
 import { Pause, Play, Swords } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PHASE_LABEL } from '../../shared/engine';
 import { SEX_SYMBOL, WIN_LEVEL, activeParticipantId, basePower, combatTotals, displayName } from '../../shared/rules';
 import { PHASES, type Phase } from '../../shared/types';
@@ -15,10 +15,15 @@ export function DmPanel({ onGoTurn }: { onGoTurn?: () => void }) {
   const [phase, setPhase] = useState<Phase | ''>('');
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [winner, setWinner] = useState('');
+  // Ficha que se ve abajo: la que tocó el DM; si no eligió, la de quien juega. Al cambiar el turno, sigue al nuevo jugador.
+  const [pick, setPick] = useState<string | null>(null);
+  const turnKey = snap ? `${snap.state.turn.turnNumber}:${activeParticipantId(snap.state)}` : '';
+  useEffect(() => setPick(null), [turnKey]);
   if (!snap || !me?.isDm) return null;
   const { state } = snap;
   const players = state.turn.order;
   const active = activeParticipantId(state);
+  const shown = pick && state.characters[pick] && players.includes(pick) ? pick : active && players.includes(active) ? active : players[0];
   const others = Object.values(state.participants).filter((p) => !p.removed && p.id !== me.id);
 
   return (
@@ -49,13 +54,15 @@ export function DmPanel({ onGoTurn }: { onGoTurn?: () => void }) {
             if (!c) return null;
             const isActive = state.status !== 'lobby' && id === active;
             const close = c.level >= WIN_LEVEL - 1;
+            const selected = id === shown;
             return (
               <button
                 key={id}
                 type="button"
-                className={`flex min-h-14 min-w-0 items-center gap-2 rounded-2xl border-2 bg-surface-raised p-2 text-left active:scale-95 ${isActive ? 'border-accent-brand' : close ? 'border-accent-gold' : 'border-ui-line/[.1]'}`}
-                onClick={() => document.getElementById(`dm-char-${id}`)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })}
-                aria-label={`Ir a ${c.name}: nivel ${c.level}, poder ${basePower(c)}`}
+                className={`flex min-h-14 min-w-0 items-center gap-2 rounded-2xl border-2 p-2 text-left transition active:scale-95 ${selected ? 'border-accent-brand bg-accent-brand/15 shadow-md' : close ? 'border-accent-gold bg-surface-raised' : 'border-ui-line/[.1] bg-surface-raised'}`}
+                onClick={() => setPick(id)}
+                aria-pressed={selected}
+                aria-label={`Ver a ${c.name}: nivel ${c.level}, poder ${basePower(c)}`}
               >
                 <Avatar c={c} size="sm" />
                 <span className="min-w-0 flex-1 leading-tight">
@@ -73,14 +80,12 @@ export function DmPanel({ onGoTurn }: { onGoTurn?: () => void }) {
       )}
 
       <section aria-label="Personajes" data-testid="dm-characters">
-        <div className="grid gap-3 md:grid-cols-2">
-          {players.map((id) => {
-            const c = state.characters[id];
-            if (!c) return null;
-            const badge = state.combat?.fighterId === id ? 'Pelea' : state.combat?.helperId === id ? 'Ayuda' : state.status !== 'lobby' && id === active ? 'Le toca' : undefined;
-            return <QuickCharacterCard key={id} c={c} active={state.status !== 'lobby' && id === active} badge={badge} />;
-          })}
-        </div>
+        {(() => {
+          const c = shown ? state.characters[shown] : undefined;
+          if (!c || !shown) return null;
+          const badge = state.combat?.fighterId === shown ? 'Pelea' : state.combat?.helperId === shown ? 'Ayuda' : state.status !== 'lobby' && shown === active ? 'Le toca' : undefined;
+          return <QuickCharacterCard key={shown} c={c} active={state.status !== 'lobby' && shown === active} badge={badge} />;
+        })()}
         {players.length === 0 && <p className="italic">Todavía no hay jugadores.</p>}
       </section>
 

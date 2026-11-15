@@ -134,7 +134,7 @@ npm run check && npm run test:e2e
 ## Panel del DM para jugar con la tele (2026-11-15)
 - Fichas rápidas por jugador en la pestaña DM: nivel, equipo y otros bonus con botones de 56 px, sexo en dos botones, raza y clase en un panel de botones grandes (un toque reemplaza; opción "Dos a la vez"), deshacer y "Más" con la ficha completa.
 - Los +/− son optimistas: varios toques seguidos suman bien aunque el servidor todavía no haya confirmado.
-- Resumen de todos arriba (nivel, poder, a quién le toca; toca y salta a su ficha), aviso de combate en curso con totales que lleva al turno, y últimos cambios.
+- Resumen de todos arriba (nivel, poder, a quién le toca) que funciona como selector: abajo se ve una sola ficha, la elegida o la de quien juega (sigue al turno), sin scroll largo, aviso de combate en curso con totales que lleva al turno, y últimos cambios.
 - e2e: el DM edita desde las fichas y la TV muestra el cambio.
 
 ## Etapas a un toque y monstruos de la mesa (2026-11-15)

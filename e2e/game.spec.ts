@@ -235,6 +235,10 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await p2.goto('about:blank');
   await tab(dm, 'DM');
   // Fichas rápidas del DM: botones grandes por jugador, sin elegir de una lista.
+  // Un solo personaje a la vista: se elige tocando su resumen, sin scrollear.
+  await expect(dm.getByTestId('dm-char')).toHaveCount(1);
+  await dm.getByTestId('dm-summary').getByRole('button', { name: /Ver a Lu/ }).click();
+  await expect(dm.getByTestId('dm-char')).toHaveCount(1);
   const luCard = dm.getByRole('article', { name: 'Personaje Lu' });
   await luCard.getByRole('button', { name: 'Sumar 1 a Nivel' }).click();
   await luCard.getByRole('button', { name: 'Sumar 1 a Equipo' }).click();
@@ -244,7 +248,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await dm.getByTestId('quick-races-picker').getByRole('button', { name: 'Enano', exact: true }).click();
   await expect(luCard.getByTestId('quick-races')).toContainText('Enano');
   await expect(tv.getByTestId('tv-view')).toContainText('Enano');
-  await expect(dm.getByTestId('dm-summary').getByRole('button', { name: /Ir a Lu: nivel 2/ })).toBeVisible();
+  await expect(dm.getByTestId('dm-summary').getByRole('button', { name: /Ver a Lu: nivel 2/ })).toBeVisible();
   await p2.goto(`/s/${code}`);
   await tab(p2, 'Mi personaje');
   await expect(p2.getByTestId('level-value')).toHaveText('2');
@@ -297,6 +301,7 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await p2.screenshot({ path: 'test-results/screens/movil-mesa.png', fullPage: true });
 
   // Fin de partida: nivel 10 pide confirmación del DM.
+  await dm.getByTestId('dm-summary').getByRole('button', { name: /Ver a Pablo/ }).click();
   const pablo = dm.getByRole('article', { name: 'Personaje Pablo' });
   for (let level = 4; level <= 10; level++) {
     await pablo.getByRole('button', { name: 'Sumar 1 a Nivel' }).click();
