@@ -65,7 +65,7 @@ export function TurnView() {
         const step = stepUndoFor(state);
         if (!step || state.status !== 'active' || (!me.isDm && step.by !== me.id)) return null;
         return (
-          <button type="button" className="flex min-h-12 w-full items-center gap-2 rounded-2xl border border-ui-line/[.12] bg-surface-raised px-4 text-left text-sm font-bold active:scale-[.98]" disabled={pending} onClick={() => send({ type: 'step.undo' })} data-testid="step-undo">
+          <button type="button" className="flex min-h-12 w-full scroll-mt-24 items-center gap-2 rounded-2xl border border-ui-line/[.12] bg-surface-raised px-4 text-left text-sm font-bold active:scale-[.98]" disabled={pending} onClick={() => send({ type: 'step.undo' })} data-testid="step-undo">
             <Undo2 aria-hidden className="size-5 shrink-0 text-accent-brand" />
             <span className="truncate">Volver atrás: {step.label}</span>
           </button>

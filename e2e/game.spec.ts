@@ -290,6 +290,13 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(dm.getByRole('article', { name: 'Personaje Pablo' }).getByTestId('quick-badge')).toHaveText('Pelea');
   await dm.getByTestId('dm-combat-banner').click();
   await expect(dm.getByTestId('combat')).toBeVisible();
+  // El DM pone al ayudante con un toque (sin que Lu tenga que aceptar) y lo puede volver atrás.
+  await dm.getByTestId('combat').getByRole('button', { name: 'Ayuda Lu' }).first().click();
+  await expect(tv.getByTestId('tv-combat')).toContainText('Lu');
+  await expect(p2.getByTestId('help-inbox')).toHaveCount(0);
+  await expect(dm.getByTestId('your-turn')).toHaveCount(0, { timeout: 8000 }); // el aviso "te toca" se va solo
+  await dm.getByTestId('step-undo').click();
+  await expect(dm.getByTestId('combat').getByRole('button', { name: 'Ayuda Lu' }).first()).toBeVisible();
   await tab(dm, 'DM');
   await expect(p1.getByTestId('combat').getByRole('button', { name: /Victoria/ })).toBeVisible();
 

@@ -299,6 +299,8 @@ const STEP_LABEL: Partial<Record<Action['type'], string>> = {
   'combat.resolveFlee': 'huida',
   'combat.resolveOther': 'resolución del combate',
   'dm.setTurn': 'corrección de turno',
+  'dm.setHelper': 'ayudante',
+  'help.dismissHelper': 'quitar ayudante',
 };
 
 /** JSON con claves ordenadas: igual antes y después de pasar por JSONB. */
@@ -713,6 +715,19 @@ function applyActionCore(
         bump(state, r.toId, 'helpRefused');
         log('help.reject', `${displayName(state, r.toId)} rechazó ayudar. Que lo disfrute.`);
       }
+      break;
+    }
+    case 'dm.setHelper': {
+      // El DM pone al ayudante sin pedido ni respuesta: en la mesa ya lo acordaron.
+      requireDm(actor);
+      requireStatus(state, 'active');
+      const c = requireCombat(state);
+      player(state, action.helperId);
+      if (action.helperId === c.fighterId) throw new GameError('invalid', 'Quien pelea no puede ayudarse a sí mismo.');
+      if (c.helperId) throw new GameError('invalid', 'Ya hay un ayudante. Quitalo primero.');
+      c.helperId = action.helperId;
+      for (const other of c.helpRequests) if (other.status === 'pending') other.status = 'cancelled';
+      log('help.accept', `${displayName(state, action.helperId)} se suma al combate como ayudante.`);
       break;
     }
     case 'help.cancel': {

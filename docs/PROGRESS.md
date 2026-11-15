@@ -152,3 +152,7 @@ npm run check && npm run test:e2e
 - `dm.setLocked`: desde la ficha rápida el DM bloquea los cambios de un jugador (mira, pero no edita ni avanza; sí responde pedidos de ayuda). Candado en el resumen y aviso en el celular del jugador.
 - `dm.setDmOnly`: interruptor "Solo el DM edita" en Partida, para todos los jugadores a la vez.
 - Se valida en el servidor (`applyAction`), con pruebas unitarias y e2e.
+
+## El DM elige quién ayuda (2026-11-15)
+- `dm.setHelper`: el DM pone al ayudante con un toque ("Ayuda X" en el combate y en el siguiente paso), sin pedido ni respuesta desde el celular del otro. Cancela pedidos pendientes y se puede volver atrás.
+- Arreglo: el aviso "¡Te toca!" quedaba colgado si el estado cambiaba antes de 6 s (mismo problema que el cartel de nivel).

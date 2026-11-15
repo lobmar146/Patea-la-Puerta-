@@ -107,7 +107,9 @@ export function CombatView() {
   const playersTakeTie = playersWinTies(state, combat.fighterId, combat.helperId);
   const losing = combat.monsters.length > 0 && totals.diff < (playersTakeTie ? 0 : 1);
   const missing = (playersTakeTie ? 0 : 1) - totals.diff;
-  const canAskHelp = isFighter && !combat.helperId && pendingReqs.length === 0 && candidates.some((id) => !combat.helpRequests.some((r) => r.toId === id && r.status === 'rejected'));
+  // El DM pone al ayudante directo (los jugadores no siempre usan la app); quien pelea se lo pide.
+  const dmPicks = me.isDm && state.status === 'active';
+  const canAskHelp = !combat.helperId && (dmPicks ? candidates.length > 0 : isFighter && pendingReqs.length === 0 && candidates.some((id) => !combat.helpRequests.some((r) => r.toId === id && r.status === 'rejected')));
   // Victoria sin confirmar: niveles de los monstruos para quien pelea (y el Elfo ayudante). Se vuelve atrás con un toque.
   const winNow = () => {
     const rewards = [{ participantId: combat.fighterId, levels: combat.monsters.reduce((a, m) => a + m.levels, 0), note: '' }];
@@ -123,7 +125,7 @@ export function CombatView() {
   };
   const open = (m: CombatModal) => (m === 'victory' ? winNow() : m === 'flee' ? fleeNow() : m === 'other' ? void send({ type: 'combat.resolveOther', text: '' }) : setModal(m));
   const askHelp = (toId: string) => {
-    void send({ type: 'help.request', toId });
+    void send(dmPicks ? { type: 'dm.setHelper', helperId: toId } : { type: 'help.request', toId });
   };
 
   return (
@@ -162,8 +164,9 @@ export function CombatView() {
           losing={losing}
           missing={missing}
           helperName={combat.helperId ? displayName(state, combat.helperId) : null}
-          waitingFor={pendingReqs.map((r) => displayName(state, r.toId))}
-          helpOptions={canAskHelp ? candidates.filter((id) => !combat.helpRequests.some((r) => r.toId === id && r.status === 'rejected')).map((id) => ({ id, name: displayName(state, id) })) : []}
+          waitingFor={dmPicks ? [] : pendingReqs.map((r) => displayName(state, r.toId))}
+          dmPicks={dmPicks}
+          helpOptions={canAskHelp ? candidates.filter((id) => dmPicks || !combat.helpRequests.some((r) => r.toId === id && r.status === 'rejected')).map((id) => ({ id, name: displayName(state, id) })) : []}
           pending={pending}
           onAskHelp={askHelp}
           onOpen={open}
@@ -191,11 +194,11 @@ export function CombatView() {
             {(isFighter || me.isDm) && <button className="underline" onClick={() => send({ type: 'help.cancel', requestId: r.id })}>cancelar</button>}
           </p>
         ))}
-        {isFighter && !combat.helperId && candidates.length > 0 && !(losing && canAskHelp) && (
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {(isFighter || dmPicks) && !combat.helperId && candidates.length > 0 && !(losing && canAskHelp) && (
+          <div className="mt-3 grid gap-2 sm:grid-cols-2" data-testid="help-candidates">
             {candidates.map((id) => (
-              <button key={id} className="btn-blue w-full" disabled={pending || pendingReqs.some((r) => r.toId === id)} onClick={() => send({ type: 'help.request', toId: id })}>
-                <GameIcon name="help" className="size-5 shrink-0" /> Pedir ayuda a {displayName(state, id)}
+              <button key={id} className="btn-blue w-full" disabled={pending || (!dmPicks && pendingReqs.some((r) => r.toId === id))} onClick={() => askHelp(id)}>
+                <GameIcon name="help" className="size-5 shrink-0" /> {dmPicks ? `Ayuda ${displayName(state, id)}` : `Pedir ayuda a ${displayName(state, id)}`}
               </button>
             ))}
           </div>
@@ -281,7 +284,8 @@ export function CombatView() {
 }
 
 /** Guía del combate para quien pelea: qué conviene hacer ahora según el marcador. */
-function NextStep({ hasMonsters, losing, missing, helperName, waitingFor, helpOptions, pending, onAskHelp, onOpen }: {
+function NextStep({ hasMonsters, losing, missing, helperName, waitingFor, helpOptions, pending, onAskHelp, onOpen, dmPicks = false }: {
+  dmPicks?: boolean;
   hasMonsters: boolean;
   losing: boolean;
   missing: number;
@@ -318,7 +322,7 @@ function NextStep({ hasMonsters, losing, missing, helperName, waitingFor, helpOp
       <>
         <p className="text-sm">{helperName ? `Ya te ayuda ${helperName}. Prueben con cartas o intentá huir.` : helpOptions.length ? 'Pedí ayuda, jugá una carta o intentá huir.' : 'Jugá una carta o intentá huir.'}</p>
         {helpOptions.map((p) => (
-          <button key={p.id} className="btn-blue w-full" disabled={pending} onClick={() => onAskHelp(p.id)}><GameIcon name="help" className="size-5 shrink-0" /> Pedir ayuda a {p.name}</button>
+          <button key={p.id} className="btn-blue w-full" disabled={pending} onClick={() => onAskHelp(p.id)}><GameIcon name="help" className="size-5 shrink-0" /> {dmPicks ? `Ayuda ${p.name}` : `Pedir ayuda a ${p.name}`}</button>
         ))}
         <div className="grid grid-cols-2 gap-2">
           <button className="btn-secondary w-full" onClick={() => onOpen('modifier')}><GameIcon name="card" className="size-5" /> Jugar una carta</button>
