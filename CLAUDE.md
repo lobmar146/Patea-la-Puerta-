@@ -22,9 +22,9 @@ npm run test:e2e                # requiere `npm run build` antes
 Las pruebas usan `TEST_DATABASE_URL` (por defecto `postgresql://munchkin:munchkin@localhost:5432/patea_test`). Nunca mocks para persistencia.
 
 ## Reglas de permisos (se validan SOLO en el servidor, `engine.ts`)
-- Espectador: ninguna mutación. Removido: sesión revocada.
+- Espectador: ninguna mutación. Removido: sesión revocada. Jugador bloqueado por el DM (`participant.locked`) o sala en "solo el DM edita" (`config.dmOnly`): ninguna mutación salvo responder pedidos de ayuda.
 - Jugador: edita solo su personaje (en cualquier momento); avanza fases solo en su turno; pide ayuda si pelea; responde solo pedidos dirigidos a él.
-- DM: todo lo anterior + iniciar/pausar/terminar, orden, editar cualquier personaje, corregir turno/fase, transferir DM, quitar participantes, confirmar ganador. Sus correcciones generan eventos `dm.*`.
+- DM: todo lo anterior + iniciar/pausar/terminar, orden, editar cualquier personaje, corregir turno/fase, transferir DM, quitar participantes, bloquear jugadores, confirmar ganador. Los pasos de turno/combate van sin confirmación y se deshacen con `step.undo`. Sus correcciones generan eventos `dm.*`.
 - Nadie se vuelve DM desde el frontend; el DM nunca cambia por desconexión.
 
 ## Persistencia y comandos

@@ -1,4 +1,5 @@
-import { Pause, Tv } from 'lucide-react';
+import { Lock, Pause, Tv } from 'lucide-react';
+import { isLocked } from '../../shared/engine';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { APP_NAME, WIN_LEVEL, activeParticipantId, almostWinners, displayName } from '../../shared/rules';
@@ -147,6 +148,11 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
               </div>
             )}
           </div>
+        )}
+        {state.status !== 'lobby' && isLocked(state, me.id) && (
+          <p className="mb-3 flex items-center gap-2 rounded-2xl bg-accent-wine/10 p-3 text-sm font-bold text-accent-wine" role="status" data-testid="locked-notice">
+            <Lock aria-hidden className="size-5 shrink-0" /> {state.config.dmOnly ? 'En esta partida solo el DM cambia cosas: podés mirar todo.' : 'El DM bloqueó tus cambios por ahora: podés mirar todo.'}
+          </p>
         )}
         <HelpInbox />
         {/* El aviso de notificaciones no ocupa lugar durante el turno: va en la sala de espera y en Mi personaje. */}

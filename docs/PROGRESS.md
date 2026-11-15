@@ -147,3 +147,8 @@ npm run check && npm run test:e2e
 - `step.undo`: cada paso de turno o combate guarda el estado anterior (`GameState.stepUndo`) y el DM o quien lo hizo lo vuelve atrás con un toque, mientras nada haya cambiado después (huella con claves ordenadas para que sobreviva a JSONB). Un solo nivel.
 - Arreglo: el cartel de "+1 nivel" quedaba colgado si llegaba otro cambio antes de que se fuera.
 - Se mantienen a propósito: terminar la partida (elegir ganador) y confirmar ganador en nivel 10.
+
+## Candado del DM (2026-11-15)
+- `dm.setLocked`: desde la ficha rápida el DM bloquea los cambios de un jugador (mira, pero no edita ni avanza; sí responde pedidos de ayuda). Candado en el resumen y aviso en el celular del jugador.
+- `dm.setDmOnly`: interruptor "Solo el DM edita" en Partida, para todos los jugadores a la vez.
+- Se valida en el servidor (`applyAction`), con pruebas unitarias y e2e.

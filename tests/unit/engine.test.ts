@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Action } from '../../src/shared/commands';
-import { GameError, addParticipant, applyAction, createInitialState, stepUndoFor, undoFor } from '../../src/shared/engine';
+import { GameError, addParticipant, applyAction, createInitialState, isLocked, stepUndoFor, undoFor } from '../../src/shared/engine';
 import { activeParticipantId, almostWinners, appliedPowers, fleeTarget, helperLevels, playersWinTies, avatarOf, combatTotals, identityLine, matchesCondition, noPursue } from '../../src/shared/rules';
 import { actionSchema } from '../../src/shared/commands';
 import { computeAwards, podium } from '../../src/shared/awards';
@@ -218,6 +218,25 @@ describe('turnos', () => {
     const s2 = run(started(), 'dm', { type: 'turn.kickDoor' });
     const reordered = JSON.parse(JSON.stringify(s2, [...new Set(collectKeys(s2))].sort().reverse())) as GameState;
     expect(stepUndoFor(reordered)).not.toBeNull();
+  });
+
+  it('el DM bloquea los cambios de un jugador y los vuelve a habilitar', () => {
+    let s = run(started(), 'dm', { type: 'dm.setLocked', participantId: 'p1', locked: true });
+    expectError(() => applyAction(s, 'p1', { type: 'character.update', targetId: 'p1', patch: { level: 5 } }), 'forbidden');
+    // El DM lo sigue editando, y los demás jugadores no se ven afectados.
+    s = run(s, 'dm', { type: 'character.update', targetId: 'p1', patch: { level: 2 } });
+    s = run(s, 'p2', { type: 'character.update', targetId: 'p2', patch: { level: 2 } });
+    expectError(() => applyAction(s, 'p1', { type: 'dm.setLocked', participantId: 'p1', locked: false }), 'forbidden');
+    s = run(s, 'dm', { type: 'dm.setLocked', participantId: 'p1', locked: false });
+    expect(run(s, 'p1', { type: 'character.update', targetId: 'p1', patch: { level: 3 } }).characters.p1.level).toBe(3);
+  });
+
+  it('"solo el DM edita" bloquea a todos los jugadores menos al DM', () => {
+    const s = run(started(), 'dm', { type: 'dm.setDmOnly', on: true });
+    expect(isLocked(s, 'p1')).toBe(true);
+    expect(isLocked(s, 'dm')).toBe(false);
+    expectError(() => applyAction(s, 'p2', { type: 'character.update', targetId: 'p2', patch: { level: 5 } }), 'forbidden');
+    expect(run(s, 'dm', { type: 'turn.kickDoor' }).turn.phase).toBe('kickDoor');
   });
 
   it('solo el jugador activo avanza la fase', () => {
