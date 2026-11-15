@@ -55,9 +55,13 @@ export function RoomApp({ publicUrl, onRejoin }: { publicUrl: string | null; onR
     } catch {
       /* sin vibración: no pasa nada */
     }
+  }, [activeId, myId, snap?.state.status]);
+  // El aviso se va solo; el temporizador no depende del estado para que otro cambio no lo deje colgado.
+  useEffect(() => {
+    if (!yourTurn) return;
     const t = window.setTimeout(() => setYourTurn(false), 6000);
     return () => window.clearTimeout(t);
-  }, [activeId, myId, snap?.state.status]);
+  }, [yourTurn]);
 
   if (status === 'unauthorized') {
     return (

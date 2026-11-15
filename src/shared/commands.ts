@@ -141,6 +141,7 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('dm.transfer'), toId: id }),
   z.object({ type: z.literal('dm.setLocked'), participantId: id, locked: z.boolean() }),
   z.object({ type: z.literal('dm.setDmOnly'), on: z.boolean() }),
+  z.object({ type: z.literal('dm.setHelper'), helperId: id }),
   z.object({ type: z.literal('dm.removeParticipant'), participantId: id }),
   z.object({ type: z.literal('levelAlert.confirmWinner') }),
   z.object({ type: z.literal('levelAlert.dismiss') }),

@@ -239,6 +239,17 @@ describe('turnos', () => {
     expect(run(s, 'dm', { type: 'turn.kickDoor' }).turn.phase).toBe('kickDoor');
   });
 
+  it('el DM pone al ayudante directo, sin pedido ni respuesta', () => {
+    let s = run(started(), 'dm', { type: 'dm.setTurn', activeId: 'p1', phase: 'kickDoor' });
+    s = run(s, 'dm', { type: 'turn.doorResult', result: 'monster', monster: { name: 'Babosa', strength: 5, levels: 1, treasures: 1 } });
+    expectError(() => applyAction(s, 'p1', { type: 'dm.setHelper', helperId: 'p2' }), 'forbidden');
+    expectError(() => applyAction(s, 'dm', { type: 'dm.setHelper', helperId: 'p1' }), 'invalid');
+    s = run(s, 'dm', { type: 'dm.setHelper', helperId: 'p2' });
+    expect(s.combat?.helperId).toBe('p2');
+    expect(stepUndoFor(s)?.label).toBe('ayudante');
+    expect(run(s, 'dm', { type: 'step.undo' }).combat?.helperId).toBeNull();
+  });
+
   it('solo el jugador activo avanza la fase', () => {
     const s = started();
     expect(activeParticipantId(s)).toBe('dm');
