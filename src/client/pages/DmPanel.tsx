@@ -1,4 +1,4 @@
-import { Pause, Play, Swords } from 'lucide-react';
+import { Lock, Pause, Play, Swords } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PHASE_LABEL } from '../../shared/engine';
 import { SEX_SYMBOL, WIN_LEVEL, activeParticipantId, basePower, combatTotals, displayName } from '../../shared/rules';
@@ -66,7 +66,7 @@ export function DmPanel({ onGoTurn }: { onGoTurn?: () => void }) {
               >
                 <Avatar c={c} size="sm" />
                 <span className="min-w-0 flex-1 leading-tight">
-                  <span className="block truncate text-sm font-black">{c.sex && <span aria-hidden className="mr-0.5">{SEX_SYMBOL[c.sex]}</span>}{c.name}</span>
+                  <span className="block truncate text-sm font-black">{state.participants[id]?.locked && <Lock aria-label="Bloqueado" className="mr-0.5 inline size-3.5 text-accent-wine" />}{c.sex && <span aria-hidden className="mr-0.5">{SEX_SYMBOL[c.sex]}</span>}{c.name}</span>
                   <span className="block text-xs font-semibold text-ui-muted">{isActive ? 'Le toca' : online.has(id) ? 'En línea' : 'Sin app'}</span>
                 </span>
                 <span className="shrink-0 text-right leading-none">
@@ -102,6 +102,10 @@ export function DmPanel({ onGoTurn }: { onGoTurn?: () => void }) {
           {state.status !== 'lobby' && !confirmEnd && <button className="btn-primary" onClick={() => setConfirmEnd(true)}>Terminar partida</button>}
           {state.status === 'lobby' && <p>La partida se inicia desde la pestaña Sala.</p>}
         </div>
+        <label className="mt-3 flex min-h-12 items-center justify-between gap-3 rounded-2xl bg-surface-muted px-4 font-bold">
+          <span>Solo el DM edita <span className="block text-xs font-semibold text-ui-muted">Los jugadores miran; vos cambiás niveles y avanzás turnos.</span></span>
+          <input type="checkbox" className="size-6 shrink-0" checked={!!state.config.dmOnly} disabled={pending} onChange={(e) => send({ type: 'dm.setDmOnly', on: e.target.checked })} data-testid="dm-only" />
+        </label>
         {confirmEnd && (
           <div className="mt-3 space-y-3 rounded-2xl border border-accent-wine/30 bg-blood/[.06] p-4">
             <label className="label" htmlFor="winner">¿Hubo ganador?</label>

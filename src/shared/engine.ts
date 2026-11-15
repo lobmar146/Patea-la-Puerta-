@@ -325,6 +325,13 @@ function stateKey(state: GameState): string {
   return `${text.length}:${h >>> 0}`;
 }
 
+/** Jugador sin permiso de cambios (bloqueado por el DM o sala en "solo el DM edita"). */
+export function isLocked(state: GameState, participantId: string): boolean {
+  const p = state.participants[participantId];
+  if (!p || p.isDm) return false;
+  return !!p.locked || !!state.config.dmOnly;
+}
+
 /** El paso que se puede deshacer, solo si nada cambió después. */
 export function stepUndoFor(state: GameState): StepUndo | null {
   const entry = state.stepUndo;
@@ -338,6 +345,10 @@ export function applyAction(
   action: Action,
   opts: { now?: string; id?: IdGen; rng?: Rng } = {},
 ): EngineResult {
+  const who = input.participants[actorId];
+  if (who && !who.isDm && who.role === 'player' && isLocked(input, actorId) && action.type !== 'help.respond') {
+    throw new GameError('forbidden', 'El DM bloqueó tus cambios por ahora. Pedile que los habilite.');
+  }
   if (action.type === 'step.undo') {
     const actor = participant(input, actorId);
     if (actor.role === 'spectator') throw new GameError('forbidden', 'Los espectadores solo pueden mirar. ¡Pochoclos!');
@@ -803,6 +814,20 @@ function applyActionCore(
       actor.isDm = false;
       target.isDm = true;
       log('dm.transfer', `${displayName(state, actor.id)} le pasó la administración a ${displayName(state, target.id)}.`);
+      break;
+    }
+    case 'dm.setLocked': {
+      requireDm(actor);
+      const target = participant(state, action.participantId);
+      if (target.isDm) throw new GameError('invalid', 'El DM no se puede bloquear a sí mismo.');
+      target.locked = action.locked;
+      log('dm.correction', action.locked ? `El DM bloqueó los cambios de ${target.name}.` : `El DM habilitó los cambios de ${target.name}.`);
+      break;
+    }
+    case 'dm.setDmOnly': {
+      requireDm(actor);
+      state.config.dmOnly = action.on;
+      log('dm.correction', action.on ? 'Desde ahora solo el DM cambia cosas.' : 'Los jugadores vuelven a poder editar.');
       break;
     }
     case 'dm.removeParticipant': {

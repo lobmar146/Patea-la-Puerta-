@@ -1,4 +1,4 @@
-import { Check, Minus, Plus, SlidersHorizontal, Undo2 } from 'lucide-react';
+import { Check, Lock, LockOpen, Minus, Plus, SlidersHorizontal, Undo2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { CharacterPatch } from '../../shared/commands';
 import { undoFor } from '../../shared/engine';
@@ -205,6 +205,23 @@ export function QuickCharacterCard({ c, active, badge }: { c: Character; active:
           <SlidersHorizontal aria-hidden className="size-5 shrink-0" /> Más
         </button>
       </div>
+      {(() => {
+        // Candado: si alguien se pone troll, el DM le apaga los cambios (mira, pero no edita ni avanza).
+        const p = snap.state.participants[c.id];
+        if (!p || p.isDm || p.bot) return null;
+        const locked = !!p.locked;
+        return (
+          <button
+            type="button"
+            aria-pressed={locked}
+            className={`mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border-2 text-sm font-black transition active:scale-95 ${locked ? 'border-accent-wine bg-accent-wine/15 text-accent-wine' : 'border-ui-line/[.12] bg-surface-raised text-ui-muted'}`}
+            onClick={() => void send({ type: 'dm.setLocked', participantId: c.id, locked: !locked })}
+            data-testid="quick-lock"
+          >
+            {locked ? <><Lock aria-hidden className="size-5 shrink-0" /> {c.name} no puede editar · tocá para habilitar</> : <><LockOpen aria-hidden className="size-5 shrink-0" /> Bloquear cambios de {c.name}</>}
+          </button>
+        );
+      })()}
 
       <TagPicker open={picker === 'races'} kind="races" values={c.races} onClose={() => setPicker(null)} onChange={(v) => void patch({ races: v })} />
       <TagPicker open={picker === 'classes'} kind="classes" values={c.classes} onClose={() => setPicker(null)} onChange={(v) => void patch({ classes: v })} />

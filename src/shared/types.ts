@@ -24,6 +24,8 @@ export interface Participant {
   removed: boolean;
   /** Jugador de mentira de una sala de práctica (sin sesión). */
   bot?: boolean;
+  /** El DM le bloqueó los cambios: puede mirar, pero no editar ni avanzar. */
+  locked?: boolean;
 }
 
 export type EquipSlot = 'head' | 'armor' | 'feet' | 'hand' | 'twoHands' | 'other';
@@ -122,6 +124,8 @@ export interface RoomConfig {
   /** Sala de práctica: jugadores de mentira que maneja quien la creó. */
   practice?: boolean;
   mode?: GameMode;
+  /** Solo el DM cambia cosas: los jugadores miran (y responden pedidos de ayuda). */
+  dmOnly?: boolean;
 }
 
 export type DoorResult = 'monster' | 'curse' | 'other';

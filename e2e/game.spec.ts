@@ -248,6 +248,13 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await tab(p2, 'Mi personaje');
   await expect(p2.getByTestId('level-value')).toHaveText('2');
   await expect(p2.getByTestId('gear-value')).toHaveText('1');
+  // Candado: el DM le apaga los cambios a Lu y después se los devuelve.
+  await luCard.getByTestId('quick-lock').click();
+  await expect(p2.getByTestId('locked-notice')).toBeVisible();
+  await p2.getByRole('button', { name: 'Sumar 1 a Nivel' }).click();
+  await expect(p2.getByTestId('level-value')).toHaveText('2');
+  await luCard.getByTestId('quick-lock').click();
+  await expect(p2.getByTestId('locked-notice')).toHaveCount(0);
 
   // 17. El DM corrige fase y turno; queda registrado.
   await dm.getByTestId('dm-turn-player').selectOption({ label: 'Pablo' });
