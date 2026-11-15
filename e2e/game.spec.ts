@@ -241,9 +241,17 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   // 13. Desconectarse y volver recupera el estado vigente.
   await p2.goto('about:blank');
   await tab(dm, 'DM');
-  await dm.getByTestId('dm-edit-select').selectOption({ label: 'Lu' });
-  await dm.getByRole('button', { name: 'Sumar 1 a Nivel' }).click();
-  await dm.getByRole('button', { name: 'Sumar 1 a Equipo (bonificación total)' }).click();
+  // Fichas rápidas del DM: botones grandes por jugador, sin elegir de una lista.
+  const luCard = dm.getByRole('article', { name: 'Personaje Lu' });
+  await luCard.getByRole('button', { name: 'Sumar 1 a Nivel' }).click();
+  await luCard.getByRole('button', { name: 'Sumar 1 a Equipo' }).click();
+  await expect(luCard.getByTestId('quick-level-value')).toHaveText('2');
+  await expect(luCard.getByTestId('quick-gear-value')).toHaveText('+1');
+  await luCard.getByTestId('quick-races').click();
+  await dm.getByTestId('quick-races-picker').getByRole('button', { name: 'Enano', exact: true }).click();
+  await expect(luCard.getByTestId('quick-races')).toContainText('Enano');
+  await expect(tv.getByTestId('tv-view')).toContainText('Enano');
+  await expect(dm.getByTestId('dm-summary').getByRole('button', { name: /Ir a Lu: nivel 2/ })).toBeVisible();
   await p2.goto(`/s/${code}`);
   await tab(p2, 'Mi personaje');
   await expect(p2.getByTestId('level-value')).toHaveText('2');
@@ -279,6 +287,12 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await expect(dm.getByTestId('level-Lu')).toHaveText('2');
   await tab(dm, 'DM');
   await expect(dm.getByTestId('dm-panel')).toBeVisible(); // el rol de DM se conserva
+  // Combate a la vista desde el panel del DM, y un toque lleva al turno.
+  await expect(dm.getByTestId('dm-combat-banner')).toContainText('8');
+  await expect(dm.getByRole('article', { name: 'Personaje Pablo' }).getByTestId('quick-badge')).toHaveText('Pelea');
+  await dm.getByTestId('dm-combat-banner').click();
+  await expect(dm.getByTestId('combat')).toBeVisible();
+  await tab(dm, 'DM');
   await expect(p1.getByTestId('combat').getByRole('button', { name: /Victoria/ })).toBeVisible();
 
   // 18. Móvil sin scroll horizontal y TV en 1920x1080.
@@ -291,10 +305,10 @@ test('partida completa con DM, dos jugadores y TV', async ({ browser }) => {
   await p2.screenshot({ path: 'test-results/screens/movil-mesa.png', fullPage: true });
 
   // Fin de partida: nivel 10 pide confirmación del DM.
-  await dm.getByTestId('dm-edit-select').selectOption({ label: 'Pablo' });
+  const pablo = dm.getByRole('article', { name: 'Personaje Pablo' });
   for (let level = 4; level <= 10; level++) {
-    await dm.getByRole('button', { name: 'Sumar 1 a Nivel' }).click();
-    await expect(dm.getByTestId('level-value')).toHaveText(String(level));
+    await pablo.getByRole('button', { name: 'Sumar 1 a Nivel' }).click();
+    await expect(pablo.getByTestId('quick-level-value')).toHaveText(String(level));
     // En 9 todos ven que está a un paso de ganar.
     if (level === 9) await expect(p2.getByTestId('almost-banner')).toContainText('Pablo en nivel 9');
   }

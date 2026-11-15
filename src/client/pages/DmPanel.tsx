@@ -1,16 +1,16 @@
-import { Pause, Play } from 'lucide-react';
+import { Pause, Play, Swords } from 'lucide-react';
 import { useState } from 'react';
 import { PHASE_LABEL } from '../../shared/engine';
-import { activeParticipantId, displayName } from '../../shared/rules';
+import { SEX_SYMBOL, WIN_LEVEL, activeParticipantId, basePower, combatTotals, displayName } from '../../shared/rules';
 import { PHASES, type Phase } from '../../shared/types';
-import { PresenceDot, Section } from '../components/ui';
+import { EventList, PresenceDot, Section } from '../components/ui';
+import { Avatar } from '../components/Avatar';
 import { useRoom } from '../useRoom';
-import { CharacterEditor } from './CharacterEditor';
+import { QuickCharacterCard } from '../components/QuickCharacterCard';
 import { GameIcon } from '../components/GameIcon';
 
-export function DmPanel() {
+export function DmPanel({ onGoTurn }: { onGoTurn?: () => void }) {
   const { snap, me, online, send, pending } = useRoom();
-  const [editId, setEditId] = useState<string>('');
   const [turnId, setTurnId] = useState<string>('');
   const [phase, setPhase] = useState<Phase | ''>('');
   const [confirmEnd, setConfirmEnd] = useState(false);
@@ -23,11 +23,73 @@ export function DmPanel() {
 
   return (
     <div className="space-y-4" data-testid="dm-panel">
-      <header className="inverse-surface relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-ink via-[#38271c] to-royal/80 p-5 text-parchment-50 shadow-[0_18px_45px_rgba(43,29,18,.18)] sm:p-7">
-        <div aria-hidden className="absolute -right-12 -top-20 -z-10 h-64 w-64 rounded-full border-[26px] border-white/[.04]" />
-        <p className="text-[10px] font-black uppercase tracking-[.24em] text-parchment-200 sm:text-xs">Herramientas de mesa</p>
-        <div className="mt-2 flex items-end justify-between gap-3"><div><h1 className="font-display text-3xl font-black sm:text-4xl">Panel del DM</h1><p className="mt-1 text-sm text-parchment-100 sm:text-base">Controlá la partida y ayudá a que siga el ritmo.</p></div><span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/10 text-2xl"><GameIcon name="dm" className="size-6 shrink-0" /></span></div>
+      <header className="inverse-surface flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br from-ink via-[#38271c] to-royal/80 px-4 py-3 text-parchment-50">
+        <h1 className="font-display text-2xl font-black">Panel del DM</h1>
+        <GameIcon name="dm" className="size-6 shrink-0" />
       </header>
+      {state.combat && (() => {
+        const t = combatTotals(state, state.combat);
+        const who = [state.combat.fighterId, state.combat.helperId].filter(Boolean).map((id) => displayName(state, id)).join(' + ');
+        return (
+          <button type="button" onClick={onGoTurn} className="flex w-full items-center gap-3 rounded-2xl border-2 border-accent-wine/40 bg-accent-wine/10 p-3 text-left active:scale-[.98]" data-testid="dm-combat-banner">
+            <Swords aria-hidden className="size-7 shrink-0 text-accent-wine" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-black uppercase tracking-[.14em] text-accent-wine">Combate en curso · tocá para ir</span>
+              <span className="block truncate font-bold">{who}</span>
+            </span>
+            <span className="shrink-0 text-center font-display text-2xl font-black tabular-nums"><span className="text-accent-moss">{t.players}</span> <span className="text-base text-ui-muted">vs</span> <span className="text-accent-wine">{t.monsters}</span></span>
+          </button>
+        );
+      })()}
+
+      {players.length > 1 && (
+        <nav aria-label="Resumen de jugadores" className="grid grid-cols-2 gap-2 sm:grid-cols-3" data-testid="dm-summary">
+          {players.map((id) => {
+            const c = state.characters[id];
+            if (!c) return null;
+            const isActive = state.status !== 'lobby' && id === active;
+            const close = c.level >= WIN_LEVEL - 1;
+            return (
+              <button
+                key={id}
+                type="button"
+                className={`flex min-h-14 min-w-0 items-center gap-2 rounded-2xl border-2 bg-surface-raised p-2 text-left active:scale-95 ${isActive ? 'border-accent-brand' : close ? 'border-accent-gold' : 'border-ui-line/[.1]'}`}
+                onClick={() => document.getElementById(`dm-char-${id}`)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })}
+                aria-label={`Ir a ${c.name}: nivel ${c.level}, poder ${basePower(c)}`}
+              >
+                <Avatar c={c} size="sm" />
+                <span className="min-w-0 flex-1 leading-tight">
+                  <span className="block truncate text-sm font-black">{c.sex && <span aria-hidden className="mr-0.5">{SEX_SYMBOL[c.sex]}</span>}{c.name}</span>
+                  <span className="block text-xs font-semibold text-ui-muted">{isActive ? 'Le toca' : online.has(id) ? 'En línea' : 'Sin app'}</span>
+                </span>
+                <span className="shrink-0 text-right leading-none">
+                  <b className="block font-display text-2xl font-black tabular-nums">{c.level}</b>
+                  <span className="text-[10px] font-bold text-ui-muted">P {basePower(c)}</span>
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      )}
+
+      <section aria-label="Personajes" data-testid="dm-characters">
+        <div className="grid gap-3 md:grid-cols-2">
+          {players.map((id) => {
+            const c = state.characters[id];
+            if (!c) return null;
+            const badge = state.combat?.fighterId === id ? 'Pelea' : state.combat?.helperId === id ? 'Ayuda' : state.status !== 'lobby' && id === active ? 'Le toca' : undefined;
+            return <QuickCharacterCard key={id} c={c} active={state.status !== 'lobby' && id === active} badge={badge} />;
+          })}
+        </div>
+        {players.length === 0 && <p className="italic">Todavía no hay jugadores.</p>}
+      </section>
+
+      {snap.events.length > 0 && (
+        <Section title="Últimos cambios">
+          <EventList events={snap.events} limit={5} />
+        </Section>
+      )}
+
       <Section title="Partida">
         <div className="flex flex-wrap gap-2">
           {state.status === 'active' && <button className="btn-secondary" disabled={pending} onClick={() => send({ type: 'game.pause' })}><Pause aria-hidden className="size-4 shrink-0" /> Pausar</button>}
@@ -65,14 +127,6 @@ export function DmPanel() {
           {state.combat && <p className="mt-2 text-xs">Si cambiás de fase o jugador, el combate en curso se descarta.</p>}
         </Section>
       )}
-
-      <Section title="Editar cualquier personaje">
-        <select className="input" aria-label="Personaje a editar" value={editId} onChange={(e) => setEditId(e.target.value)} data-testid="dm-edit-select">
-          <option value="">Elegí un personaje…</option>
-          {players.map((id) => <option key={id} value={id}>{displayName(state, id)}</option>)}
-        </select>
-        {editId && state.characters[editId] && <div className="mt-3"><CharacterEditor targetId={editId} /></div>}
-      </Section>
 
       <Section title="Participantes">
         <ul className="space-y-2">
