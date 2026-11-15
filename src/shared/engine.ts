@@ -4,7 +4,7 @@
 import type { Action, CharacterPatch, MonsterInput } from './commands.js';
 import { gearFromItems } from './novice.js';
 import { AVATAR_IDS, DEFAULT_SETS, COLORS, SEX_LABEL, WIN_LEVEL, activeParticipantId, displayName, type AvatarId } from './rules.js';
-import type { Character, Combat, GameState, Monster, Participant, Phase, PlayerStats, Role, Sex, UndoEntry } from './types.js';
+import type { Character, Combat, GameState, Monster, Participant, Phase, PlayerStats, Role, Sex, StepUndo, UndoEntry } from './types.js';
 
 export class GameError extends Error {
   constructor(
@@ -276,7 +276,91 @@ function shuffle<T>(arr: T[], rng: Rng): T[] {
 
 // ---------------------------------------------------------------- reducer
 
+// ---------------------------------------------------------------- volver atrás un paso
+// Los pasos del turno y del combate se aplican sin confirmación; el último se puede deshacer
+// mientras nada haya cambiado después.
+
+const STEP_LABEL: Partial<Record<Action['type'], string>> = {
+  'turn.kickDoor': 'patear la puerta',
+  'turn.doorResult': 'lo que salió de la puerta',
+  'turn.curseResolved': 'maldición resuelta',
+  'turn.lookForTrouble': 'buscar problemas',
+  'turn.lootRoom': 'saquear',
+  'turn.lootDone': 'saqueo',
+  'turn.charityDone': 'caridad',
+  'turn.end': 'pasar turno',
+  'combat.addMonster': 'agregar monstruo',
+  'combat.updateMonster': 'editar monstruo',
+  'combat.removeMonster': 'quitar monstruo',
+  'combat.addModifier': 'carta jugada',
+  'combat.removeModifier': 'quitar carta',
+  'combat.useItem': 'usar objeto',
+  'combat.resolveVictory': 'victoria',
+  'combat.resolveFlee': 'huida',
+  'combat.resolveOther': 'resolución del combate',
+  'dm.setTurn': 'corrección de turno',
+};
+
+/** JSON con claves ordenadas: igual antes y después de pasar por JSONB. */
+function stable(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map((x) => (x === undefined ? 'null' : stable(x))).join(',')}]`;
+  if (v && typeof v === 'object') {
+    return `{${Object.keys(v)
+      .filter((k) => (v as Record<string, unknown>)[k] !== undefined)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${stable((v as Record<string, unknown>)[k])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(v);
+}
+
+function stateKey(state: GameState): string {
+  // Lo que se puede deshacer (personajes o pasos) no cuenta como "cambio posterior".
+  const { stepUndo: _s, undo: _u, ...rest } = state;
+  void _s;
+  void _u;
+  const text = stable(rest);
+  let h = 5381;
+  for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) | 0;
+  return `${text.length}:${h >>> 0}`;
+}
+
+/** El paso que se puede deshacer, solo si nada cambió después. */
+export function stepUndoFor(state: GameState): StepUndo | null {
+  const entry = state.stepUndo;
+  if (!entry || state.status === 'finished') return null;
+  return stateKey(state) === entry.afterKey ? entry : null;
+}
+
 export function applyAction(
+  input: GameState,
+  actorId: string,
+  action: Action,
+  opts: { now?: string; id?: IdGen; rng?: Rng } = {},
+): EngineResult {
+  if (action.type === 'step.undo') {
+    const actor = participant(input, actorId);
+    if (actor.role === 'spectator') throw new GameError('forbidden', 'Los espectadores solo pueden mirar. ¡Pochoclos!');
+    const entry = stepUndoFor(input);
+    if (!entry) throw new GameError('invalid', 'No hay nada para volver atrás: después hubo otro cambio. Corregilo a mano.');
+    if (!actor.isDm && entry.by !== actor.id) throw new GameError('forbidden', 'Solo el DM o quien hizo el paso puede volverlo atrás.');
+    const state = structuredClone(entry.before);
+    // Los cambios de personaje que se pueden deshacer siguen siendo los de ahora.
+    state.undo = structuredClone(input.undo);
+    delete state.stepUndo;
+    return { state, events: [{ type: actor.isDm && entry.by !== actor.id ? 'dm.correction' : 'step.undo', message: `${displayName(input, actor.id)} volvió atrás: ${entry.label}.` }] };
+  }
+  const result = applyActionCore(input, actorId, action, opts);
+  const label = STEP_LABEL[action.type];
+  if (label) {
+    const { stepUndo: _prev, ...before } = structuredClone(input);
+    void _prev;
+    result.state.stepUndo = { label, by: actorId, before, afterKey: stateKey(result.state) };
+  }
+  return result;
+}
+
+function applyActionCore(
   input: GameState,
   actorId: string,
   action: Action,
@@ -478,11 +562,14 @@ export function applyAction(
     case 'turn.lootRoom': {
       requireTurnOwner(state, actor);
       requirePhase(state, 'noMonster');
-      state.turn.phase = 'lootRoom';
+      // Sin confirmar el robo: la carta se roba en la mesa y se sigue directo a caridad.
+      state.turn.phase = 'charity';
       bump(state, activeParticipantId(state), 'loots');
       log('turn.phase', `${by(state, actor)} saquea la habitación: roba una Puerta boca abajo.`);
       break;
     }
+    case 'step.undo':
+      throw new GameError('invalid', 'Volver atrás se resuelve antes.');
     case 'turn.lootDone': {
       requireTurnOwner(state, actor);
       requirePhase(state, 'lootRoom');
@@ -499,7 +586,8 @@ export function applyAction(
     }
     case 'turn.end': {
       requireTurnOwner(state, actor);
-      requirePhase(state, 'endTurn');
+      // Desde caridad también: pasar el turno ya implica que la caridad quedó hecha.
+      requirePhase(state, 'endTurn', 'charity');
       const prev = activeParticipantId(state);
       accrueClock(state, now, true);
       state.turn.activeIndex = nextActiveIndex(state);
@@ -684,7 +772,7 @@ export function applyAction(
     }
     case 'combat.resolveOther': {
       requireResolver(state, actor);
-      log('combat.other', `Combate resuelto: ${action.text}`);
+      log('combat.other', `Combate resuelto: ${action.text || 'de otra forma en la mesa'}.`.replace('..', '.'));
       endCombat(state);
       break;
     }

@@ -140,3 +140,10 @@ npm run check && npm run test:e2e
 ## Etapas a un toque y monstruos de la mesa (2026-11-15)
 - Pasar de etapa es un toque: Maldición resuelta, Saquear, Ya saqué, Caridad lista y Pasar turno mandan el comando directo. La puerta muestra Monstruo / Maldición / Otra carta lado a lado y "sin monstruo" muestra Buscar problemas / Saquear. Solo cargar un monstruo abre un panel.
 - Los monstruos cargados a mano en partidas reales se guardan en `CustomMonster` (clave sin tildes ni mayúsculas, cuenta usos, guarda los últimos números) y aparecen en el buscador como "Cargados en la mesa" en las próximas partidas. Las de práctica no guardan.
+
+## Sin confirmaciones, con "Volver atrás" (2026-11-15)
+- Victoria, huida sin tirada, "Otra" resolución y saquear se registran con un toque. Saquear pasa directo a caridad y desde caridad se pasa el turno. La huida con una sola tirada muestra "Escapó" / "Lo atrapó" y listo; con varias tiradas sigue el formulario.
+- Se sacó el cartel "¡Estás perdiendo!": el siguiente paso del combate ya ofrece pedir ayuda, jugar una carta o huir.
+- `step.undo`: cada paso de turno o combate guarda el estado anterior (`GameState.stepUndo`) y el DM o quien lo hizo lo vuelve atrás con un toque, mientras nada haya cambiado después (huella con claves ordenadas para que sobreviva a JSONB). Un solo nivel.
+- Arreglo: el cartel de "+1 nivel" quedaba colgado si llegaba otro cambio antes de que se fuera.
+- Se mantienen a propósito: terminar la partida (elegir ganador) y confirmar ganador en nivel 10.

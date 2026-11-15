@@ -183,6 +183,18 @@ export interface GameState {
   rematch?: { code: string; map: Record<string, string> };
   /** Último cambio manual de cada personaje, para poder deshacerlo (opcional en salas viejas). */
   undo?: Record<string, UndoEntry>;
+  /** Último paso del turno o del combate, para volver atrás sin confirmaciones (opcional en salas viejas). */
+  stepUndo?: StepUndo;
+}
+
+export interface StepUndo {
+  /** Qué se hizo, para el botón ("victoria", "pasar turno"). */
+  label: string;
+  by: string;
+  /** Estado completo de antes (sin su propio stepUndo). */
+  before: GameState;
+  /** Huella del estado justo después: si algo cambió desde entonces, ya no se puede volver. */
+  afterKey: string;
 }
 
 export interface UndoEntry {

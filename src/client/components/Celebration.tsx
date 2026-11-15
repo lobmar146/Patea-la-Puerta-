@@ -28,9 +28,15 @@ export function Celebration({ state, big = false }: { state: GameState; big?: bo
       .sort((a, b) => b.gained - a.gained)[0];
     if (!up) return;
     setBurst({ key: Date.now(), name: displayName(state, up.id), gained: up.gained, level: up.lvl });
+  }, [state]);
+
+  // El cartel se va solo. El temporizador depende del cartel y no del estado: si llega otro cambio
+  // (por ejemplo el DM toca otro botón) no se cancela y el cartel no queda colgado.
+  useEffect(() => {
+    if (!burst) return;
     const t = window.setTimeout(() => setBurst(null), 2600);
     return () => window.clearTimeout(t);
-  }, [state]);
+  }, [burst]);
 
   if (!burst) return null;
   return (

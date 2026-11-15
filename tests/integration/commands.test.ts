@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Action } from '../../src/shared/commands';
 import type { GameState } from '../../src/shared/types';
 import { prisma } from '../../src/server/db';
+import { stepUndoFor } from '../../src/shared/engine';
 import { createRoom, joinRoom, listCustomMonsters, loadRoom, processCommand } from '../../src/server/rooms';
 import { hashToken } from '../../src/server/sessions';
 
@@ -155,6 +156,10 @@ describe('idempotencia y concurrencia', () => {
     const row = await prisma.customMonster.findUnique({ where: { key: 'caracol gigante' } });
     // Mismo monstruo sin importar tildes ni mayúsculas: se actualiza y cuenta los usos.
     expect(row).toMatchObject({ strength: 4, uses: 2 });
+    // Volver atrás funciona con el estado leído de PostgreSQL (JSONB reordena claves).
+    expect(stepUndoFor(await state())?.label).toBe('agregar monstruo');
+    expect((await cmd(dm, { type: 'step.undo' })).result.ok).toBe(true);
+    expect((await state()).combat?.monsters).toHaveLength(1);
     expect(await listCustomMonsters()).toContainEqual({ name: 'Cáracol gigante', strength: 4, levels: 1, treasures: 2 });
     await prisma.customMonster.deleteMany({ where: { key: { in: ['babosa', 'caracol gigante'] } } });
   });

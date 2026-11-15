@@ -61,7 +61,6 @@ for (const theme of ['dark', 'light'] as const) {
     await dm.getByRole('button', { name: /Monstruo/ }).click();
     await dm.getByTestId('monster-strength').fill('6');
     await dm.getByRole('button', { name: 'Entrar en combate' }).click();
-    await dm.getByText('Seguir sin ayuda por ahora').click();
     await shot(dm, `${theme}-07-dm-combate`, true);
     await tab(p1, 'Turno');
     await shot(p1, `${theme}-08-combate-otro`, true);
@@ -81,7 +80,6 @@ for (const theme of ['dark', 'light'] as const) {
     await p1.screenshot({ path: `${OUT}/${theme}-12-reacciones.png` });
     await tab(dm, 'Turno');
     await dm.getByRole('button', { name: 'Victoria', exact: true }).click();
-    await dm.getByTestId('victory-form').getByRole('button', { name: 'Confirmar victoria' }).click();
     await tab(dm, 'DM');
     await dm.getByRole('button', { name: 'Terminar partida' }).click();
     await dm.locator('#winner').selectOption({ label: 'Dana' });

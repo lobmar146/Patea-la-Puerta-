@@ -62,9 +62,6 @@ test('opciones rápidas sin scroll en cada fase', async ({ browser }) => {
   await dm.getByRole('button', { name: 'Entrar en combate' }).click();
 
   // Combate: quien pelea ve "Resolver combate" y el resto "Jugar una carta", sin scrollear.
-  const skip = dm.getByRole('button', { name: 'Seguir sin ayuda por ahora' });
-  await expect(skip).toBeVisible();
-  await skip.click();
   await expect(dm.getByTestId('combat-quick')).toBeVisible();
   await expect(dm.getByTestId('monsters-total')).toHaveText('11');
   await expect(dm.getByTestId('applied-conditions')).toContainText('+5 contra hombres (Martín)');
@@ -86,7 +83,6 @@ test('opciones rápidas sin scroll en cada fase', async ({ browser }) => {
 
   // Después del combate vuelve la acción fija.
   await dm.getByTestId('combat-quick').getByRole('button', { name: 'Victoria' }).click();
-  await dm.getByTestId('victory-form').getByRole('button', { name: /Registrar|Confirmar/ }).first().click();
   await expect(dm.getByTestId('turn-action')).toBeVisible();
   await inView(dm, 'turn-action');
   await dm.screenshot({ path: `${OUT}/celu-despues.png` });

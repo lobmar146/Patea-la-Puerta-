@@ -91,22 +91,6 @@ type CombatModal = 'monster' | 'modifier' | 'victory' | 'flee' | 'other' | { mon
 export function CombatView() {
   const { snap, me, send, pending } = useRoom();
   const [modal, setModal] = useState<CombatModal>(null);
-  // Se recuerda en la pestaña del navegador: cambiar de sección no vuelve a mostrar el mismo aviso.
-  const [seenAlert, setSeenAlertState] = useState<string | null>(() => {
-    try {
-      return sessionStorage.getItem('pp-losing-seen');
-    } catch {
-      return null;
-    }
-  });
-  const setSeenAlert = (k: string) => {
-    setSeenAlertState(k);
-    try {
-      sessionStorage.setItem('pp-losing-seen', k);
-    } catch {
-      /* sin almacenamiento: vale mientras siga montado */
-    }
-  };
   if (!snap || !me || !snap.state.combat) return null;
   const { state } = snap;
   const combat = snap.state.combat;
@@ -124,12 +108,21 @@ export function CombatView() {
   const losing = combat.monsters.length > 0 && totals.diff < (playersTakeTie ? 0 : 1);
   const missing = (playersTakeTie ? 0 : 1) - totals.diff;
   const canAskHelp = isFighter && !combat.helperId && pendingReqs.length === 0 && candidates.some((id) => !combat.helpRequests.some((r) => r.toId === id && r.status === 'rejected'));
-  // El aviso aparece una vez por situación: al empezar a perder y de nuevo si rechazan un pedido.
-  const declined = combat.helpRequests.filter((r) => r.status === 'rejected').length;
-  const alertKey = `${combat.id}:${declined}`;
-  const showLosingAlert = losing && canAskHelp && state.status === 'active' && seenAlert !== alertKey && modal === null;
+  // Victoria sin confirmar: niveles de los monstruos para quien pelea (y el Elfo ayudante). Se vuelve atrás con un toque.
+  const winNow = () => {
+    const rewards = [{ participantId: combat.fighterId, levels: combat.monsters.reduce((a, m) => a + m.levels, 0), note: '' }];
+    if (combat.helperId) rewards.push({ participantId: combat.helperId, levels: elfHelperLevels(state.characters[combat.helperId], combat.monsters.length), note: '' });
+    void send({ type: 'combat.resolveVictory', rewards, note: '' });
+  };
+  // Huida: si no hace falta tirar el dado (no persigue), se registra directo.
+  const fleeRolls = [combat.fighterId, ...(combat.helperId ? [combat.helperId] : [])].flatMap((p) => combat.monsters.filter((m) => !noPursue(state, m, p)).map((m) => `${p}:${m.id}`));
+  const fleeNow = () => {
+    if (fleeRolls.length > 0) return setModal('flee');
+    const outcomes = [combat.fighterId, ...(combat.helperId ? [combat.helperId] : [])].flatMap((p) => combat.monsters.map((m) => ({ participantId: p, monsterId: m.id, result: 'escaped' as const })));
+    void send({ type: 'combat.resolveFlee', outcomes, note: '' });
+  };
+  const open = (m: CombatModal) => (m === 'victory' ? winNow() : m === 'flee' ? fleeNow() : m === 'other' ? void send({ type: 'combat.resolveOther', text: '' }) : setModal(m));
   const askHelp = (toId: string) => {
-    setSeenAlert(alertKey);
     void send({ type: 'help.request', toId });
   };
 
@@ -153,9 +146,9 @@ export function CombatView() {
           <div className={`grid gap-2 ${canResolve ? 'grid-cols-3' : 'grid-cols-1'}`}>
             {canResolve ? (
               <>
-                <button className="btn-go w-full px-2" onClick={() => setModal('victory')}><GameIcon name="victory" className="size-4 shrink-0" /> Victoria</button>
-                <button className="btn-secondary w-full px-2" onClick={() => setModal('flee')}><GameIcon name="flee" className="size-4 shrink-0" /> Huida</button>
-                <button className="btn-secondary w-full px-2" onClick={() => setModal('other')}><Sparkles aria-hidden className="size-4 shrink-0" /> Otra</button>
+                <button className="btn-go w-full px-2" disabled={pending} onClick={winNow}><GameIcon name="victory" className="size-4 shrink-0" /> Victoria</button>
+                <button className="btn-secondary w-full px-2" disabled={pending} onClick={fleeNow}><GameIcon name="flee" className="size-4 shrink-0" /> Huida</button>
+                <button className="btn-secondary w-full px-2" disabled={pending} onClick={() => open('other')}><Sparkles aria-hidden className="size-4 shrink-0" /> Otra</button>
               </>
             ) : (
               <button className="btn-secondary w-full" onClick={() => setModal('modifier')}><GameIcon name="card" className="size-5" /> Jugar una carta</button>
@@ -173,7 +166,7 @@ export function CombatView() {
           helpOptions={canAskHelp ? candidates.filter((id) => !combat.helpRequests.some((r) => r.toId === id && r.status === 'rejected')).map((id) => ({ id, name: displayName(state, id) })) : []}
           pending={pending}
           onAskHelp={askHelp}
-          onOpen={setModal}
+          onOpen={open}
         />
       )}
       <div className="rounded-2xl bg-gradient-to-b from-royal/20 to-royal/5 p-3 ring-1 ring-royal/30" data-testid="combat-help">
@@ -254,24 +247,6 @@ export function CombatView() {
         {isPlayer && <button className="btn-secondary mt-2 w-full sm:w-auto" onClick={() => setModal('modifier')}><GameIcon name="card" className="size-5" /> Añadir modificador</button>}
       </div>
 
-      <Modal open={showLosingAlert} title="¡Estás perdiendo!" onClose={() => setSeenAlert(alertKey)}>
-        <div className="space-y-3" data-testid="losing-alert">
-          <div className="flex items-center gap-3 rounded-2xl bg-blood/10 p-3 text-accent-wine">
-            <Illustration name="help" className="w-16 shrink-0" />
-            <p className="text-lg font-black leading-tight">Te {missing === 1 ? 'falta 1 punto' : `faltan ${missing} puntos`} para ganar. ¿Querés pedir ayuda?</p>
-          </div>
-          {candidates.filter((id) => !combat.helpRequests.some((r) => r.toId === id && r.status === 'rejected')).map((id) => (
-            <button key={id} className="btn-blue w-full text-lg" disabled={pending} onClick={() => askHelp(id)}>
-              <GameIcon name="help" className="size-5 shrink-0" /> Pedir ayuda a {displayName(state, id)}
-            </button>
-          ))}
-          <div className="grid grid-cols-2 gap-2">
-            <button className="btn-secondary w-full" onClick={() => { setSeenAlert(alertKey); setModal('modifier'); }}><GameIcon name="card" className="size-5" /> Jugar una carta</button>
-            <button className="btn-secondary w-full" onClick={() => { setSeenAlert(alertKey); setModal('flee'); }}><GameIcon name="flee" className="size-4 shrink-0" /> Huir</button>
-          </div>
-          <button className="w-full py-2 text-sm font-semibold text-ui-muted underline" onClick={() => setSeenAlert(alertKey)}>Seguir sin ayuda por ahora</button>
-        </div>
-      </Modal>
       <Modal tall open={modal === 'monster'} title="Añadir monstruo" onClose={() => setModal(null)}>
         <MonsterForm state={state} submitLabel="Sumar al combate" disabled={pending || !canEdit} onSubmit={(monster) => { void send({ type: 'combat.addMonster', monster }); setModal(null); }} />
       </Modal>
@@ -300,9 +275,7 @@ export function CombatView() {
           onUse={(itemId, side) => { void send({ type: 'combat.useItem', itemId, side }); setModal(null); }}
         />
       </Modal>
-      <Modal open={modal === 'victory'} title="Registrar victoria" onClose={() => setModal(null)}><VictoryForm combat={combat} /></Modal>
       <Modal open={modal === 'flee'} title="Registrar huida" onClose={() => setModal(null)}><FleeForm combat={combat} /></Modal>
-      <Modal open={modal === 'other'} title="Registrar otra resolución" onClose={() => setModal(null)}><OtherForm /></Modal>
     </section>
   );
 }
@@ -359,52 +332,6 @@ function NextStep({ hasMonsters, losing, missing, helperName, waitingFor, helpOp
       <p className="text-lg font-black">{title}</p>
       {body}
     </div>
-  );
-}
-
-function VictoryForm({ combat }: { combat: Combat }) {
-  const { snap, send, pending } = useRoom();
-  const defaultLevels = combat.monsters.reduce((a, m) => a + m.levels, 0);
-  const [fighter, setFighter] = useState(String(defaultLevels));
-  // Elfo ayudante: sube 1 nivel por cada monstruo que ayuda a vencer.
-  const elfHelper = isElf(combat.helperId ? snap?.state.characters[combat.helperId] : undefined);
-  const [helper, setHelper] = useState(String(elfHelperLevels(combat.helperId ? snap?.state.characters[combat.helperId] : undefined, combat.monsters.length)));
-  const [note, setNote] = useState('');
-  if (!snap) return null;
-  const treasures = combat.monsters.reduce((a, m) => a + m.treasures, 0);
-  const fighterLevels = Number(fighter) || 0;
-  const helperLevels = Number(helper) || 0;
-  const rewards = [{ participantId: combat.fighterId, levels: fighterLevels, note: '' }];
-  if (combat.helperId) rewards.push({ participantId: combat.helperId, levels: helperLevels, note: '' });
-  const signed = (n: number) => `${n >= 0 ? '+' : ''}${n} ${Math.abs(n) === 1 ? 'nivel' : 'niveles'}`;
-  return (
-    <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void send({ type: 'combat.resolveVictory', rewards, note: note.trim() }); }} data-testid="victory-form">
-      <div className="flex items-center gap-3 rounded-2xl bg-moss/10 p-3">
-        <Illustration name="rewards" className="w-16 shrink-0" />
-        <ul className="space-y-1 text-lg font-bold" data-testid="victory-summary">
-          <li>{displayName(snap.state, combat.fighterId)}: {signed(fighterLevels)}</li>
-          {combat.helperId && helperLevels !== 0 && <li>{displayName(snap.state, combat.helperId)}: {signed(helperLevels)}</li>}
-          <li>Roban {treasures} {treasures === 1 ? 'tesoro' : 'tesoros'} en la mesa</li>
-        </ul>
-      </div>
-      <button className="btn-go w-full text-lg" disabled={pending}><GameIcon name="victory" className="size-5 shrink-0" /> Confirmar victoria</button>
-      <details className="rounded-2xl bg-surface-muted/75 px-4">
-        <summary className="min-h-12 cursor-pointer py-3 font-bold">Ajustar niveles o agregar una nota</summary>
-        <div className="space-y-2 pb-4">
-          <label className="flex items-center justify-between gap-2">
-            <span>Niveles para {displayName(snap.state, combat.fighterId)}</span>
-            <input className="input w-24" type="number" min={-10} max={10} value={fighter} onChange={(e) => setFighter(e.target.value)} data-testid="reward-fighter" />
-          </label>
-          {combat.helperId && (
-            <label className="flex items-center justify-between gap-2">
-              <span>Niveles para {displayName(snap.state, combat.helperId)} {elfHelper ? '(Elfo: +1 por monstruo vencido)' : '(ayudante; solo si una carta o raza lo indica)'}</span>
-              <input className="input w-24" type="number" min={-10} max={10} value={helper} onChange={(e) => setHelper(e.target.value)} />
-            </label>
-          )}
-          <input className="input" maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota opcional (ej.: el ayudante se lleva 2 tesoros)" />
-        </div>
-      </details>
-    </form>
   );
 }
 
@@ -483,6 +410,21 @@ function FleeForm({ combat }: { combat: Combat }) {
   const [note, setNote] = useState('');
   if (!snap) return null;
   const outcomes = people.flatMap((p) => combat.monsters.map((m) => ({ participantId: p, monsterId: m.id, result: noPursue(snap.state, m, p) ? 'escaped' as const : res[`${p}:${m.id}`] ?? 'escaped' })));
+  const rolls = people.flatMap((p) => combat.monsters.filter((m) => !noPursue(snap.state, m, p)).map((m) => ({ p, m })));
+  // Una sola tirada: un toque con el resultado y listo.
+  if (rolls.length === 1) {
+    const { p, m } = rolls[0];
+    const sendOne = (result: 'escaped' | 'caught') => void send({ type: 'combat.resolveFlee', outcomes: outcomes.map((o) => (o.participantId === p && o.monsterId === m.id ? { ...o, result } : o)), note: '' });
+    return (
+      <div className="space-y-3" data-testid="flee-form">
+        <p>{displayName(snap.state, p)} tira el dado contra {m.name || 'el monstruo'}: escapa con <b data-testid="flee-target">{fleeTarget(snap.state.characters[p])}+</b>{isElf(snap.state.characters[p]) ? ' (Elfo)' : ''}.</p>
+        <div className="grid grid-cols-2 gap-2">
+          <button className="btn-go min-h-16 text-lg" disabled={pending} onClick={() => sendOne('escaped')}>Escapó</button>
+          <button className="btn-primary min-h-16 text-lg" disabled={pending} onClick={() => sendOne('caught')}>Lo atrapó</button>
+        </div>
+      </div>
+    );
+  }
   return (
     <form className="mt-3 space-y-2" onSubmit={(e) => { e.preventDefault(); void send({ type: 'combat.resolveFlee', outcomes, note: note.trim() }); }} data-testid="flee-form">
       <div className="flex items-center gap-3">
@@ -522,13 +464,3 @@ function FleeForm({ combat }: { combat: Combat }) {
   );
 }
 
-function OtherForm() {
-  const { send, pending } = useRoom();
-  const [text, setText] = useState('');
-  return (
-    <form className="mt-3 space-y-2" onSubmit={(e) => { e.preventDefault(); if (text.trim()) void send({ type: 'combat.resolveOther', text: text.trim() }); }}>
-      <input className="input" maxLength={200} value={text} onChange={(e) => setText(e.target.value)} placeholder="Ej.: el monstruo fue eliminado con una carta, sin nivel" data-testid="other-text" />
-      <button className="btn-go w-full" disabled={pending || !text.trim()}>Confirmar resolución</button>
-    </form>
-  );
-}
